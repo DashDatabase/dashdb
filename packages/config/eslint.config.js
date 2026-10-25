@@ -1,1 +1,3 @@
-export { default } from './eslint/base.js';
+import { base } from './eslint/base.js';
+
+export default base(import.meta.dirname);

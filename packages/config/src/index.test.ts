@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { brandColors } from './index';
 
+// eslint-disable-next-line security/detect-non-literal-fs-filename -- fixed path next to this file
 const preset = readFileSync(
   fileURLToPath(new URL('../tailwind/preset.css', import.meta.url)),
   'utf8',

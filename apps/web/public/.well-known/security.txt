@@ -1,0 +1,5 @@
+Contact: mailto:security@dashdb.dev
+Expires: 2027-10-25T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://dashdb.dev/.well-known/security.txt
+Policy: https://dashdb.dev/security

@@ -1,0 +1,44 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm # covers pnpm workspaces via pnpm-lock.yaml
+    directory: /
+    cooldown:
+      default-days: 7 # let new releases age a week before they are proposed
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    cooldown:
+      default-days: 7 # let new releases age a week before they are proposed
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: ci
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: docker-compose
+    directory: /
+    cooldown:
+      default-days: 7 # let new releases age a week before they are proposed
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]

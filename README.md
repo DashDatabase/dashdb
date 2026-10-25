@@ -36,3 +36,19 @@ pnpm dev                   # web :3000, api :8787
 | `e2e`                                   | Playwright (run `pnpm --filter @dashdb/web exec playwright install chromium` once) |
 | `db:generate` / `db:migrate`            | drizzle-kit in `packages/db`                                                       |
 | `format`                                | Prettier                                                                           |
+
+## Code quality & security
+
+- **Lint**: shared ESLint flat configs in `packages/config/eslint` (typescript-eslint `strictTypeChecked`,
+  `eslint-plugin-security`, `import/no-cycle`, React + hooks rules for `ui` and `web`). Lint fails on warnings.
+- **Format**: Prettier with `prettier-plugin-tailwindcss` (`pnpm format`, `pnpm format:check`).
+- **Git hooks** (Husky, installed by `pnpm install`):
+  - `pre-commit`: [gitleaks](https://github.com/gitleaks/gitleaks) on staged changes, then lint-staged
+    (`eslint --fix` + `prettier --write` on staged files). **gitleaks must be on your PATH**:
+    `winget install --id Gitleaks.Gitleaks -e` / `brew install gitleaks`.
+  - `commit-msg`: commitlint with [Conventional Commits](https://www.conventionalcommits.org).
+- **CI** (`.github/workflows/ci.yml`): lint, typecheck, test, build, plus a `db-tests` job against Postgres.
+- **Security** (`.github/workflows/security.yml`, also weekly): CodeQL, gitleaks over full history,
+  `pnpm audit --audit-level=high`, and Semgrep (`p/owasp-top-ten`, `p/typescript`).
+- **Dependabot**: weekly, with minor and patch updates grouped into one PR per ecosystem.
+- Reporting vulnerabilities: see [SECURITY.md](SECURITY.md).

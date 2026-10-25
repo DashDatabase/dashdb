@@ -13,18 +13,24 @@
     "./tsconfig/react-library.json": "./tsconfig/react-library.json",
     "./tsconfig/nextjs.json": "./tsconfig/nextjs.json",
     "./eslint/base": "./eslint/base.js",
+    "./eslint/react": "./eslint/react.js",
     "./eslint/next": "./eslint/next.js",
     "./tailwind/preset.css": "./tailwind/preset.css"
   },
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@eslint/js": "^9.39.0",
     "eslint-config-next": "^16.4.3",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-security": "^4.2.0",
     "globals": "^17.13.0",
     "typescript-eslint": "^8.72.0"
   },

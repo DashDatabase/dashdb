@@ -1,0 +1,5 @@
+# gitleaks config: default ruleset. Add narrow [[allowlists]] here only for verified false positives.
+title = "DashDB gitleaks config"
+
+[extend]
+useDefault = true
