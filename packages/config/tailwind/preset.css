@@ -1,0 +1,17 @@
+/*
+ * DashDB Tailwind v4 preset. Import it after tailwindcss:
+ *   @import 'tailwindcss';
+ *   @import '@dashdb/config/tailwind/preset.css';
+ * Keep in sync with brandColors in src/index.ts.
+ */
+@theme {
+  --color-brand-50: #eef6ff;
+  --color-brand-100: #d9eaff;
+  --color-brand-500: #2f7cf6;
+  --color-brand-600: #1f63db;
+  --color-brand-700: #1a4fb0;
+  --color-brand-900: #142f63;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}

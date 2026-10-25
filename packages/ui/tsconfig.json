@@ -1,0 +1,4 @@
+{
+  "extends": "@dashdb/config/tsconfig/react-library.json",
+  "include": ["src", "*.config.ts"]
+}

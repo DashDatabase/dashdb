@@ -1,0 +1,9 @@
+@import 'tailwindcss';
+@import '@dashdb/config/tailwind/preset.css';
+
+/* Shared components ship as JS, so Tailwind has to scan their source for class names. */
+@source '../../../../packages/ui/src';
+
+body {
+  @apply bg-white font-sans text-slate-900 antialiased;
+}

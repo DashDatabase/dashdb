@@ -1,0 +1,27 @@
+{
+  "name": "dashdb",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.3",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "test:db": "turbo run test:db",
+    "e2e": "pnpm --filter @dashdb/web e2e",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write .",
+    "db:generate": "pnpm --filter @dashdb/db db:generate",
+    "db:migrate": "pnpm --filter @dashdb/db db:migrate"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "prettier": "^3.9.10",
+    "turbo": "^2.11.10",
+    "typescript": "~6.0.3"
+  }
+}
