@@ -24,3 +24,6 @@ blob-report/
 # misc
 .DS_Store
 *.log
+
+# claude code (personal overrides)
+.claude/settings.local.json
