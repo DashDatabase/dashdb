@@ -160,6 +160,10 @@ describe.each(['postgres', 'mysql'] as const)('%s type mapping', (dialect) => {
     expect(fromNativeType(dialect, native, ctx)).toBeNull();
   });
 
+  it('throws for the unknown logical type', () => {
+    expect(() => toNativeType(dialect, { kind: 'unknown' }, ctx)).toThrow(/nativeType/);
+  });
+
   it('throws when an enum type references an unknown enum', () => {
     expect(() => toNativeType(dialect, { kind: 'enum', enumId: 'e_gone' }, ctx)).toThrow(
       /Unknown enum e_gone/,

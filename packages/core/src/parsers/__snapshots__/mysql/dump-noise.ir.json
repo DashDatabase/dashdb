@@ -1,0 +1,287 @@
+{
+  "schema": {
+    "id": "schema",
+    "dialect": "mysql",
+    "namespaces": [
+      {
+        "id": "namespace:default",
+        "name": "default"
+      }
+    ],
+    "tables": [
+      {
+        "id": "table:default.suppliers",
+        "name": "suppliers",
+        "namespace": "namespace:default",
+        "columns": [
+          {
+            "id": "column:default.suppliers.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "int",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.suppliers.name",
+            "name": "name",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 150
+            },
+            "nativeType": "varchar(150)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.suppliers.contact_email",
+            "name": "contact_email",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 255
+            },
+            "nativeType": "varchar(255)",
+            "nullable": true,
+            "default": {
+              "kind": "literal",
+              "value": null
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:default.suppliers",
+          "name": null,
+          "columns": [
+            "column:default.suppliers.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": null,
+        "metadata": {
+          "engine": "innodb",
+          "auto_increment": "4",
+          "charset": "utf8mb4",
+          "collate": "utf8mb4_0900_ai_ci"
+        }
+      },
+      {
+        "id": "table:default.parts",
+        "name": "parts",
+        "namespace": "namespace:default",
+        "columns": [
+          {
+            "id": "column:default.parts.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "int",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.parts.supplier_id",
+            "name": "supplier_id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "int",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.parts.part_no",
+            "name": "part_no",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 40
+            },
+            "nativeType": "varchar(40)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.parts.unit",
+            "name": "unit",
+            "logicalType": {
+              "kind": "enum",
+              "enumId": "enum:default.parts_unit"
+            },
+            "nativeType": "enum('pc','kg','m')",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "pc"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.parts.cost",
+            "name": "cost",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 10,
+              "scale": 4
+            },
+            "nativeType": "decimal(10,4)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:default.parts",
+          "name": null,
+          "columns": [
+            "column:default.parts.id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:default.parts.parts_supplier_fk",
+            "name": "parts_supplier_fk",
+            "columns": [
+              {
+                "column": "column:default.parts.supplier_id",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          }
+        ],
+        "uniques": [
+          {
+            "id": "unique:default.parts.part_no",
+            "name": "part_no",
+            "columns": [
+              "column:default.parts.part_no"
+            ]
+          }
+        ],
+        "foreignKeys": [
+          {
+            "id": "fk:default.parts.parts_supplier_fk",
+            "name": "parts_supplier_fk",
+            "columns": [
+              "column:default.parts.supplier_id"
+            ],
+            "refTable": "table:default.suppliers",
+            "refColumns": [
+              "column:default.suppliers.id"
+            ],
+            "onDelete": "no action",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {
+          "engine": "innodb",
+          "charset": "utf8mb4",
+          "collate": "utf8mb4_0900_ai_ci"
+        }
+      }
+    ],
+    "enums": [
+      {
+        "id": "enum:default.parts_unit",
+        "name": "parts_unit",
+        "namespace": "namespace:default",
+        "values": [
+          "pc",
+          "kg",
+          "m"
+        ]
+      }
+    ],
+    "version": 1
+  },
+  "diagnostics": [
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored DROP TABLE statement",
+      "line": 16,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored LOCK TABLES statement",
+      "line": 31,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored INSERT statement",
+      "line": 33,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored UNLOCK TABLES statement",
+      "line": 35,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored DROP TABLE statement",
+      "line": 37,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored unsupported statement: CREATE PROCEDURE `restock` …",
+      "line": 51,
+      "column": 1
+    },
+    {
+      "severity": "error",
+      "code": "syntax-error",
+      "message": "CREATE TABLE `broken_table` …: Syntax error near \",\"",
+      "line": 59,
+      "column": 21
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored CREATE VIEW statement",
+      "line": 63,
+      "column": 1
+    }
+  ]
+}

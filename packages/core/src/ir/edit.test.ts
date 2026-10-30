@@ -98,6 +98,7 @@ describe('tables', () => {
           default: null,
           autoIncrement: false,
           comment: null,
+          metadata: {},
         },
       ],
       primaryKey: null,
@@ -106,6 +107,7 @@ describe('tables', () => {
       foreignKeys: [],
       checks: [],
       comment: null,
+      metadata: {},
     });
     expect(validateSchema(next)).toEqual([]);
   });

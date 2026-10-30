@@ -10,6 +10,7 @@ export function column(id: string, overrides: Partial<Column> = {}): Column {
     default: null,
     autoIncrement: false,
     comment: null,
+    metadata: {},
     ...overrides,
   };
 }
@@ -35,6 +36,7 @@ export function blogSchema(): Schema {
         name: 'users',
         namespace: 'ns_public',
         comment: 'Registered users',
+        metadata: {},
         columns: [
           column('c_users_id', {
             name: 'id',
@@ -73,6 +75,7 @@ export function blogSchema(): Schema {
         name: 'posts',
         namespace: 'ns_public',
         comment: null,
+        metadata: { owner: 'blog' },
         columns: [
           column('c_posts_id', { name: 'id' }),
           column('c_posts_author', { name: 'author_id' }),

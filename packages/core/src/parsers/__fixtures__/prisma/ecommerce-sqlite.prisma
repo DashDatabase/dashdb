@@ -1,0 +1,47 @@
+// Small shop on SQLite: composite keys, decimals, bytes and an ignored model.
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Customer {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  createdAt DateTime @default(now())
+  orders    Order[]
+}
+
+model Product {
+  sku        String      @id
+  title      String
+  price      Decimal
+  rating     Float?
+  thumbnail  Bytes?
+  inStock    Boolean     @default(true)
+  orderItems OrderItem[]
+}
+
+model Order {
+  id         Int         @id @default(autoincrement())
+  customerId Int
+  customer   Customer    @relation(fields: [customerId], references: [id])
+  items      OrderItem[]
+  placedAt   DateTime    @default(now())
+  notes      String      @default("")
+}
+
+model OrderItem {
+  orderId  Int
+  sku      String
+  quantity Int     @default(1)
+  order    Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product  Product @relation(fields: [sku], references: [sku])
+
+  @@id([orderId, sku])
+}
+
+model LegacyCart {
+  id Int @id
+
+  @@ignore
+}

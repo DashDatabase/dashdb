@@ -1,0 +1,360 @@
+{
+  "schema": {
+    "id": "schema",
+    "dialect": "postgres",
+    "namespaces": [
+      {
+        "id": "namespace:public",
+        "name": "public"
+      }
+    ],
+    "tables": [
+      {
+        "id": "table:public.tickets",
+        "name": "tickets",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.tickets.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": {
+              "kind": "sequence",
+              "name": "public.tickets_id_seq"
+            },
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.tickets.subject",
+            "name": "subject",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 200
+            },
+            "nativeType": "character varying(200)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.tickets.priority",
+            "name": "priority",
+            "logicalType": {
+              "kind": "enum",
+              "enumId": "enum:public.ticket_priority"
+            },
+            "nativeType": "public.ticket_priority",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "normal"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.tickets.requester_email",
+            "name": "requester_email",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 320
+            },
+            "nativeType": "character varying(320)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.tickets.created_at",
+            "name": "created_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": true
+            },
+            "nativeType": "timestamp with time zone",
+            "nullable": false,
+            "default": {
+              "kind": "expression",
+              "sql": "now()"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.tickets.updated_at",
+            "name": "updated_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": true
+            },
+            "nativeType": "timestamp with time zone",
+            "nullable": false,
+            "default": {
+              "kind": "expression",
+              "sql": "now()"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.tickets",
+          "name": "tickets_pkey",
+          "columns": [
+            "column:public.tickets.id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:public.tickets.tickets_priority_idx",
+            "name": "tickets_priority_idx",
+            "columns": [
+              {
+                "column": "column:public.tickets.priority",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": "btree",
+            "where": "priority = 'urgent'::public.ticket_priority"
+          }
+        ],
+        "uniques": [],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:public.ticket_replies",
+        "name": "ticket_replies",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.ticket_replies.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.ticket_replies.ticket_id",
+            "name": "ticket_id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.ticket_replies.body",
+            "name": "body",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.ticket_replies.internal",
+            "name": "internal",
+            "logicalType": {
+              "kind": "boolean"
+            },
+            "nativeType": "boolean",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": false
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.ticket_replies",
+          "name": "ticket_replies_pkey",
+          "columns": [
+            "column:public.ticket_replies.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:public.ticket_replies.ticket_replies_ticket_id_fkey",
+            "name": "ticket_replies_ticket_id_fkey",
+            "columns": [
+              "column:public.ticket_replies.ticket_id"
+            ],
+            "refTable": "table:public.tickets",
+            "refColumns": [
+              "column:public.tickets.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      }
+    ],
+    "enums": [
+      {
+        "id": "enum:public.ticket_priority",
+        "name": "ticket_priority",
+        "namespace": "namespace:public",
+        "values": [
+          "low",
+          "normal",
+          "urgent"
+        ]
+      }
+    ],
+    "version": 1
+  },
+  "diagnostics": [
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored SET statement",
+      "line": 8,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored SET statement",
+      "line": 9,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored SET statement",
+      "line": 10,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored SET statement",
+      "line": 11,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored SELECT statement",
+      "line": 12,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored SET statement",
+      "line": 13,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored unsupported statement: ALTER TYPE public.ticket_priority …",
+      "line": 21,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored CREATE FUNCTION statement",
+      "line": 23,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored SET statement",
+      "line": 32,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored CREATE SEQUENCE statement",
+      "line": 45,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored ALTER SEQUENCE statement",
+      "line": 53,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored unsupported statement: COPY public.tickets id, …",
+      "line": 64,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored unsupported statement: CREATE TRIGGER tickets_touch …",
+      "line": 77,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored CREATE VIEW statement",
+      "line": 82,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored unsupported statement: GRANT SELECT ON …",
+      "line": 85,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored unsupported statement: REVOKE ALL ON …",
+      "line": 86,
+      "column": 1
+    }
+  ]
+}

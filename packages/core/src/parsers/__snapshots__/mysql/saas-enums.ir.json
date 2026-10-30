@@ -1,0 +1,595 @@
+{
+  "schema": {
+    "id": "schema",
+    "dialect": "mysql",
+    "namespaces": [
+      {
+        "id": "namespace:default",
+        "name": "default"
+      }
+    ],
+    "tables": [
+      {
+        "id": "table:default.accounts",
+        "name": "accounts",
+        "namespace": "namespace:default",
+        "columns": [
+          {
+            "id": "column:default.accounts.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "bigint"
+            },
+            "nativeType": "bigint",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.accounts.name",
+            "name": "name",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 200
+            },
+            "nativeType": "varchar(200)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.accounts.plan",
+            "name": "plan",
+            "logicalType": {
+              "kind": "enum",
+              "enumId": "enum:default.accounts_plan"
+            },
+            "nativeType": "enum('free','starter','pro','enterprise')",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "free"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.accounts.billing_cycle",
+            "name": "billing_cycle",
+            "logicalType": {
+              "kind": "enum",
+              "enumId": "enum:default.accounts_billing_cycle"
+            },
+            "nativeType": "enum('monthly','yearly')",
+            "nullable": true,
+            "default": {
+              "kind": "literal",
+              "value": null
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.accounts.region",
+            "name": "region",
+            "logicalType": {
+              "kind": "enum",
+              "enumId": "enum:default.accounts_region"
+            },
+            "nativeType": "enum('us-east','eu-west','ap-south')",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "us-east"
+            },
+            "autoIncrement": false,
+            "comment": "Data residency",
+            "metadata": {}
+          },
+          {
+            "id": "column:default.accounts.trial_ends_at",
+            "name": "trial_ends_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": false
+            },
+            "nativeType": "datetime",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.accounts.created_at",
+            "name": "created_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": true
+            },
+            "nativeType": "timestamp",
+            "nullable": false,
+            "default": {
+              "kind": "expression",
+              "sql": "CURRENT_TIMESTAMP"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:default.accounts",
+          "name": null,
+          "columns": [
+            "column:default.accounts.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": null,
+        "metadata": {
+          "engine": "innodb",
+          "charset": "utf8mb4",
+          "collate": "utf8mb4_unicode_ci"
+        }
+      },
+      {
+        "id": "table:default.seats",
+        "name": "seats",
+        "namespace": "namespace:default",
+        "columns": [
+          {
+            "id": "column:default.seats.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "bigint"
+            },
+            "nativeType": "bigint",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.seats.account_id",
+            "name": "account_id",
+            "logicalType": {
+              "kind": "bigint"
+            },
+            "nativeType": "bigint",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.seats.email",
+            "name": "email",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 255
+            },
+            "nativeType": "varchar(255)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.seats.role",
+            "name": "role",
+            "logicalType": {
+              "kind": "enum",
+              "enumId": "enum:default.seats_role"
+            },
+            "nativeType": "enum('owner','admin','member','billing')",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "member"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.seats.status",
+            "name": "status",
+            "logicalType": {
+              "kind": "enum",
+              "enumId": "enum:default.seats_status"
+            },
+            "nativeType": "enum('invited','active','suspended')",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "invited"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:default.seats",
+          "name": null,
+          "columns": [
+            "column:default.seats.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [
+          {
+            "id": "unique:default.seats.seats_account_email",
+            "name": "seats_account_email",
+            "columns": [
+              "column:default.seats.account_id",
+              "column:default.seats.email"
+            ]
+          }
+        ],
+        "foreignKeys": [
+          {
+            "id": "fk:default.seats.seats_account_fk",
+            "name": "seats_account_fk",
+            "columns": [
+              "column:default.seats.account_id"
+            ],
+            "refTable": "table:default.accounts",
+            "refColumns": [
+              "column:default.accounts.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {
+          "engine": "innodb",
+          "charset": "utf8mb4"
+        }
+      },
+      {
+        "id": "table:default.invoices",
+        "name": "invoices",
+        "namespace": "namespace:default",
+        "columns": [
+          {
+            "id": "column:default.invoices.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "bigint"
+            },
+            "nativeType": "bigint",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.invoices.account_id",
+            "name": "account_id",
+            "logicalType": {
+              "kind": "bigint"
+            },
+            "nativeType": "bigint",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.invoices.status",
+            "name": "status",
+            "logicalType": {
+              "kind": "enum",
+              "enumId": "enum:default.invoices_status"
+            },
+            "nativeType": "enum('draft','open','paid','uncollectible','void')",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "draft"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.invoices.currency",
+            "name": "currency",
+            "logicalType": {
+              "kind": "unknown"
+            },
+            "nativeType": "char(3)",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "USD"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.invoices.amount_cents",
+            "name": "amount_cents",
+            "logicalType": {
+              "kind": "bigint"
+            },
+            "nativeType": "int unsigned",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.invoices.memo",
+            "name": "memo",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 500
+            },
+            "nativeType": "varchar(500)",
+            "nullable": true,
+            "default": {
+              "kind": "literal",
+              "value": "Thanks for your business! It's appreciated."
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.invoices.issued_at",
+            "name": "issued_at",
+            "logicalType": {
+              "kind": "date"
+            },
+            "nativeType": "date",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:default.invoices",
+          "name": null,
+          "columns": [
+            "column:default.invoices.id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:default.invoices.invoices_account_status",
+            "name": "invoices_account_status",
+            "columns": [
+              {
+                "column": "column:default.invoices.account_id",
+                "order": "asc",
+                "nulls": null
+              },
+              {
+                "column": "column:default.invoices.status",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          },
+          {
+            "id": "index:default.invoices.invoices_issued_idx",
+            "name": "invoices_issued_idx",
+            "columns": [
+              {
+                "column": "column:default.invoices.issued_at",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          }
+        ],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:default.invoices.invoices_ibfk_1",
+            "name": "invoices_ibfk_1",
+            "columns": [
+              "column:default.invoices.account_id"
+            ],
+            "refTable": "table:default.accounts",
+            "refColumns": [
+              "column:default.accounts.id"
+            ],
+            "onDelete": "no action",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {
+          "engine": "innodb",
+          "charset": "utf8mb4"
+        }
+      },
+      {
+        "id": "table:default.feature_flags",
+        "name": "feature_flags",
+        "namespace": "namespace:default",
+        "columns": [
+          {
+            "id": "column:default.feature_flags.account_id",
+            "name": "account_id",
+            "logicalType": {
+              "kind": "bigint"
+            },
+            "nativeType": "bigint",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.feature_flags.flag",
+            "name": "flag",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 64
+            },
+            "nativeType": "varchar(64)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.feature_flags.enabled",
+            "name": "enabled",
+            "logicalType": {
+              "kind": "boolean"
+            },
+            "nativeType": "tinyint(1)",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": 0
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:default.feature_flags",
+          "name": null,
+          "columns": [
+            "column:default.feature_flags.account_id",
+            "column:default.feature_flags.flag"
+          ]
+        },
+        "indexes": [],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:default.feature_flags.feature_flags_account_fk",
+            "name": "feature_flags_account_fk",
+            "columns": [
+              "column:default.feature_flags.account_id"
+            ],
+            "refTable": "table:default.accounts",
+            "refColumns": [
+              "column:default.accounts.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {
+          "engine": "myisam"
+        }
+      }
+    ],
+    "enums": [
+      {
+        "id": "enum:default.accounts_plan",
+        "name": "accounts_plan",
+        "namespace": "namespace:default",
+        "values": [
+          "free",
+          "starter",
+          "pro",
+          "enterprise"
+        ]
+      },
+      {
+        "id": "enum:default.accounts_billing_cycle",
+        "name": "accounts_billing_cycle",
+        "namespace": "namespace:default",
+        "values": [
+          "monthly",
+          "yearly"
+        ]
+      },
+      {
+        "id": "enum:default.accounts_region",
+        "name": "accounts_region",
+        "namespace": "namespace:default",
+        "values": [
+          "us-east",
+          "eu-west",
+          "ap-south"
+        ]
+      },
+      {
+        "id": "enum:default.seats_role",
+        "name": "seats_role",
+        "namespace": "namespace:default",
+        "values": [
+          "owner",
+          "admin",
+          "member",
+          "billing"
+        ]
+      },
+      {
+        "id": "enum:default.seats_status",
+        "name": "seats_status",
+        "namespace": "namespace:default",
+        "values": [
+          "invited",
+          "active",
+          "suspended"
+        ]
+      },
+      {
+        "id": "enum:default.invoices_status",
+        "name": "invoices_status",
+        "namespace": "namespace:default",
+        "values": [
+          "draft",
+          "open",
+          "paid",
+          "uncollectible",
+          "void"
+        ]
+      }
+    ],
+    "version": 1
+  },
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "unknown-type",
+      "message": "Type \"char(3)\" of \"invoices.currency\" has no logical equivalent; it is kept as a native type",
+      "line": 23,
+      "column": 1
+    }
+  ]
+}

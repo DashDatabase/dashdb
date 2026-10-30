@@ -1,0 +1,38 @@
+{
+  "tables": [
+    { "schema": "shop", "name": "categories", "engine": "InnoDB", "collation": "utf8mb4_0900_ai_ci" },
+    { "schema": "shop", "name": "items", "engine": "InnoDB", "collation": "utf8mb4_0900_ai_ci", "comment": "Catalog items" },
+    { "schema": "shop", "name": "item_categories", "engine": "InnoDB" }
+  ],
+  "columns": [
+    { "schema": "shop", "table": "categories", "name": "id", "position": 1, "type": "int unsigned", "nullable": false, "default": null, "extra": "auto_increment" },
+    { "schema": "shop", "table": "categories", "name": "name", "position": 2, "type": "varchar(100)", "nullable": false, "default": null },
+    { "schema": "shop", "table": "items", "name": "id", "position": 1, "type": "bigint unsigned", "nullable": false, "default": null, "extra": "auto_increment" },
+    { "schema": "shop", "table": "items", "name": "title", "position": 2, "type": "varchar(255)", "nullable": false, "default": null },
+    { "schema": "shop", "table": "items", "name": "condition", "position": 3, "type": "enum('new','used','refurbished')", "nullable": false, "default": "new" },
+    { "schema": "shop", "table": "items", "name": "price", "position": 4, "type": "decimal(10,2)", "nullable": false, "default": "0.00" },
+    { "schema": "shop", "table": "items", "name": "featured", "position": 5, "type": "tinyint(1)", "nullable": false, "default": "0" },
+    { "schema": "shop", "table": "items", "name": "specs", "position": 6, "type": "json", "nullable": true, "default": null, "comment": "Free-form attributes" },
+    { "schema": "shop", "table": "items", "name": "created_at", "position": 7, "type": "datetime", "nullable": false, "default": "CURRENT_TIMESTAMP", "extra": "DEFAULT_GENERATED" },
+    { "schema": "shop", "table": "items", "name": "updated_at", "position": 8, "type": "timestamp", "nullable": false, "default": "CURRENT_TIMESTAMP", "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP" },
+    { "schema": "shop", "table": "item_categories", "name": "item_id", "position": 1, "type": "bigint unsigned", "nullable": false },
+    { "schema": "shop", "table": "item_categories", "name": "category_id", "position": 2, "type": "int unsigned", "nullable": false },
+    { "schema": "shop", "table": "ghost_table", "name": "x", "position": 1, "type": "int", "nullable": true }
+  ],
+  "constraints": [
+    { "schema": "shop", "table": "categories", "name": "PRIMARY", "type": "PRIMARY KEY", "columns": ["id"] },
+    { "schema": "shop", "table": "categories", "name": "categories_name_uq", "type": "UNIQUE", "columns": ["name"] },
+    { "schema": "shop", "table": "items", "name": "PRIMARY", "type": "PRIMARY KEY", "columns": ["id"] },
+    { "schema": "shop", "table": "items", "name": "items_price_chk", "type": "CHECK", "columns": [], "definition": "(`price` >= 0)" },
+    { "schema": "shop", "table": "item_categories", "name": "PRIMARY", "type": "PRIMARY KEY", "columns": ["item_id", "category_id"] },
+    { "schema": "shop", "table": "item_categories", "name": "item_categories_item_fk", "type": "FOREIGN KEY", "columns": ["item_id"], "ref_schema": "shop", "ref_table": "items", "ref_columns": ["id"], "on_delete": "CASCADE", "on_update": "RESTRICT" },
+    { "schema": "shop", "table": "item_categories", "name": "item_categories_category_fk", "type": "FOREIGN KEY", "columns": ["category_id"], "ref_schema": "shop", "ref_table": "categories", "ref_columns": ["id"], "on_delete": "CASCADE", "on_update": "CASCADE" }
+  ],
+  "indexes": [
+    { "schema": "shop", "table": "categories", "name": "PRIMARY", "unique": true, "primary": true, "method": "BTREE", "columns": ["id"] },
+    { "schema": "shop", "table": "categories", "name": "categories_name_uq", "unique": true, "method": "BTREE", "columns": ["name"] },
+    { "schema": "shop", "table": "items", "name": "items_title_idx", "unique": false, "method": "BTREE", "columns": ["title"] },
+    { "schema": "shop", "table": "items", "name": "items_title_ft", "unique": false, "method": "FULLTEXT", "columns": ["title"] },
+    { "schema": "shop", "table": "item_categories", "name": "item_categories_category_fk", "unique": false, "method": "BTREE", "columns": ["category_id"] }
+  ]
+}

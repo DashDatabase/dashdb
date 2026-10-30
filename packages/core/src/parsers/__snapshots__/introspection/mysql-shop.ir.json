@@ -1,0 +1,359 @@
+{
+  "schema": {
+    "id": "schema",
+    "dialect": "mysql",
+    "namespaces": [
+      {
+        "id": "namespace:shop",
+        "name": "shop"
+      }
+    ],
+    "tables": [
+      {
+        "id": "table:shop.categories",
+        "name": "categories",
+        "namespace": "namespace:shop",
+        "columns": [
+          {
+            "id": "column:shop.categories.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "bigint"
+            },
+            "nativeType": "int unsigned",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.categories.name",
+            "name": "name",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 100
+            },
+            "nativeType": "varchar(100)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:shop.categories",
+          "name": null,
+          "columns": [
+            "column:shop.categories.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [
+          {
+            "id": "unique:shop.categories.categories_name_uq",
+            "name": "categories_name_uq",
+            "columns": [
+              "column:shop.categories.name"
+            ]
+          }
+        ],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": null,
+        "metadata": {
+          "engine": "innodb",
+          "collate": "utf8mb4_0900_ai_ci"
+        }
+      },
+      {
+        "id": "table:shop.items",
+        "name": "items",
+        "namespace": "namespace:shop",
+        "columns": [
+          {
+            "id": "column:shop.items.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 20,
+              "scale": 0
+            },
+            "nativeType": "bigint unsigned",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.items.title",
+            "name": "title",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 255
+            },
+            "nativeType": "varchar(255)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.items.condition",
+            "name": "condition",
+            "logicalType": {
+              "kind": "enum",
+              "enumId": "enum:shop.items_condition"
+            },
+            "nativeType": "enum('new','used','refurbished')",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "new"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.items.price",
+            "name": "price",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 10,
+              "scale": 2
+            },
+            "nativeType": "decimal(10,2)",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": 0
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.items.featured",
+            "name": "featured",
+            "logicalType": {
+              "kind": "boolean"
+            },
+            "nativeType": "tinyint(1)",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": 0
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.items.specs",
+            "name": "specs",
+            "logicalType": {
+              "kind": "json"
+            },
+            "nativeType": "json",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": "Free-form attributes",
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.items.created_at",
+            "name": "created_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": false
+            },
+            "nativeType": "datetime",
+            "nullable": false,
+            "default": {
+              "kind": "expression",
+              "sql": "CURRENT_TIMESTAMP"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.items.updated_at",
+            "name": "updated_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": true
+            },
+            "nativeType": "timestamp",
+            "nullable": false,
+            "default": {
+              "kind": "expression",
+              "sql": "CURRENT_TIMESTAMP"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {
+              "onUpdate": "CURRENT_TIMESTAMP"
+            }
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:shop.items",
+          "name": null,
+          "columns": [
+            "column:shop.items.id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:shop.items.items_title_idx",
+            "name": "items_title_idx",
+            "columns": [
+              {
+                "column": "column:shop.items.title",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": "btree",
+            "where": null
+          },
+          {
+            "id": "index:shop.items.items_title_ft",
+            "name": "items_title_ft",
+            "columns": [
+              {
+                "column": "column:shop.items.title",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": "fulltext",
+            "where": null
+          }
+        ],
+        "uniques": [],
+        "foreignKeys": [],
+        "checks": [
+          {
+            "id": "check:shop.items.items_price_chk",
+            "name": "items_price_chk",
+            "expression": "`price` >= 0"
+          }
+        ],
+        "comment": "Catalog items",
+        "metadata": {
+          "engine": "innodb",
+          "collate": "utf8mb4_0900_ai_ci"
+        }
+      },
+      {
+        "id": "table:shop.item_categories",
+        "name": "item_categories",
+        "namespace": "namespace:shop",
+        "columns": [
+          {
+            "id": "column:shop.item_categories.item_id",
+            "name": "item_id",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 20,
+              "scale": 0
+            },
+            "nativeType": "bigint unsigned",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.item_categories.category_id",
+            "name": "category_id",
+            "logicalType": {
+              "kind": "bigint"
+            },
+            "nativeType": "int unsigned",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:shop.item_categories",
+          "name": null,
+          "columns": [
+            "column:shop.item_categories.item_id",
+            "column:shop.item_categories.category_id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:shop.item_categories.item_categories_item_fk",
+            "name": "item_categories_item_fk",
+            "columns": [
+              "column:shop.item_categories.item_id"
+            ],
+            "refTable": "table:shop.items",
+            "refColumns": [
+              "column:shop.items.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "restrict"
+          },
+          {
+            "id": "fk:shop.item_categories.item_categories_category_fk",
+            "name": "item_categories_category_fk",
+            "columns": [
+              "column:shop.item_categories.category_id"
+            ],
+            "refTable": "table:shop.categories",
+            "refColumns": [
+              "column:shop.categories.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "cascade"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {
+          "engine": "innodb"
+        }
+      }
+    ],
+    "enums": [
+      {
+        "id": "enum:shop.items_condition",
+        "name": "items_condition",
+        "namespace": "namespace:shop",
+        "values": [
+          "new",
+          "used",
+          "refurbished"
+        ]
+      }
+    ],
+    "version": 1
+  },
+  "diagnostics": [
+    {
+      "severity": "warning",
+      "code": "unresolved-reference",
+      "message": "Column \"x\" belongs to unknown table \"shop.ghost_table\"",
+      "line": 1,
+      "column": 1
+    }
+  ]
+}

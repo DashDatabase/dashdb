@@ -1,0 +1,66 @@
+// SaaS on MySQL with @@map/@map snake_case tables, mapped enums and native @db types.
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Plan {
+  FREE       @map("free")
+  PRO        @map("pro")
+  ENTERPRISE @map("enterprise")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+
+  @@map("member_role")
+}
+
+model Organization {
+  id        String       @id @default(uuid()) @db.Char(36)
+  name      String       @db.VarChar(120)
+  plan      Plan         @default(FREE)
+  seatLimit Int          @default(5) @map("seat_limit") @db.UnsignedSmallInt
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamp(0)
+  members   Membership[]
+  invoices  Invoice[]
+
+  @@map("organizations")
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique(map: "users_email_uq") @db.VarChar(255)
+  passwordHash String?      @map("password_hash") @db.Text
+  memberships  Membership[]
+
+  @@map("users")
+}
+
+model Membership {
+  orgId  String       @map("org_id") @db.Char(36)
+  userId String       @map("user_id")
+  role   Role         @default(MEMBER)
+  org    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade, map: "memberships_org_fk")
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([orgId, userId])
+  @@index([userId], map: "memberships_user_idx")
+  @@map("memberships")
+}
+
+model Invoice {
+  id          BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
+  orgId       String       @map("org_id") @db.Char(36)
+  amountCents Int          @map("amount_cents")
+  currency    String       @default("USD") @db.Char(3)
+  paid        Boolean      @default(false)
+  metadata    Json?
+  org         Organization @relation(fields: [orgId], references: [id])
+
+  @@unique([orgId, id], name: "orgInvoice")
+  @@fulltext([currency])
+  @@map("invoices")
+}

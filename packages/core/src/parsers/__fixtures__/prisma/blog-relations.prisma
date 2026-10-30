@@ -1,0 +1,69 @@
+// Blog with every relation shape: 1-n, 1-1, implicit m-n, and a self-relation.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// Anyone who can sign in
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  profile   Profile?
+  posts     Post[]
+  comments  Comment[]
+  createdAt DateTime @default(now())
+}
+
+/// One-to-one with User
+model Profile {
+  id     Int     @id @default(autoincrement())
+  bio    String?
+  avatar String?
+  userId Int     @unique
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Post {
+  id          Int        @id @default(autoincrement())
+  title       String     @db.VarChar(200)
+  slug        String     @unique
+  content     String?
+  status      PostStatus @default(DRAFT)
+  authorId    Int
+  author      User       @relation(fields: [authorId], references: [id])
+  categories  Category[]
+  comments    Comment[]
+  publishedAt DateTime?
+  updatedAt   DateTime   @updatedAt
+
+  @@index([authorId, publishedAt(sort: Desc)])
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  posts Post[]
+}
+
+model Comment {
+  id       Int       @id @default(autoincrement())
+  body     String
+  postId   Int
+  post     Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId Int?
+  author   User?     @relation(fields: [authorId], references: [id])
+  parentId Int?
+  parent   Comment?  @relation("Thread", fields: [parentId], references: [id])
+  replies  Comment[] @relation("Thread")
+}

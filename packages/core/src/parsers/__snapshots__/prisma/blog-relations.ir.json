@@ -1,0 +1,666 @@
+{
+  "schema": {
+    "id": "schema",
+    "dialect": "postgres",
+    "namespaces": [
+      {
+        "id": "namespace:public",
+        "name": "public"
+      }
+    ],
+    "tables": [
+      {
+        "id": "table:public.User",
+        "name": "User",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.User.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": {
+              "kind": "sequence",
+              "name": "User_id_seq"
+            },
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.User.email",
+            "name": "email",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.User.name",
+            "name": "name",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.User.createdAt",
+            "name": "createdAt",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": false
+            },
+            "nativeType": "timestamp(3)",
+            "nullable": false,
+            "default": {
+              "kind": "expression",
+              "sql": "CURRENT_TIMESTAMP"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.User",
+          "name": "User_pkey",
+          "columns": [
+            "column:public.User.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [
+          {
+            "id": "unique:public.User.User_email_key",
+            "name": "User_email_key",
+            "columns": [
+              "column:public.User.email"
+            ]
+          }
+        ],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": "Anyone who can sign in",
+        "metadata": {}
+      },
+      {
+        "id": "table:public.Profile",
+        "name": "Profile",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.Profile.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": {
+              "kind": "sequence",
+              "name": "Profile_id_seq"
+            },
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.Profile.bio",
+            "name": "bio",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.Profile.avatar",
+            "name": "avatar",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.Profile.userId",
+            "name": "userId",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.Profile",
+          "name": "Profile_pkey",
+          "columns": [
+            "column:public.Profile.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [
+          {
+            "id": "unique:public.Profile.Profile_userId_key",
+            "name": "Profile_userId_key",
+            "columns": [
+              "column:public.Profile.userId"
+            ]
+          }
+        ],
+        "foreignKeys": [
+          {
+            "id": "fk:public.Profile.Profile_userId_fkey",
+            "name": "Profile_userId_fkey",
+            "columns": [
+              "column:public.Profile.userId"
+            ],
+            "refTable": "table:public.User",
+            "refColumns": [
+              "column:public.User.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "cascade"
+          }
+        ],
+        "checks": [],
+        "comment": "One-to-one with User",
+        "metadata": {}
+      },
+      {
+        "id": "table:public.Post",
+        "name": "Post",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.Post.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": {
+              "kind": "sequence",
+              "name": "Post_id_seq"
+            },
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.Post.title",
+            "name": "title",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 200
+            },
+            "nativeType": "varchar(200)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.Post.slug",
+            "name": "slug",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.Post.content",
+            "name": "content",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.Post.status",
+            "name": "status",
+            "logicalType": {
+              "kind": "enum",
+              "enumId": "enum:public.PostStatus"
+            },
+            "nativeType": "PostStatus",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "DRAFT"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.Post.authorId",
+            "name": "authorId",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.Post.publishedAt",
+            "name": "publishedAt",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": false
+            },
+            "nativeType": "timestamp(3)",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.Post.updatedAt",
+            "name": "updatedAt",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": false
+            },
+            "nativeType": "timestamp(3)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {
+              "prismaUpdatedAt": "true"
+            }
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.Post",
+          "name": "Post_pkey",
+          "columns": [
+            "column:public.Post.id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:public.Post.Post_authorId_publishedAt_idx",
+            "name": "Post_authorId_publishedAt_idx",
+            "columns": [
+              {
+                "column": "column:public.Post.authorId",
+                "order": "asc",
+                "nulls": null
+              },
+              {
+                "column": "column:public.Post.publishedAt",
+                "order": "desc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          }
+        ],
+        "uniques": [
+          {
+            "id": "unique:public.Post.Post_slug_key",
+            "name": "Post_slug_key",
+            "columns": [
+              "column:public.Post.slug"
+            ]
+          }
+        ],
+        "foreignKeys": [
+          {
+            "id": "fk:public.Post.Post_authorId_fkey",
+            "name": "Post_authorId_fkey",
+            "columns": [
+              "column:public.Post.authorId"
+            ],
+            "refTable": "table:public.User",
+            "refColumns": [
+              "column:public.User.id"
+            ],
+            "onDelete": "restrict",
+            "onUpdate": "cascade"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:public.Category",
+        "name": "Category",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.Category.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": {
+              "kind": "sequence",
+              "name": "Category_id_seq"
+            },
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.Category.name",
+            "name": "name",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.Category",
+          "name": "Category_pkey",
+          "columns": [
+            "column:public.Category.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [
+          {
+            "id": "unique:public.Category.Category_name_key",
+            "name": "Category_name_key",
+            "columns": [
+              "column:public.Category.name"
+            ]
+          }
+        ],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:public.Comment",
+        "name": "Comment",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.Comment.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": {
+              "kind": "sequence",
+              "name": "Comment_id_seq"
+            },
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.Comment.body",
+            "name": "body",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.Comment.postId",
+            "name": "postId",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.Comment.authorId",
+            "name": "authorId",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.Comment.parentId",
+            "name": "parentId",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.Comment",
+          "name": "Comment_pkey",
+          "columns": [
+            "column:public.Comment.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:public.Comment.Comment_postId_fkey",
+            "name": "Comment_postId_fkey",
+            "columns": [
+              "column:public.Comment.postId"
+            ],
+            "refTable": "table:public.Post",
+            "refColumns": [
+              "column:public.Post.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "cascade"
+          },
+          {
+            "id": "fk:public.Comment.Comment_authorId_fkey",
+            "name": "Comment_authorId_fkey",
+            "columns": [
+              "column:public.Comment.authorId"
+            ],
+            "refTable": "table:public.User",
+            "refColumns": [
+              "column:public.User.id"
+            ],
+            "onDelete": "set null",
+            "onUpdate": "cascade"
+          },
+          {
+            "id": "fk:public.Comment.Comment_parentId_fkey",
+            "name": "Comment_parentId_fkey",
+            "columns": [
+              "column:public.Comment.parentId"
+            ],
+            "refTable": "table:public.Comment",
+            "refColumns": [
+              "column:public.Comment.id"
+            ],
+            "onDelete": "set null",
+            "onUpdate": "cascade"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:public._CategoryToPost",
+        "name": "_CategoryToPost",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public._CategoryToPost.A",
+            "name": "A",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public._CategoryToPost.B",
+            "name": "B",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public._CategoryToPost",
+          "name": "_CategoryToPost_AB_pkey",
+          "columns": [
+            "column:public._CategoryToPost.A",
+            "column:public._CategoryToPost.B"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:public._CategoryToPost._CategoryToPost_B_index",
+            "name": "_CategoryToPost_B_index",
+            "columns": [
+              {
+                "column": "column:public._CategoryToPost.B",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          }
+        ],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:public._CategoryToPost._CategoryToPost_A_fkey",
+            "name": "_CategoryToPost_A_fkey",
+            "columns": [
+              "column:public._CategoryToPost.A"
+            ],
+            "refTable": "table:public.Category",
+            "refColumns": [
+              "column:public.Category.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "cascade"
+          },
+          {
+            "id": "fk:public._CategoryToPost._CategoryToPost_B_fkey",
+            "name": "_CategoryToPost_B_fkey",
+            "columns": [
+              "column:public._CategoryToPost.B"
+            ],
+            "refTable": "table:public.Post",
+            "refColumns": [
+              "column:public.Post.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "cascade"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {
+          "prismaImplicitManyToMany": "true"
+        }
+      }
+    ],
+    "enums": [
+      {
+        "id": "enum:public.PostStatus",
+        "name": "PostStatus",
+        "namespace": "namespace:public",
+        "values": [
+          "DRAFT",
+          "PUBLISHED",
+          "ARCHIVED"
+        ]
+      }
+    ],
+    "version": 1
+  },
+  "diagnostics": []
+}

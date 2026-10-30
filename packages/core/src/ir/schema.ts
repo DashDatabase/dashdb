@@ -23,6 +23,7 @@ import {
 
 const idSchema = z.string().min(1);
 const nameSchema = z.string().min(1);
+const metadataSchema = z.record(z.string(), z.string());
 const positiveInt = z.number().int().positive();
 
 export const irDialectSchema = z.enum(IR_DIALECTS);
@@ -50,6 +51,7 @@ export const logicalTypeSchema: z.ZodType<LogicalType> = z.discriminatedUnion('k
   z.strictObject({ kind: z.literal('date') }),
   z.strictObject({ kind: z.literal('bytes') }),
   z.strictObject({ kind: z.literal('enum'), enumId: idSchema }),
+  z.strictObject({ kind: z.literal('unknown') }),
 ]);
 
 export const columnDefaultSchema: z.ZodType<ColumnDefault> = z.discriminatedUnion('kind', [
@@ -70,6 +72,7 @@ export const columnSchema: z.ZodType<Column> = z.strictObject({
   default: columnDefaultSchema.nullable(),
   autoIncrement: z.boolean(),
   comment: z.string().nullable(),
+  metadata: metadataSchema,
 });
 
 const columnRefsSchema = z.array(idSchema).min(1);
@@ -128,6 +131,7 @@ export const tableSchema: z.ZodType<Table> = z.strictObject({
   foreignKeys: z.array(foreignKeySchema),
   checks: z.array(checkSchema),
   comment: z.string().nullable(),
+  metadata: metadataSchema,
 });
 
 export const enumSchema: z.ZodType<Enum> = z.strictObject({

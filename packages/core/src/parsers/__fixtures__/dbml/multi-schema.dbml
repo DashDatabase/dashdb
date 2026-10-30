@@ -1,0 +1,51 @@
+// HR system split across schemas, with a one-to-one and a many-to-many ref.
+Project hr {
+  database_type: 'PostgreSQL'
+}
+
+Enum people.employment_type {
+  full_time
+  part_time
+  contractor
+}
+
+Table people.employees {
+  id uuid [pk, default: `gen_random_uuid()`]
+  email text [unique, not null]
+  manager_id uuid [ref: > people.employees.id]
+  department_id int [not null]
+  kind people.employment_type [not null, default: 'full_time']
+  hired_on date [not null]
+}
+
+Table people.badges {
+  employee_id uuid [pk]
+  badge_no varchar(20) [unique, not null]
+}
+
+Table org.departments {
+  id int [pk, increment]
+  name varchar(100) [not null, unique]
+  cost_center char(6)
+}
+
+Table org.projects {
+  id int [pk, increment]
+  code varchar(12) [not null, unique]
+}
+
+Table payroll.salaries {
+  employee_id uuid [not null]
+  effective_from date [not null]
+  amount numeric(12,2) [not null]
+  currency char(3) [not null, default: 'EUR']
+
+  indexes {
+    (employee_id, effective_from) [pk]
+  }
+}
+
+Ref: people.employees.department_id > org.departments.id
+Ref: people.employees.id - people.badges.employee_id [delete: cascade]
+Ref: payroll.salaries.employee_id > people.employees.id [delete: cascade]
+Ref: people.employees.id <> org.projects.id

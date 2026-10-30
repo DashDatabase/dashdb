@@ -1,0 +1,382 @@
+{
+  "schema": {
+    "id": "schema",
+    "dialect": "sqlite",
+    "namespaces": [
+      {
+        "id": "namespace:main",
+        "name": "main"
+      }
+    ],
+    "tables": [
+      {
+        "id": "table:main.Customer",
+        "name": "Customer",
+        "namespace": "namespace:main",
+        "columns": [
+          {
+            "id": "column:main.Customer.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "INTEGER",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:main.Customer.email",
+            "name": "email",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "TEXT",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:main.Customer.createdAt",
+            "name": "createdAt",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": false
+            },
+            "nativeType": "DATETIME",
+            "nullable": false,
+            "default": {
+              "kind": "expression",
+              "sql": "CURRENT_TIMESTAMP"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:main.Customer",
+          "name": null,
+          "columns": [
+            "column:main.Customer.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [
+          {
+            "id": "unique:main.Customer.Customer_email_key",
+            "name": "Customer_email_key",
+            "columns": [
+              "column:main.Customer.email"
+            ]
+          }
+        ],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:main.Product",
+        "name": "Product",
+        "namespace": "namespace:main",
+        "columns": [
+          {
+            "id": "column:main.Product.sku",
+            "name": "sku",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "TEXT",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:main.Product.title",
+            "name": "title",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "TEXT",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:main.Product.price",
+            "name": "price",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 65,
+              "scale": 30
+            },
+            "nativeType": "DECIMAL",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:main.Product.rating",
+            "name": "rating",
+            "logicalType": {
+              "kind": "unknown"
+            },
+            "nativeType": "REAL",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:main.Product.thumbnail",
+            "name": "thumbnail",
+            "logicalType": {
+              "kind": "bytes"
+            },
+            "nativeType": "BLOB",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:main.Product.inStock",
+            "name": "inStock",
+            "logicalType": {
+              "kind": "boolean"
+            },
+            "nativeType": "BOOLEAN",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": true
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:main.Product",
+          "name": null,
+          "columns": [
+            "column:main.Product.sku"
+          ]
+        },
+        "indexes": [],
+        "uniques": [],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:main.Order",
+        "name": "Order",
+        "namespace": "namespace:main",
+        "columns": [
+          {
+            "id": "column:main.Order.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "INTEGER",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:main.Order.customerId",
+            "name": "customerId",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "INTEGER",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:main.Order.placedAt",
+            "name": "placedAt",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": false
+            },
+            "nativeType": "DATETIME",
+            "nullable": false,
+            "default": {
+              "kind": "expression",
+              "sql": "CURRENT_TIMESTAMP"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:main.Order.notes",
+            "name": "notes",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "TEXT",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": ""
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:main.Order",
+          "name": null,
+          "columns": [
+            "column:main.Order.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:main.Order.Order_customerId_fkey",
+            "name": "Order_customerId_fkey",
+            "columns": [
+              "column:main.Order.customerId"
+            ],
+            "refTable": "table:main.Customer",
+            "refColumns": [
+              "column:main.Customer.id"
+            ],
+            "onDelete": "restrict",
+            "onUpdate": "cascade"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:main.OrderItem",
+        "name": "OrderItem",
+        "namespace": "namespace:main",
+        "columns": [
+          {
+            "id": "column:main.OrderItem.orderId",
+            "name": "orderId",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "INTEGER",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:main.OrderItem.sku",
+            "name": "sku",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "TEXT",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:main.OrderItem.quantity",
+            "name": "quantity",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "INTEGER",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": 1
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:main.OrderItem",
+          "name": null,
+          "columns": [
+            "column:main.OrderItem.orderId",
+            "column:main.OrderItem.sku"
+          ]
+        },
+        "indexes": [],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:main.OrderItem.OrderItem_orderId_fkey",
+            "name": "OrderItem_orderId_fkey",
+            "columns": [
+              "column:main.OrderItem.orderId"
+            ],
+            "refTable": "table:main.Order",
+            "refColumns": [
+              "column:main.Order.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "cascade"
+          },
+          {
+            "id": "fk:main.OrderItem.OrderItem_sku_fkey",
+            "name": "OrderItem_sku_fkey",
+            "columns": [
+              "column:main.OrderItem.sku"
+            ],
+            "refTable": "table:main.Product",
+            "refColumns": [
+              "column:main.Product.sku"
+            ],
+            "onDelete": "restrict",
+            "onUpdate": "cascade"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      }
+    ],
+    "enums": [],
+    "version": 1
+  },
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "unsupported-feature",
+      "message": "Model \"LegacyCart\" has @@ignore and is skipped",
+      "line": 43,
+      "column": 1
+    }
+  ]
+}

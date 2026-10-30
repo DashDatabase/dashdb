@@ -18,7 +18,11 @@
   },
   "dependencies": {
     "@dashdb/shared": "workspace:*",
+    "@dbml/core": "10.3.1",
+    "@mrleebo/prisma-ast": "0.16.0",
     "nanoid": "^5.1.16",
+    "node-sql-parser": "5.4.0",
+    "pgsql-ast-parser": "12.0.2",
     "zod": "^4.6.7"
   },
   "devDependencies": {

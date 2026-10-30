@@ -1,0 +1,1095 @@
+{
+  "schema": {
+    "id": "schema",
+    "dialect": "postgres",
+    "namespaces": [
+      {
+        "id": "namespace:public",
+        "name": "public"
+      }
+    ],
+    "tables": [
+      {
+        "id": "table:public.customers",
+        "name": "customers",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.customers.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": {
+              "kind": "sequence",
+              "name": "customers_id_seq"
+            },
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.customers.email",
+            "name": "email",
+            "logicalType": {
+              "kind": "unknown"
+            },
+            "nativeType": "citext",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.customers.first_name",
+            "name": "first_name",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 100
+            },
+            "nativeType": "varchar(100)",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.customers.last_name",
+            "name": "last_name",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 100
+            },
+            "nativeType": "varchar(100)",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.customers.marketing_opt_in",
+            "name": "marketing_opt_in",
+            "logicalType": {
+              "kind": "boolean"
+            },
+            "nativeType": "boolean",
+            "nullable": true,
+            "default": {
+              "kind": "literal",
+              "value": false
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.customers.created_at",
+            "name": "created_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": false
+            },
+            "nativeType": "timestamp without time zone",
+            "nullable": true,
+            "default": {
+              "kind": "expression",
+              "sql": "CURRENT_TIMESTAMP"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.customers",
+          "name": null,
+          "columns": [
+            "column:public.customers.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [
+          {
+            "id": "unique:public.customers.customers_email_key",
+            "name": "customers_email_key",
+            "columns": [
+              "column:public.customers.email"
+            ]
+          }
+        ],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:public.addresses",
+        "name": "addresses",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.addresses.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": {
+              "kind": "sequence",
+              "name": "addresses_id_seq"
+            },
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.addresses.customer_id",
+            "name": "customer_id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.addresses.line1",
+            "name": "line1",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.addresses.line2",
+            "name": "line2",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.addresses.city",
+            "name": "city",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 100
+            },
+            "nativeType": "varchar(100)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.addresses.postal_code",
+            "name": "postal_code",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 20
+            },
+            "nativeType": "varchar(20)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.addresses.country_code",
+            "name": "country_code",
+            "logicalType": {
+              "kind": "unknown"
+            },
+            "nativeType": "char(2)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.addresses.is_default",
+            "name": "is_default",
+            "logicalType": {
+              "kind": "boolean"
+            },
+            "nativeType": "boolean",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": false
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.addresses",
+          "name": null,
+          "columns": [
+            "column:public.addresses.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:public.addresses.addresses_customer_id_fkey",
+            "name": "addresses_customer_id_fkey",
+            "columns": [
+              "column:public.addresses.customer_id"
+            ],
+            "refTable": "table:public.customers",
+            "refColumns": [
+              "column:public.customers.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:public.categories",
+        "name": "categories",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.categories.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": {
+              "kind": "sequence",
+              "name": "categories_id_seq"
+            },
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.categories.parent_id",
+            "name": "parent_id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.categories.slug",
+            "name": "slug",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 120
+            },
+            "nativeType": "varchar(120)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.categories.name",
+            "name": "name",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 120
+            },
+            "nativeType": "varchar(120)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.categories",
+          "name": null,
+          "columns": [
+            "column:public.categories.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [
+          {
+            "id": "unique:public.categories.categories_slug_key",
+            "name": "categories_slug_key",
+            "columns": [
+              "column:public.categories.slug"
+            ]
+          }
+        ],
+        "foreignKeys": [
+          {
+            "id": "fk:public.categories.categories_parent_id_fkey",
+            "name": "categories_parent_id_fkey",
+            "columns": [
+              "column:public.categories.parent_id"
+            ],
+            "refTable": "table:public.categories",
+            "refColumns": [
+              "column:public.categories.id"
+            ],
+            "onDelete": "no action",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:public.products",
+        "name": "products",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.products.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": {
+              "kind": "sequence",
+              "name": "products_id_seq"
+            },
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.products.category_id",
+            "name": "category_id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.products.sku",
+            "name": "sku",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 64
+            },
+            "nativeType": "varchar(64)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.products.title",
+            "name": "title",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 255
+            },
+            "nativeType": "varchar(255)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.products.description",
+            "name": "description",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.products.price",
+            "name": "price",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 12,
+              "scale": 2
+            },
+            "nativeType": "numeric(12,2)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.products.currency",
+            "name": "currency",
+            "logicalType": {
+              "kind": "unknown"
+            },
+            "nativeType": "char(3)",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "USD"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.products.active",
+            "name": "active",
+            "logicalType": {
+              "kind": "boolean"
+            },
+            "nativeType": "boolean",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": true
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.products.created_at",
+            "name": "created_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": false
+            },
+            "nativeType": "timestamp",
+            "nullable": true,
+            "default": {
+              "kind": "expression",
+              "sql": "now()"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.products",
+          "name": null,
+          "columns": [
+            "column:public.products.id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:public.products.products_category_idx",
+            "name": "products_category_idx",
+            "columns": [
+              {
+                "column": "column:public.products.category_id",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": "active"
+          },
+          {
+            "id": "index:public.products.products_title_trgm_idx",
+            "name": "products_title_trgm_idx",
+            "columns": [
+              {
+                "column": "column:public.products.title",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": "gin",
+            "where": null
+          }
+        ],
+        "uniques": [
+          {
+            "id": "unique:public.products.products_sku_key",
+            "name": "products_sku_key",
+            "columns": [
+              "column:public.products.sku"
+            ]
+          }
+        ],
+        "foreignKeys": [
+          {
+            "id": "fk:public.products.products_category_id_fkey",
+            "name": "products_category_id_fkey",
+            "columns": [
+              "column:public.products.category_id"
+            ],
+            "refTable": "table:public.categories",
+            "refColumns": [
+              "column:public.categories.id"
+            ],
+            "onDelete": "set null",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [
+          {
+            "id": "check:public.products.products_price_check",
+            "name": "products_price_check",
+            "expression": "price >= 0"
+          }
+        ],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:public.product_variants",
+        "name": "product_variants",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.product_variants.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": {
+              "kind": "sequence",
+              "name": "product_variants_id_seq"
+            },
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.product_variants.product_id",
+            "name": "product_id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.product_variants.sku",
+            "name": "sku",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 64
+            },
+            "nativeType": "varchar(64)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.product_variants.option_values",
+            "name": "option_values",
+            "logicalType": {
+              "kind": "json"
+            },
+            "nativeType": "jsonb",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.product_variants.price_override",
+            "name": "price_override",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 12,
+              "scale": 2
+            },
+            "nativeType": "numeric(12,2)",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.product_variants.stock",
+            "name": "stock",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": 0
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.product_variants",
+          "name": null,
+          "columns": [
+            "column:public.product_variants.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [
+          {
+            "id": "unique:public.product_variants.product_variants_product_id_sku_key",
+            "name": "product_variants_product_id_sku_key",
+            "columns": [
+              "column:public.product_variants.product_id",
+              "column:public.product_variants.sku"
+            ]
+          }
+        ],
+        "foreignKeys": [
+          {
+            "id": "fk:public.product_variants.product_variants_product_id_fkey",
+            "name": "product_variants_product_id_fkey",
+            "columns": [
+              "column:public.product_variants.product_id"
+            ],
+            "refTable": "table:public.products",
+            "refColumns": [
+              "column:public.products.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [
+          {
+            "id": "check:public.product_variants.product_variants_stock_check",
+            "name": "product_variants_stock_check",
+            "expression": "stock >= 0"
+          }
+        ],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:public.orders",
+        "name": "orders",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.orders.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "bigint"
+            },
+            "nativeType": "bigint",
+            "nullable": false,
+            "default": {
+              "kind": "sequence",
+              "name": "orders_id_seq"
+            },
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.orders.customer_id",
+            "name": "customer_id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.orders.shipping_address_id",
+            "name": "shipping_address_id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.orders.status",
+            "name": "status",
+            "logicalType": {
+              "kind": "enum",
+              "enumId": "enum:public.order_status"
+            },
+            "nativeType": "order_status",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "pending"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.orders.subtotal",
+            "name": "subtotal",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 12,
+              "scale": 2
+            },
+            "nativeType": "numeric(12,2)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.orders.tax",
+            "name": "tax",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 12,
+              "scale": 2
+            },
+            "nativeType": "numeric(12,2)",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": 0
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.orders.total",
+            "name": "total",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 12,
+              "scale": 2
+            },
+            "nativeType": "numeric(12,2)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.orders.placed_at",
+            "name": "placed_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": true
+            },
+            "nativeType": "timestamptz",
+            "nullable": false,
+            "default": {
+              "kind": "expression",
+              "sql": "now()"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.orders",
+          "name": null,
+          "columns": [
+            "column:public.orders.id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:public.orders.orders_customer_placed_idx",
+            "name": "orders_customer_placed_idx",
+            "columns": [
+              {
+                "column": "column:public.orders.customer_id",
+                "order": "asc",
+                "nulls": null
+              },
+              {
+                "column": "column:public.orders.placed_at",
+                "order": "desc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          },
+          {
+            "id": "index:public.orders.orders_open_idx",
+            "name": "orders_open_idx",
+            "columns": [
+              {
+                "column": "column:public.orders.placed_at",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": "status IN ('pending', 'paid')"
+          }
+        ],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:public.orders.orders_customer_id_fkey",
+            "name": "orders_customer_id_fkey",
+            "columns": [
+              "column:public.orders.customer_id"
+            ],
+            "refTable": "table:public.customers",
+            "refColumns": [
+              "column:public.customers.id"
+            ],
+            "onDelete": "no action",
+            "onUpdate": "no action"
+          },
+          {
+            "id": "fk:public.orders.orders_shipping_address_id_fkey",
+            "name": "orders_shipping_address_id_fkey",
+            "columns": [
+              "column:public.orders.shipping_address_id"
+            ],
+            "refTable": "table:public.addresses",
+            "refColumns": [
+              "column:public.addresses.id"
+            ],
+            "onDelete": "no action",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [
+          {
+            "id": "check:public.orders.orders_check",
+            "name": "orders_check",
+            "expression": "total = subtotal + tax"
+          }
+        ],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:public.order_items",
+        "name": "order_items",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.order_items.order_id",
+            "name": "order_id",
+            "logicalType": {
+              "kind": "bigint"
+            },
+            "nativeType": "bigint",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.order_items.line_no",
+            "name": "line_no",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "smallint",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.order_items.variant_id",
+            "name": "variant_id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.order_items.quantity",
+            "name": "quantity",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.order_items.unit_price",
+            "name": "unit_price",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 12,
+              "scale": 2
+            },
+            "nativeType": "numeric(12,2)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.order_items",
+          "name": null,
+          "columns": [
+            "column:public.order_items.order_id",
+            "column:public.order_items.line_no"
+          ]
+        },
+        "indexes": [],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:public.order_items.order_items_order_id_fkey",
+            "name": "order_items_order_id_fkey",
+            "columns": [
+              "column:public.order_items.order_id"
+            ],
+            "refTable": "table:public.orders",
+            "refColumns": [
+              "column:public.orders.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "no action"
+          },
+          {
+            "id": "fk:public.order_items.order_items_variant_id_fkey",
+            "name": "order_items_variant_id_fkey",
+            "columns": [
+              "column:public.order_items.variant_id"
+            ],
+            "refTable": "table:public.product_variants",
+            "refColumns": [
+              "column:public.product_variants.id"
+            ],
+            "onDelete": "no action",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [
+          {
+            "id": "check:public.order_items.order_items_quantity_check",
+            "name": "order_items_quantity_check",
+            "expression": "quantity > 0"
+          }
+        ],
+        "comment": null,
+        "metadata": {}
+      }
+    ],
+    "enums": [
+      {
+        "id": "enum:public.order_status",
+        "name": "order_status",
+        "namespace": "namespace:public",
+        "values": [
+          "pending",
+          "paid",
+          "shipped",
+          "delivered",
+          "cancelled",
+          "refunded"
+        ]
+      }
+    ],
+    "version": 1
+  },
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "unknown-type",
+      "message": "Type \"citext\" of \"customers.email\" has no logical equivalent; it is kept as a native type",
+      "line": 6,
+      "column": 3
+    },
+    {
+      "severity": "info",
+      "code": "unknown-type",
+      "message": "Type \"char(2)\" of \"addresses.country_code\" has no logical equivalent; it is kept as a native type",
+      "line": 20,
+      "column": 3
+    },
+    {
+      "severity": "info",
+      "code": "unknown-type",
+      "message": "Type \"char(3)\" of \"products.currency\" has no logical equivalent; it is kept as a native type",
+      "line": 38,
+      "column": 3
+    }
+  ]
+}

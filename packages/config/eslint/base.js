@@ -27,7 +27,8 @@ export const sharedRules = {
   '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
   // Fires on nearly every indexed access; noUncheckedIndexedAccess already covers the real risk.
   'security/detect-object-injection': 'off',
-  'import/no-cycle': 'error',
+  // Cycles within our own code only; walking into dependencies is slow and can overflow the stack.
+  'import/no-cycle': ['error', { ignoreExternal: true }],
 };
 
 /** @param {string} tsconfigRootDir */
@@ -46,6 +47,8 @@ export function base(tsconfigRootDir) {
       },
       settings: {
         'import/resolver': { typescript: { alwaysTryTypes: true }, node: true },
+        // Never parse dependency sources for export analysis (some, like @dbml/core, overflow the parser).
+        'import/ignore': ['node_modules'],
       },
       rules: {
         ...sharedRules,

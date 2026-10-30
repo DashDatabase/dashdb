@@ -1,0 +1,489 @@
+{
+  "schema": {
+    "id": "schema",
+    "dialect": "mysql",
+    "namespaces": [
+      {
+        "id": "namespace:default",
+        "name": "default"
+      }
+    ],
+    "tables": [
+      {
+        "id": "table:default.organizations",
+        "name": "organizations",
+        "namespace": "namespace:default",
+        "columns": [
+          {
+            "id": "column:default.organizations.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "char(36)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {
+              "prismaDefault": "uuid()"
+            }
+          },
+          {
+            "id": "column:default.organizations.name",
+            "name": "name",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 120
+            },
+            "nativeType": "varchar(120)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.organizations.plan",
+            "name": "plan",
+            "logicalType": {
+              "kind": "enum",
+              "enumId": "enum:default.Plan"
+            },
+            "nativeType": "enum('free','pro','enterprise')",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "free"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.organizations.seat_limit",
+            "name": "seat_limit",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "smallint unsigned",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": 5
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {
+              "prismaName": "seatLimit"
+            }
+          },
+          {
+            "id": "column:default.organizations.created_at",
+            "name": "created_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": true
+            },
+            "nativeType": "timestamp(0)",
+            "nullable": false,
+            "default": {
+              "kind": "expression",
+              "sql": "CURRENT_TIMESTAMP"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {
+              "prismaName": "createdAt"
+            }
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:default.organizations",
+          "name": null,
+          "columns": [
+            "column:default.organizations.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": null,
+        "metadata": {
+          "prismaName": "Organization"
+        }
+      },
+      {
+        "id": "table:default.users",
+        "name": "users",
+        "namespace": "namespace:default",
+        "columns": [
+          {
+            "id": "column:default.users.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 191
+            },
+            "nativeType": "varchar(191)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {
+              "prismaDefault": "cuid()"
+            }
+          },
+          {
+            "id": "column:default.users.email",
+            "name": "email",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 255
+            },
+            "nativeType": "varchar(255)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.users.password_hash",
+            "name": "password_hash",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {
+              "prismaName": "passwordHash"
+            }
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:default.users",
+          "name": null,
+          "columns": [
+            "column:default.users.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [
+          {
+            "id": "unique:default.users.users_email_uq",
+            "name": "users_email_uq",
+            "columns": [
+              "column:default.users.email"
+            ]
+          }
+        ],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": null,
+        "metadata": {
+          "prismaName": "User"
+        }
+      },
+      {
+        "id": "table:default.memberships",
+        "name": "memberships",
+        "namespace": "namespace:default",
+        "columns": [
+          {
+            "id": "column:default.memberships.org_id",
+            "name": "org_id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "char(36)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {
+              "prismaName": "orgId"
+            }
+          },
+          {
+            "id": "column:default.memberships.user_id",
+            "name": "user_id",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 191
+            },
+            "nativeType": "varchar(191)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {
+              "prismaName": "userId"
+            }
+          },
+          {
+            "id": "column:default.memberships.role",
+            "name": "role",
+            "logicalType": {
+              "kind": "enum",
+              "enumId": "enum:default.member_role"
+            },
+            "nativeType": "enum('OWNER','ADMIN','MEMBER')",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "MEMBER"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:default.memberships",
+          "name": null,
+          "columns": [
+            "column:default.memberships.org_id",
+            "column:default.memberships.user_id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:default.memberships.memberships_user_idx",
+            "name": "memberships_user_idx",
+            "columns": [
+              {
+                "column": "column:default.memberships.user_id",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          }
+        ],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:default.memberships.memberships_org_fk",
+            "name": "memberships_org_fk",
+            "columns": [
+              "column:default.memberships.org_id"
+            ],
+            "refTable": "table:default.organizations",
+            "refColumns": [
+              "column:default.organizations.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "cascade"
+          },
+          {
+            "id": "fk:default.memberships.memberships_user_id_fkey",
+            "name": "memberships_user_id_fkey",
+            "columns": [
+              "column:default.memberships.user_id"
+            ],
+            "refTable": "table:default.users",
+            "refColumns": [
+              "column:default.users.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "cascade"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {
+          "prismaName": "Membership"
+        }
+      },
+      {
+        "id": "table:default.invoices",
+        "name": "invoices",
+        "namespace": "namespace:default",
+        "columns": [
+          {
+            "id": "column:default.invoices.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 20,
+              "scale": 0
+            },
+            "nativeType": "bigint unsigned",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.invoices.org_id",
+            "name": "org_id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "char(36)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {
+              "prismaName": "orgId"
+            }
+          },
+          {
+            "id": "column:default.invoices.amount_cents",
+            "name": "amount_cents",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "int",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {
+              "prismaName": "amountCents"
+            }
+          },
+          {
+            "id": "column:default.invoices.currency",
+            "name": "currency",
+            "logicalType": {
+              "kind": "unknown"
+            },
+            "nativeType": "char(3)",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "USD"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.invoices.paid",
+            "name": "paid",
+            "logicalType": {
+              "kind": "boolean"
+            },
+            "nativeType": "tinyint(1)",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": false
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.invoices.metadata",
+            "name": "metadata",
+            "logicalType": {
+              "kind": "json"
+            },
+            "nativeType": "json",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:default.invoices",
+          "name": null,
+          "columns": [
+            "column:default.invoices.id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:default.invoices.invoices_currency_idx",
+            "name": "invoices_currency_idx",
+            "columns": [
+              {
+                "column": "column:default.invoices.currency",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": "fulltext",
+            "where": null
+          }
+        ],
+        "uniques": [
+          {
+            "id": "unique:default.invoices.invoices_org_id_id_key",
+            "name": "invoices_org_id_id_key",
+            "columns": [
+              "column:default.invoices.org_id",
+              "column:default.invoices.id"
+            ]
+          }
+        ],
+        "foreignKeys": [
+          {
+            "id": "fk:default.invoices.invoices_org_id_fkey",
+            "name": "invoices_org_id_fkey",
+            "columns": [
+              "column:default.invoices.org_id"
+            ],
+            "refTable": "table:default.organizations",
+            "refColumns": [
+              "column:default.organizations.id"
+            ],
+            "onDelete": "restrict",
+            "onUpdate": "cascade"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {
+          "prismaName": "Invoice"
+        }
+      }
+    ],
+    "enums": [
+      {
+        "id": "enum:default.Plan",
+        "name": "Plan",
+        "namespace": "namespace:default",
+        "values": [
+          "free",
+          "pro",
+          "enterprise"
+        ]
+      },
+      {
+        "id": "enum:default.member_role",
+        "name": "member_role",
+        "namespace": "namespace:default",
+        "values": [
+          "OWNER",
+          "ADMIN",
+          "MEMBER"
+        ]
+      }
+    ],
+    "version": 1
+  },
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "unknown-type",
+      "message": "Type \"char(3)\" of \"invoices.currency\" has no logical equivalent; it is kept as a native type",
+      "line": 58,
+      "column": 3
+    }
+  ]
+}

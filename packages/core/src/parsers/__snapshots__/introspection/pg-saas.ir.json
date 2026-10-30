@@ -1,0 +1,482 @@
+{
+  "schema": {
+    "id": "schema",
+    "dialect": "postgres",
+    "namespaces": [
+      {
+        "id": "namespace:public",
+        "name": "public"
+      }
+    ],
+    "tables": [
+      {
+        "id": "table:public.workspaces",
+        "name": "workspaces",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.workspaces.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": {
+              "kind": "expression",
+              "sql": "gen_random_uuid()"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.workspaces.slug",
+            "name": "slug",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 63
+            },
+            "nativeType": "character varying(63)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.workspaces.tier",
+            "name": "tier",
+            "logicalType": {
+              "kind": "enum",
+              "enumId": "enum:public.workspace_tier"
+            },
+            "nativeType": "workspace_tier",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "free"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.workspaces.created_at",
+            "name": "created_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": true
+            },
+            "nativeType": "timestamp with time zone",
+            "nullable": false,
+            "default": {
+              "kind": "expression",
+              "sql": "now()"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.workspaces",
+          "name": "workspaces_pkey",
+          "columns": [
+            "column:public.workspaces.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [
+          {
+            "id": "unique:public.workspaces.workspaces_slug_key",
+            "name": "workspaces_slug_key",
+            "columns": [
+              "column:public.workspaces.slug"
+            ]
+          }
+        ],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": "Top-level tenant",
+        "metadata": {}
+      },
+      {
+        "id": "table:public.members",
+        "name": "members",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.members.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": {
+              "kind": "sequence",
+              "name": "members_id_seq"
+            },
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.members.workspace_id",
+            "name": "workspace_id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.members.email",
+            "name": "email",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": "Login address",
+            "metadata": {}
+          },
+          {
+            "id": "column:public.members.is_admin",
+            "name": "is_admin",
+            "logicalType": {
+              "kind": "boolean"
+            },
+            "nativeType": "boolean",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": false
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.members",
+          "name": "members_pkey",
+          "columns": [
+            "column:public.members.id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:public.members.members_email_idx",
+            "name": "members_email_idx",
+            "columns": [
+              {
+                "column": "column:public.members.email",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": "btree",
+            "where": null
+          }
+        ],
+        "uniques": [
+          {
+            "id": "unique:public.members.members_workspace_email_key",
+            "name": "members_workspace_email_key",
+            "columns": [
+              "column:public.members.workspace_id",
+              "column:public.members.email"
+            ]
+          }
+        ],
+        "foreignKeys": [
+          {
+            "id": "fk:public.members.members_workspace_id_fkey",
+            "name": "members_workspace_id_fkey",
+            "columns": [
+              "column:public.members.workspace_id"
+            ],
+            "refTable": "table:public.workspaces",
+            "refColumns": [
+              "column:public.workspaces.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:public.documents",
+        "name": "documents",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.documents.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "bigint"
+            },
+            "nativeType": "bigint",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {
+              "identity": "true"
+            }
+          },
+          {
+            "id": "column:public.documents.title",
+            "name": "title",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "Untitled"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.documents.workspace_id",
+            "name": "workspace_id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.documents.author_id",
+            "name": "author_id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.documents.body",
+            "name": "body",
+            "logicalType": {
+              "kind": "json"
+            },
+            "nativeType": "jsonb",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "{}"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.documents.version",
+            "name": "version",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": 1
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.documents.word_count",
+            "name": "word_count",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 10,
+              "scale": 0
+            },
+            "nativeType": "numeric(10,0)",
+            "nullable": true,
+            "default": {
+              "kind": "literal",
+              "value": -1
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.documents.embedding",
+            "name": "embedding",
+            "logicalType": {
+              "kind": "unknown"
+            },
+            "nativeType": "vector(1536)",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.documents.deleted_at",
+            "name": "deleted_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": false
+            },
+            "nativeType": "timestamp(3) without time zone",
+            "nullable": true,
+            "default": {
+              "kind": "literal",
+              "value": null
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.documents",
+          "name": "documents_pkey",
+          "columns": [
+            "column:public.documents.id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:public.documents.documents_live_idx",
+            "name": "documents_live_idx",
+            "columns": [
+              {
+                "column": "column:public.documents.workspace_id",
+                "order": "asc",
+                "nulls": null
+              },
+              {
+                "column": "column:public.documents.id",
+                "order": "desc",
+                "nulls": "last"
+              }
+            ],
+            "unique": false,
+            "method": "btree",
+            "where": "(deleted_at IS NULL)"
+          },
+          {
+            "id": "index:public.documents.documents_body_idx",
+            "name": "documents_body_idx",
+            "columns": [
+              {
+                "column": "column:public.documents.body",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": "gin",
+            "where": null
+          }
+        ],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:public.documents.documents_workspace_id_fkey",
+            "name": "documents_workspace_id_fkey",
+            "columns": [
+              "column:public.documents.workspace_id"
+            ],
+            "refTable": "table:public.workspaces",
+            "refColumns": [
+              "column:public.workspaces.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "no action"
+          },
+          {
+            "id": "fk:public.documents.documents_author_id_fkey",
+            "name": "documents_author_id_fkey",
+            "columns": [
+              "column:public.documents.author_id"
+            ],
+            "refTable": "table:public.members",
+            "refColumns": [
+              "column:public.members.id"
+            ],
+            "onDelete": "set null",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [
+          {
+            "id": "check:public.documents.documents_version_check",
+            "name": "documents_version_check",
+            "expression": "version > 0"
+          }
+        ],
+        "comment": null,
+        "metadata": {}
+      }
+    ],
+    "enums": [
+      {
+        "id": "enum:public.workspace_tier",
+        "name": "workspace_tier",
+        "namespace": "namespace:public",
+        "values": [
+          "free",
+          "team",
+          "enterprise"
+        ]
+      }
+    ],
+    "version": 1
+  },
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "unsupported-feature",
+      "message": "view \"public.active_documents\" is skipped",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-feature",
+      "message": "Expression index \"documents_title_lower_idx\" is skipped: the IR only indexes columns",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "severity": "info",
+      "code": "unknown-type",
+      "message": "Type \"vector(1536)\" of \"documents.embedding\" has no logical equivalent; it is kept as a native type",
+      "line": 1,
+      "column": 1
+    }
+  ]
+}

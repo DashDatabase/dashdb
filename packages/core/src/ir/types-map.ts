@@ -243,6 +243,8 @@ export function toNativeType(
       return 'date';
     case 'bytes':
       return pg ? 'bytea' : 'blob';
+    case 'unknown':
+      throw new Error('An unknown logical type has no native mapping; use the column nativeType');
     case 'enum': {
       const en = findEnum(type.enumId, ctx);
       return pg ? en.name : `enum(${en.values.map(quoteMysqlString).join(',')})`;

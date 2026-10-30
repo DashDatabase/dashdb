@@ -1,0 +1,65 @@
+// dbdiagram.io-style e-commerce model
+Project shop {
+  database_type: 'PostgreSQL'
+  Note: 'Storefront and order management'
+}
+
+Enum order_status {
+  created
+  paid [note: 'Payment captured']
+  shipped
+  cancelled
+}
+
+Table customers {
+  id integer [pk, increment]
+  email varchar(255) [unique, not null]
+  full_name varchar(120)
+  created_at timestamptz [not null, default: `now()`]
+  Note: 'People who buy things'
+}
+
+Table products {
+  id integer [pk, increment]
+  sku varchar(64) [unique, not null]
+  name varchar(255) [not null]
+  price numeric(10,2) [not null, check: `price >= 0`]
+  in_stock boolean [default: true]
+  metadata jsonb [default: '{}']
+
+  indexes {
+    name [name: 'products_name_idx']
+    `lower(name)` [name: 'products_lower_name_idx']
+  }
+}
+
+Table orders {
+  id bigint [pk, increment]
+  customer_id integer [not null, ref: > customers.id]
+  status order_status [not null, default: 'created']
+  total numeric(12,2) [not null, default: 0]
+  placed_at timestamptz [note: 'Null while in cart']
+
+  indexes {
+    (customer_id, placed_at) [name: 'orders_customer_placed_idx']
+  }
+}
+
+Table order_items {
+  order_id bigint [not null]
+  product_id integer [not null]
+  quantity integer [not null, default: 1]
+  unit_price numeric(10,2) [not null]
+
+  indexes {
+    (order_id, product_id) [pk]
+    product_id [type: hash]
+  }
+
+  checks {
+    `quantity > 0` [name: 'order_items_quantity_positive']
+  }
+}
+
+Ref order_items_order_fk: order_items.order_id > orders.id [delete: cascade]
+Ref: order_items.product_id > products.id [delete: restrict, update: cascade]

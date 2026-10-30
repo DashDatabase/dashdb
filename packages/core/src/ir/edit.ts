@@ -9,6 +9,7 @@ import {
   type Index,
   type IndexColumn,
   type IrDialect,
+  type Metadata,
   type Namespace,
   type PrimaryKey,
   type Schema,
@@ -43,7 +44,7 @@ type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 export type NewNamespace = Optional<Namespace, 'id'>;
 export type NewColumn = Optional<
   Column,
-  'id' | 'nullable' | 'default' | 'autoIncrement' | 'comment'
+  'id' | 'nullable' | 'default' | 'autoIncrement' | 'comment' | 'metadata'
 >;
 export interface NewTable {
   readonly id?: Id;
@@ -51,6 +52,7 @@ export interface NewTable {
   readonly namespace: Id;
   readonly columns?: readonly NewColumn[];
   readonly comment?: string | null;
+  readonly metadata?: Metadata;
 }
 export type NewPrimaryKey = Optional<PrimaryKey, 'id' | 'name'>;
 export type NewIndexColumn = Optional<IndexColumn, 'order' | 'nulls'>;
@@ -62,7 +64,7 @@ export type NewForeignKey = Optional<ForeignKey, 'id' | 'onDelete' | 'onUpdate'>
 export type NewCheck = Optional<Check, 'id'>;
 export type NewEnum = Optional<Enum, 'id'>;
 
-export type TablePatch = Partial<Pick<Table, 'name' | 'namespace' | 'comment'>>;
+export type TablePatch = Partial<Pick<Table, 'name' | 'namespace' | 'comment' | 'metadata'>>;
 export type ColumnPatch = Partial<Omit<Column, 'id'>>;
 export type EnumPatch = Partial<Pick<Enum, 'name' | 'namespace' | 'values'>>;
 
@@ -94,7 +96,15 @@ function updateTableById(schema: Schema, tableId: Id, update: (table: Table) => 
 }
 
 function buildColumn({ id = createId(), ...input }: NewColumn): Column {
-  return { nullable: true, default: null, autoIncrement: false, comment: null, ...input, id };
+  return {
+    nullable: true,
+    default: null,
+    autoIncrement: false,
+    comment: null,
+    metadata: {},
+    ...input,
+    id,
+  };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -129,7 +139,7 @@ export function renameNamespace(schema: Schema, namespaceId: Id, name: string): 
 
 export function addTable(
   schema: Schema,
-  { id = createId(), columns = [], comment = null, ...input }: NewTable,
+  { id = createId(), columns = [], comment = null, metadata = {}, ...input }: NewTable,
 ): Schema {
   const table: Table = {
     ...input,
@@ -141,6 +151,7 @@ export function addTable(
     foreignKeys: [],
     checks: [],
     comment,
+    metadata,
   };
   return { ...schema, tables: [...schema.tables, table] };
 }

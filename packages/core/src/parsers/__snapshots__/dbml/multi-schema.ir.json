@@ -1,0 +1,482 @@
+{
+  "schema": {
+    "id": "schema",
+    "dialect": "postgres",
+    "namespaces": [
+      {
+        "id": "namespace:people",
+        "name": "people"
+      },
+      {
+        "id": "namespace:org",
+        "name": "org"
+      },
+      {
+        "id": "namespace:payroll",
+        "name": "payroll"
+      }
+    ],
+    "tables": [
+      {
+        "id": "table:people.employees",
+        "name": "employees",
+        "namespace": "namespace:people",
+        "columns": [
+          {
+            "id": "column:people.employees.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": {
+              "kind": "expression",
+              "sql": "gen_random_uuid()"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:people.employees.email",
+            "name": "email",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:people.employees.manager_id",
+            "name": "manager_id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:people.employees.department_id",
+            "name": "department_id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "int",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:people.employees.kind",
+            "name": "kind",
+            "logicalType": {
+              "kind": "enum",
+              "enumId": "enum:people.employment_type"
+            },
+            "nativeType": "people.employment_type",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "full_time"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:people.employees.hired_on",
+            "name": "hired_on",
+            "logicalType": {
+              "kind": "date"
+            },
+            "nativeType": "date",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:people.employees",
+          "name": null,
+          "columns": [
+            "column:people.employees.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [
+          {
+            "id": "unique:people.employees.employees_email_key",
+            "name": "employees_email_key",
+            "columns": [
+              "column:people.employees.email"
+            ]
+          }
+        ],
+        "foreignKeys": [
+          {
+            "id": "fk:people.employees.employees_manager_id_fkey",
+            "name": "employees_manager_id_fkey",
+            "columns": [
+              "column:people.employees.manager_id"
+            ],
+            "refTable": "table:people.employees",
+            "refColumns": [
+              "column:people.employees.id"
+            ],
+            "onDelete": "no action",
+            "onUpdate": "no action"
+          },
+          {
+            "id": "fk:people.employees.employees_department_id_fkey",
+            "name": "employees_department_id_fkey",
+            "columns": [
+              "column:people.employees.department_id"
+            ],
+            "refTable": "table:org.departments",
+            "refColumns": [
+              "column:org.departments.id"
+            ],
+            "onDelete": "no action",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:people.badges",
+        "name": "badges",
+        "namespace": "namespace:people",
+        "columns": [
+          {
+            "id": "column:people.badges.employee_id",
+            "name": "employee_id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:people.badges.badge_no",
+            "name": "badge_no",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 20
+            },
+            "nativeType": "varchar(20)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:people.badges",
+          "name": null,
+          "columns": [
+            "column:people.badges.employee_id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [
+          {
+            "id": "unique:people.badges.badges_badge_no_key",
+            "name": "badges_badge_no_key",
+            "columns": [
+              "column:people.badges.badge_no"
+            ]
+          }
+        ],
+        "foreignKeys": [
+          {
+            "id": "fk:people.badges.badges_employee_id_fkey",
+            "name": "badges_employee_id_fkey",
+            "columns": [
+              "column:people.badges.employee_id"
+            ],
+            "refTable": "table:people.employees",
+            "refColumns": [
+              "column:people.employees.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:org.departments",
+        "name": "departments",
+        "namespace": "namespace:org",
+        "columns": [
+          {
+            "id": "column:org.departments.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "int",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:org.departments.name",
+            "name": "name",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 100
+            },
+            "nativeType": "varchar(100)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:org.departments.cost_center",
+            "name": "cost_center",
+            "logicalType": {
+              "kind": "unknown"
+            },
+            "nativeType": "char(6)",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:org.departments",
+          "name": null,
+          "columns": [
+            "column:org.departments.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [
+          {
+            "id": "unique:org.departments.departments_name_key",
+            "name": "departments_name_key",
+            "columns": [
+              "column:org.departments.name"
+            ]
+          }
+        ],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:org.projects",
+        "name": "projects",
+        "namespace": "namespace:org",
+        "columns": [
+          {
+            "id": "column:org.projects.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "int",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:org.projects.code",
+            "name": "code",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 12
+            },
+            "nativeType": "varchar(12)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:org.projects",
+          "name": null,
+          "columns": [
+            "column:org.projects.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [
+          {
+            "id": "unique:org.projects.projects_code_key",
+            "name": "projects_code_key",
+            "columns": [
+              "column:org.projects.code"
+            ]
+          }
+        ],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:payroll.salaries",
+        "name": "salaries",
+        "namespace": "namespace:payroll",
+        "columns": [
+          {
+            "id": "column:payroll.salaries.employee_id",
+            "name": "employee_id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:payroll.salaries.effective_from",
+            "name": "effective_from",
+            "logicalType": {
+              "kind": "date"
+            },
+            "nativeType": "date",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:payroll.salaries.amount",
+            "name": "amount",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 12,
+              "scale": 2
+            },
+            "nativeType": "numeric(12,2)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:payroll.salaries.currency",
+            "name": "currency",
+            "logicalType": {
+              "kind": "unknown"
+            },
+            "nativeType": "char(3)",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "EUR"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:payroll.salaries",
+          "name": null,
+          "columns": [
+            "column:payroll.salaries.employee_id",
+            "column:payroll.salaries.effective_from"
+          ]
+        },
+        "indexes": [],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:payroll.salaries.salaries_employee_id_fkey",
+            "name": "salaries_employee_id_fkey",
+            "columns": [
+              "column:payroll.salaries.employee_id"
+            ],
+            "refTable": "table:people.employees",
+            "refColumns": [
+              "column:people.employees.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      }
+    ],
+    "enums": [
+      {
+        "id": "enum:people.employment_type",
+        "name": "employment_type",
+        "namespace": "namespace:people",
+        "values": [
+          "full_time",
+          "part_time",
+          "contractor"
+        ]
+      }
+    ],
+    "version": 1
+  },
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "unknown-type",
+      "message": "Type \"char(6)\" of \"departments.cost_center\" has no logical equivalent; it is kept as a native type",
+      "line": 29,
+      "column": 3
+    },
+    {
+      "severity": "info",
+      "code": "unknown-type",
+      "message": "Type \"char(3)\" of \"salaries.currency\" has no logical equivalent; it is kept as a native type",
+      "line": 41,
+      "column": 3
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-feature",
+      "message": "Many-to-many refs (<>) have no foreign key and are skipped",
+      "line": 51,
+      "column": 1
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "tables": [
+    { "schema": "public", "name": "workspaces", "comment": "Top-level tenant" },
+    { "schema": "public", "name": "members" },
+    { "schema": "public", "name": "documents" },
+    { "schema": "public", "name": "active_documents", "kind": "view" }
+  ],
+  "columns": [
+    { "schema": "public", "table": "workspaces", "name": "id", "position": 1, "type": "uuid", "nullable": false, "default": "gen_random_uuid()" },
+    { "schema": "public", "table": "workspaces", "name": "slug", "position": 2, "type": "character varying(63)", "nullable": false, "default": null },
+    { "schema": "public", "table": "workspaces", "name": "tier", "position": 3, "type": "workspace_tier", "nullable": false, "default": "'free'::workspace_tier" },
+    { "schema": "public", "table": "workspaces", "name": "created_at", "position": 4, "type": "timestamp with time zone", "nullable": false, "default": "now()" },
+    { "schema": "public", "table": "members", "name": "id", "position": 1, "type": "integer", "nullable": false, "default": "nextval('members_id_seq'::regclass)" },
+    { "schema": "public", "table": "members", "name": "workspace_id", "position": 2, "type": "uuid", "nullable": false, "default": null },
+    { "schema": "public", "table": "members", "name": "email", "position": 3, "type": "text", "nullable": false, "default": null, "comment": "Login address" },
+    { "schema": "public", "table": "members", "name": "is_admin", "position": 4, "type": "boolean", "nullable": false, "default": "false" },
+    { "schema": "public", "table": "documents", "name": "title", "position": 2, "type": "text", "nullable": false, "default": "'Untitled'::text" },
+    { "schema": "public", "table": "documents", "name": "id", "position": 1, "type": "bigint", "nullable": false, "identity": true },
+    { "schema": "public", "table": "documents", "name": "workspace_id", "position": 3, "type": "uuid", "nullable": false },
+    { "schema": "public", "table": "documents", "name": "author_id", "position": 4, "type": "integer", "nullable": true },
+    { "schema": "public", "table": "documents", "name": "body", "position": 5, "type": "jsonb", "nullable": false, "default": "'{}'::jsonb" },
+    { "schema": "public", "table": "documents", "name": "version", "position": 6, "type": "integer", "nullable": false, "default": "1" },
+    { "schema": "public", "table": "documents", "name": "word_count", "position": 7, "type": "numeric(10,0)", "nullable": true, "default": "'-1'::integer" },
+    { "schema": "public", "table": "documents", "name": "embedding", "position": 8, "type": "vector(1536)", "nullable": true },
+    { "schema": "public", "table": "documents", "name": "deleted_at", "position": 9, "type": "timestamp(3) without time zone", "nullable": true, "default": "NULL::timestamp without time zone" }
+  ],
+  "constraints": [
+    { "schema": "public", "table": "workspaces", "name": "workspaces_pkey", "type": "PRIMARY KEY", "columns": ["id"] },
+    { "schema": "public", "table": "workspaces", "name": "workspaces_slug_key", "type": "UNIQUE", "columns": ["slug"] },
+    { "schema": "public", "table": "members", "name": "members_pkey", "type": "PRIMARY KEY", "columns": ["id"] },
+    { "schema": "public", "table": "members", "name": "members_workspace_email_key", "type": "UNIQUE", "columns": ["workspace_id", "email"] },
+    { "schema": "public", "table": "members", "name": "members_workspace_id_fkey", "type": "FOREIGN KEY", "columns": ["workspace_id"], "ref_schema": "public", "ref_table": "workspaces", "ref_columns": ["id"], "on_delete": "c", "on_update": "a" },
+    { "schema": "public", "table": "documents", "name": "documents_pkey", "type": "PRIMARY KEY", "columns": ["id"] },
+    { "schema": "public", "table": "documents", "name": "documents_workspace_id_fkey", "type": "FOREIGN KEY", "columns": ["workspace_id"], "ref_schema": "public", "ref_table": "workspaces", "ref_columns": ["id"], "on_delete": "CASCADE", "on_update": "NO ACTION" },
+    { "schema": "public", "table": "documents", "name": "documents_author_id_fkey", "type": "FOREIGN KEY", "columns": ["author_id"], "ref_schema": "public", "ref_table": "members", "ref_columns": ["id"], "on_delete": "n" },
+    { "schema": "public", "table": "documents", "name": "documents_version_check", "type": "CHECK", "columns": ["version"], "definition": "CHECK ((version > 0))" }
+  ],
+  "indexes": [
+    { "schema": "public", "table": "workspaces", "name": "workspaces_pkey", "unique": true, "primary": true, "method": "btree", "columns": ["id"] },
+    { "schema": "public", "table": "workspaces", "name": "workspaces_slug_key", "unique": true, "method": "btree", "columns": ["slug"] },
+    { "schema": "public", "table": "members", "name": "members_email_idx", "unique": false, "method": "btree", "columns": [{ "name": "email", "order": "asc" }] },
+    { "schema": "public", "table": "documents", "name": "documents_live_idx", "unique": false, "method": "btree", "predicate": "(deleted_at IS NULL)", "columns": [{ "name": "workspace_id" }, { "name": "id", "order": "desc", "nulls": "last" }] },
+    { "schema": "public", "table": "documents", "name": "documents_body_idx", "unique": false, "method": "gin", "columns": ["body"] },
+    { "schema": "public", "table": "documents", "name": "documents_title_lower_idx", "unique": false, "method": "btree", "columns": [{ "expression": "lower(title)" }] }
+  ],
+  "enums": [
+    { "schema": "public", "name": "workspace_tier", "values": ["free", "team", "enterprise"] }
+  ]
+}

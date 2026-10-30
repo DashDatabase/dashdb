@@ -1,0 +1,332 @@
+{
+  "schema": {
+    "id": "schema",
+    "dialect": "postgres",
+    "namespaces": [
+      {
+        "id": "namespace:public",
+        "name": "public"
+      }
+    ],
+    "tables": [
+      {
+        "id": "table:public.warehouses",
+        "name": "warehouses",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.warehouses.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.warehouses.code",
+            "name": "code",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.warehouses.location",
+            "name": "location",
+            "logicalType": {
+              "kind": "unknown"
+            },
+            "nativeType": "point",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.warehouses",
+          "name": "warehouses_pkey",
+          "columns": [
+            "column:public.warehouses.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [
+          {
+            "id": "unique:public.warehouses.warehouses_code_key",
+            "name": "warehouses_code_key",
+            "columns": [
+              "column:public.warehouses.code"
+            ]
+          }
+        ],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": "Physical storage locations",
+        "metadata": {}
+      },
+      {
+        "id": "table:public.stock_movements",
+        "name": "stock_movements",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.stock_movements.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "bigint"
+            },
+            "nativeType": "bigint",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.stock_movements.warehouse_id",
+            "name": "warehouse_id",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.stock_movements.sku",
+            "name": "sku",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.stock_movements.delta",
+            "name": "delta",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": "Positive for receipts, negative for picks",
+            "metadata": {}
+          },
+          {
+            "id": "column:public.stock_movements.reason",
+            "name": "reason",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": true,
+            "default": {
+              "kind": "literal",
+              "value": "manual"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.stock_movements.tags",
+            "name": "tags",
+            "logicalType": {
+              "kind": "unknown"
+            },
+            "nativeType": "text[]",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.stock_movements.search",
+            "name": "search",
+            "logicalType": {
+              "kind": "unknown"
+            },
+            "nativeType": "tsvector",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.stock_movements.moved_at",
+            "name": "moved_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": true
+            },
+            "nativeType": "timestamp with time zone",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.stock_movements.note",
+            "name": "note",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 500
+            },
+            "nativeType": "varchar(500)",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.stock_movements",
+          "name": "stock_movements_pkey",
+          "columns": [
+            "column:public.stock_movements.id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:public.stock_movements.stock_movements_tags_idx",
+            "name": "stock_movements_tags_idx",
+            "columns": [
+              {
+                "column": "column:public.stock_movements.tags",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": "gin",
+            "where": null
+          },
+          {
+            "id": "index:public.stock_movements.stock_movements_search_idx",
+            "name": "stock_movements_search_idx",
+            "columns": [
+              {
+                "column": "column:public.stock_movements.search",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": "gin",
+            "where": null
+          },
+          {
+            "id": "index:public.stock_movements.stock_movements_sku_hash_idx",
+            "name": "stock_movements_sku_hash_idx",
+            "columns": [
+              {
+                "column": "column:public.stock_movements.sku",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": "hash",
+            "where": null
+          }
+        ],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:public.stock_movements.stock_movements_warehouse_fkey",
+            "name": "stock_movements_warehouse_fkey",
+            "columns": [
+              "column:public.stock_movements.warehouse_id"
+            ],
+            "refTable": "table:public.warehouses",
+            "refColumns": [
+              "column:public.warehouses.id"
+            ],
+            "onDelete": "restrict",
+            "onUpdate": "cascade"
+          }
+        ],
+        "checks": [
+          {
+            "id": "check:public.stock_movements.stock_movements_delta_check",
+            "name": "stock_movements_delta_check",
+            "expression": "delta <> 0"
+          }
+        ],
+        "comment": null,
+        "metadata": {}
+      }
+    ],
+    "enums": [],
+    "version": 1
+  },
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "unknown-type",
+      "message": "Type \"point\" of \"warehouses.location\" has no logical equivalent; it is kept as a native type",
+      "line": 5,
+      "column": 3
+    },
+    {
+      "severity": "info",
+      "code": "unknown-type",
+      "message": "Type \"text[]\" of \"stock_movements.tags\" has no logical equivalent; it is kept as a native type",
+      "line": 14,
+      "column": 3
+    },
+    {
+      "severity": "info",
+      "code": "unknown-type",
+      "message": "Type \"tsvector\" of \"stock_movements.search\" has no logical equivalent; it is kept as a native type",
+      "line": 15,
+      "column": 3
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-feature",
+      "message": "Expression index stock_movements_lower_sku_idx is skipped: the IR only indexes columns",
+      "line": 32,
+      "column": 1
+    },
+    {
+      "severity": "error",
+      "code": "unresolved-reference",
+      "message": "Unknown column \"stock_movements.missing_column\"",
+      "line": 36,
+      "column": 1
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored COMMENT ON INDEX",
+      "line": 37,
+      "column": 1
+    }
+  ]
+}

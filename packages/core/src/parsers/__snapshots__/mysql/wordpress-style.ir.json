@@ -1,0 +1,739 @@
+{
+  "schema": {
+    "id": "schema",
+    "dialect": "mysql",
+    "namespaces": [
+      {
+        "id": "namespace:default",
+        "name": "default"
+      }
+    ],
+    "tables": [
+      {
+        "id": "table:default.wp_users",
+        "name": "wp_users",
+        "namespace": "namespace:default",
+        "columns": [
+          {
+            "id": "column:default.wp_users.ID",
+            "name": "ID",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 20,
+              "scale": 0
+            },
+            "nativeType": "bigint(20) unsigned",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_users.user_login",
+            "name": "user_login",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 60
+            },
+            "nativeType": "varchar(60)",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": ""
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_users.user_pass",
+            "name": "user_pass",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 255
+            },
+            "nativeType": "varchar(255)",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": ""
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_users.user_email",
+            "name": "user_email",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 100
+            },
+            "nativeType": "varchar(100)",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": ""
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_users.user_registered",
+            "name": "user_registered",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": false
+            },
+            "nativeType": "datetime",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "0000-00-00 00:00:00"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_users.user_status",
+            "name": "user_status",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "int(11)",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": 0
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_users.display_name",
+            "name": "display_name",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 250
+            },
+            "nativeType": "varchar(250)",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": ""
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:default.wp_users",
+          "name": null,
+          "columns": [
+            "column:default.wp_users.ID"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:default.wp_users.user_login_key",
+            "name": "user_login_key",
+            "columns": [
+              {
+                "column": "column:default.wp_users.user_login",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          },
+          {
+            "id": "index:default.wp_users.user_email",
+            "name": "user_email",
+            "columns": [
+              {
+                "column": "column:default.wp_users.user_email",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          }
+        ],
+        "uniques": [],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": null,
+        "metadata": {
+          "engine": "innodb",
+          "auto_increment": "2",
+          "charset": "utf8mb4",
+          "collate": "utf8mb4_unicode_520_ci"
+        }
+      },
+      {
+        "id": "table:default.wp_usermeta",
+        "name": "wp_usermeta",
+        "namespace": "namespace:default",
+        "columns": [
+          {
+            "id": "column:default.wp_usermeta.umeta_id",
+            "name": "umeta_id",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 20,
+              "scale": 0
+            },
+            "nativeType": "bigint(20) unsigned",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_usermeta.user_id",
+            "name": "user_id",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 20,
+              "scale": 0
+            },
+            "nativeType": "bigint(20) unsigned",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": 0
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_usermeta.meta_key",
+            "name": "meta_key",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 255
+            },
+            "nativeType": "varchar(255)",
+            "nullable": true,
+            "default": {
+              "kind": "literal",
+              "value": null
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_usermeta.meta_value",
+            "name": "meta_value",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "longtext",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:default.wp_usermeta",
+          "name": null,
+          "columns": [
+            "column:default.wp_usermeta.umeta_id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:default.wp_usermeta.user_id",
+            "name": "user_id",
+            "columns": [
+              {
+                "column": "column:default.wp_usermeta.user_id",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          },
+          {
+            "id": "index:default.wp_usermeta.meta_key",
+            "name": "meta_key",
+            "columns": [
+              {
+                "column": "column:default.wp_usermeta.meta_key",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          }
+        ],
+        "uniques": [],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": null,
+        "metadata": {
+          "engine": "innodb",
+          "charset": "utf8mb4",
+          "collate": "utf8mb4_unicode_520_ci"
+        }
+      },
+      {
+        "id": "table:default.wp_posts",
+        "name": "wp_posts",
+        "namespace": "namespace:default",
+        "columns": [
+          {
+            "id": "column:default.wp_posts.ID",
+            "name": "ID",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 20,
+              "scale": 0
+            },
+            "nativeType": "bigint(20) unsigned",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_posts.post_author",
+            "name": "post_author",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 20,
+              "scale": 0
+            },
+            "nativeType": "bigint(20) unsigned",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": 0
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_posts.post_date",
+            "name": "post_date",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": false
+            },
+            "nativeType": "datetime",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "0000-00-00 00:00:00"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_posts.post_content",
+            "name": "post_content",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "longtext",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_posts.post_title",
+            "name": "post_title",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_posts.post_status",
+            "name": "post_status",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 20
+            },
+            "nativeType": "varchar(20)",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "publish"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_posts.post_name",
+            "name": "post_name",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 200
+            },
+            "nativeType": "varchar(200)",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": ""
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_posts.post_parent",
+            "name": "post_parent",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 20,
+              "scale": 0
+            },
+            "nativeType": "bigint(20) unsigned",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": 0
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_posts.post_type",
+            "name": "post_type",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 20
+            },
+            "nativeType": "varchar(20)",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "post"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_posts.comment_count",
+            "name": "comment_count",
+            "logicalType": {
+              "kind": "bigint"
+            },
+            "nativeType": "bigint(20)",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": 0
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:default.wp_posts",
+          "name": null,
+          "columns": [
+            "column:default.wp_posts.ID"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:default.wp_posts.post_name",
+            "name": "post_name",
+            "columns": [
+              {
+                "column": "column:default.wp_posts.post_name",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          },
+          {
+            "id": "index:default.wp_posts.type_status_date",
+            "name": "type_status_date",
+            "columns": [
+              {
+                "column": "column:default.wp_posts.post_type",
+                "order": "asc",
+                "nulls": null
+              },
+              {
+                "column": "column:default.wp_posts.post_status",
+                "order": "asc",
+                "nulls": null
+              },
+              {
+                "column": "column:default.wp_posts.post_date",
+                "order": "asc",
+                "nulls": null
+              },
+              {
+                "column": "column:default.wp_posts.ID",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          },
+          {
+            "id": "index:default.wp_posts.post_parent",
+            "name": "post_parent",
+            "columns": [
+              {
+                "column": "column:default.wp_posts.post_parent",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          },
+          {
+            "id": "index:default.wp_posts.post_author",
+            "name": "post_author",
+            "columns": [
+              {
+                "column": "column:default.wp_posts.post_author",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          }
+        ],
+        "uniques": [],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": null,
+        "metadata": {
+          "engine": "innodb",
+          "charset": "utf8mb4",
+          "collate": "utf8mb4_unicode_520_ci"
+        }
+      },
+      {
+        "id": "table:default.wp_comments",
+        "name": "wp_comments",
+        "namespace": "namespace:default",
+        "columns": [
+          {
+            "id": "column:default.wp_comments.comment_ID",
+            "name": "comment_ID",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 20,
+              "scale": 0
+            },
+            "nativeType": "bigint(20) unsigned",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_comments.comment_post_ID",
+            "name": "comment_post_ID",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 20,
+              "scale": 0
+            },
+            "nativeType": "bigint(20) unsigned",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": 0
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_comments.comment_author",
+            "name": "comment_author",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "tinytext",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_comments.comment_content",
+            "name": "comment_content",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_comments.comment_approved",
+            "name": "comment_approved",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 20
+            },
+            "nativeType": "varchar(20)",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "1"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_comments.comment_parent",
+            "name": "comment_parent",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 20,
+              "scale": 0
+            },
+            "nativeType": "bigint(20) unsigned",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": 0
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:default.wp_comments.user_id",
+            "name": "user_id",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 20,
+              "scale": 0
+            },
+            "nativeType": "bigint(20) unsigned",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": 0
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:default.wp_comments",
+          "name": null,
+          "columns": [
+            "column:default.wp_comments.comment_ID"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:default.wp_comments.comment_post_ID",
+            "name": "comment_post_ID",
+            "columns": [
+              {
+                "column": "column:default.wp_comments.comment_post_ID",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          },
+          {
+            "id": "index:default.wp_comments.comment_approved_date_gmt",
+            "name": "comment_approved_date_gmt",
+            "columns": [
+              {
+                "column": "column:default.wp_comments.comment_approved",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          },
+          {
+            "id": "index:default.wp_comments.comment_parent",
+            "name": "comment_parent",
+            "columns": [
+              {
+                "column": "column:default.wp_comments.comment_parent",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          }
+        ],
+        "uniques": [],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": null,
+        "metadata": {
+          "engine": "innodb",
+          "charset": "utf8mb4",
+          "collate": "utf8mb4_unicode_520_ci"
+        }
+      }
+    ],
+    "enums": [],
+    "version": 1
+  },
+  "diagnostics": []
+}

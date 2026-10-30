@@ -14,6 +14,9 @@ export const IR_VERSION = 1;
 
 export type Id = string;
 
+/** Free-form, source-specific annotations (e.g. MySQL `engine`, Prisma model names). */
+export type Metadata = Readonly<Record<string, string>>;
+
 export type LogicalType =
   | { readonly kind: 'int' }
   | { readonly kind: 'bigint' }
@@ -26,7 +29,9 @@ export type LogicalType =
   | { readonly kind: 'timestamp'; readonly withTimeZone: boolean }
   | { readonly kind: 'date' }
   | { readonly kind: 'bytes' }
-  | { readonly kind: 'enum'; readonly enumId: Id };
+  | { readonly kind: 'enum'; readonly enumId: Id }
+  /** No logical equivalent (e.g. `point`, `int[]`); the column's `nativeType` is authoritative. */
+  | { readonly kind: 'unknown' };
 
 export type LogicalTypeKind = LogicalType['kind'];
 
@@ -45,6 +50,7 @@ export interface Column {
   readonly default: ColumnDefault | null;
   readonly autoIncrement: boolean;
   readonly comment: string | null;
+  readonly metadata: Metadata;
 }
 
 export interface PrimaryKey {
@@ -112,6 +118,7 @@ export interface Table {
   readonly foreignKeys: readonly ForeignKey[];
   readonly checks: readonly Check[];
   readonly comment: string | null;
+  readonly metadata: Metadata;
 }
 
 export interface Enum {

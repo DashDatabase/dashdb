@@ -1,0 +1,912 @@
+{
+  "schema": {
+    "id": "schema",
+    "dialect": "postgres",
+    "namespaces": [
+      {
+        "id": "namespace:public",
+        "name": "public"
+      }
+    ],
+    "tables": [
+      {
+        "id": "table:public.organizations",
+        "name": "organizations",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.organizations.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": {
+              "kind": "expression",
+              "sql": "gen_random_uuid()"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.organizations.slug",
+            "name": "slug",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 63
+            },
+            "nativeType": "varchar(63)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.organizations.name",
+            "name": "name",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.organizations.plan",
+            "name": "plan",
+            "logicalType": {
+              "kind": "enum",
+              "enumId": "enum:public.plan_tier"
+            },
+            "nativeType": "plan_tier",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "free"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.organizations.seats",
+            "name": "seats",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": 5
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.organizations.created_at",
+            "name": "created_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": true
+            },
+            "nativeType": "timestamptz",
+            "nullable": false,
+            "default": {
+              "kind": "expression",
+              "sql": "now()"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.organizations.deleted_at",
+            "name": "deleted_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": true
+            },
+            "nativeType": "timestamptz",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.organizations",
+          "name": null,
+          "columns": [
+            "column:public.organizations.id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:public.organizations.organizations_active_idx",
+            "name": "organizations_active_idx",
+            "columns": [
+              {
+                "column": "column:public.organizations.created_at",
+                "order": "desc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": "deleted_at IS NULL"
+          }
+        ],
+        "uniques": [
+          {
+            "id": "unique:public.organizations.organizations_slug_key",
+            "name": "organizations_slug_key",
+            "columns": [
+              "column:public.organizations.slug"
+            ]
+          }
+        ],
+        "foreignKeys": [],
+        "checks": [
+          {
+            "id": "check:public.organizations.organizations_seats_check",
+            "name": "organizations_seats_check",
+            "expression": "seats > 0"
+          }
+        ],
+        "comment": "A tenant; every row in the app belongs to one",
+        "metadata": {}
+      },
+      {
+        "id": "table:public.users",
+        "name": "users",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.users.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": {
+              "kind": "expression",
+              "sql": "gen_random_uuid()"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.users.email",
+            "name": "email",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 320
+            },
+            "nativeType": "varchar(320)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.users.display_name",
+            "name": "display_name",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.users.is_staff",
+            "name": "is_staff",
+            "logicalType": {
+              "kind": "boolean"
+            },
+            "nativeType": "boolean",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": false
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.users.created_at",
+            "name": "created_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": true
+            },
+            "nativeType": "timestamptz",
+            "nullable": false,
+            "default": {
+              "kind": "expression",
+              "sql": "now()"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.users",
+          "name": null,
+          "columns": [
+            "column:public.users.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [
+          {
+            "id": "unique:public.users.users_email_key",
+            "name": "users_email_key",
+            "columns": [
+              "column:public.users.email"
+            ]
+          }
+        ],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:public.memberships",
+        "name": "memberships",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.memberships.org_id",
+            "name": "org_id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.memberships.user_id",
+            "name": "user_id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.memberships.role",
+            "name": "role",
+            "logicalType": {
+              "kind": "enum",
+              "enumId": "enum:public.member_role"
+            },
+            "nativeType": "member_role",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "member"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.memberships.invited_by",
+            "name": "invited_by",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.memberships.joined_at",
+            "name": "joined_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": true
+            },
+            "nativeType": "timestamptz",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.memberships",
+          "name": null,
+          "columns": [
+            "column:public.memberships.org_id",
+            "column:public.memberships.user_id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:public.memberships.memberships_user_idx",
+            "name": "memberships_user_idx",
+            "columns": [
+              {
+                "column": "column:public.memberships.user_id",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          }
+        ],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:public.memberships.memberships_org_id_fkey",
+            "name": "memberships_org_id_fkey",
+            "columns": [
+              "column:public.memberships.org_id"
+            ],
+            "refTable": "table:public.organizations",
+            "refColumns": [
+              "column:public.organizations.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "no action"
+          },
+          {
+            "id": "fk:public.memberships.memberships_user_id_fkey",
+            "name": "memberships_user_id_fkey",
+            "columns": [
+              "column:public.memberships.user_id"
+            ],
+            "refTable": "table:public.users",
+            "refColumns": [
+              "column:public.users.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "no action"
+          },
+          {
+            "id": "fk:public.memberships.memberships_invited_by_fkey",
+            "name": "memberships_invited_by_fkey",
+            "columns": [
+              "column:public.memberships.invited_by"
+            ],
+            "refTable": "table:public.users",
+            "refColumns": [
+              "column:public.users.id"
+            ],
+            "onDelete": "set null",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:public.projects",
+        "name": "projects",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.projects.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "bigint"
+            },
+            "nativeType": "bigint",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {
+              "identity": "by default"
+            }
+          },
+          {
+            "id": "column:public.projects.org_id",
+            "name": "org_id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.projects.name",
+            "name": "name",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.projects.settings",
+            "name": "settings",
+            "logicalType": {
+              "kind": "json"
+            },
+            "nativeType": "jsonb",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "{}"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.projects.archived",
+            "name": "archived",
+            "logicalType": {
+              "kind": "boolean"
+            },
+            "nativeType": "boolean",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": false
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.projects",
+          "name": null,
+          "columns": [
+            "column:public.projects.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [
+          {
+            "id": "unique:public.projects.projects_org_name_key",
+            "name": "projects_org_name_key",
+            "columns": [
+              "column:public.projects.org_id",
+              "column:public.projects.name"
+            ]
+          }
+        ],
+        "foreignKeys": [
+          {
+            "id": "fk:public.projects.projects_org_fkey",
+            "name": "projects_org_fkey",
+            "columns": [
+              "column:public.projects.org_id"
+            ],
+            "refTable": "table:public.organizations",
+            "refColumns": [
+              "column:public.organizations.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:public.api_keys",
+        "name": "api_keys",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.api_keys.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": {
+              "kind": "expression",
+              "sql": "gen_random_uuid()"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.api_keys.org_id",
+            "name": "org_id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.api_keys.prefix",
+            "name": "prefix",
+            "logicalType": {
+              "kind": "unknown"
+            },
+            "nativeType": "char(8)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": "First 8 characters, shown in the UI",
+            "metadata": {}
+          },
+          {
+            "id": "column:public.api_keys.hashed_secret",
+            "name": "hashed_secret",
+            "logicalType": {
+              "kind": "bytes"
+            },
+            "nativeType": "bytea",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.api_keys.scopes",
+            "name": "scopes",
+            "logicalType": {
+              "kind": "unknown"
+            },
+            "nativeType": "text[]",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "{}"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.api_keys.last_used_at",
+            "name": "last_used_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": true
+            },
+            "nativeType": "timestamptz",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.api_keys.expires_at",
+            "name": "expires_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": true
+            },
+            "nativeType": "timestamptz",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.api_keys.revoked_at",
+            "name": "revoked_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": true
+            },
+            "nativeType": "timestamptz",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.api_keys",
+          "name": null,
+          "columns": [
+            "column:public.api_keys.id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:public.api_keys.api_keys_prefix_idx",
+            "name": "api_keys_prefix_idx",
+            "columns": [
+              {
+                "column": "column:public.api_keys.prefix",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": true,
+            "method": null,
+            "where": "revoked_at IS NULL"
+          }
+        ],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:public.api_keys.api_keys_org_id_fkey",
+            "name": "api_keys_org_id_fkey",
+            "columns": [
+              "column:public.api_keys.org_id"
+            ],
+            "refTable": "table:public.organizations",
+            "refColumns": [
+              "column:public.organizations.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:public.audit_events",
+        "name": "audit_events",
+        "namespace": "namespace:public",
+        "columns": [
+          {
+            "id": "column:public.audit_events.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "bigint"
+            },
+            "nativeType": "bigint",
+            "nullable": false,
+            "default": {
+              "kind": "sequence",
+              "name": "audit_events_id_seq"
+            },
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.audit_events.org_id",
+            "name": "org_id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.audit_events.actor_id",
+            "name": "actor_id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.audit_events.action",
+            "name": "action",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 64
+            },
+            "nativeType": "varchar(64)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.audit_events.payload",
+            "name": "payload",
+            "logicalType": {
+              "kind": "json"
+            },
+            "nativeType": "jsonb",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:public.audit_events.occurred_at",
+            "name": "occurred_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": true
+            },
+            "nativeType": "timestamptz",
+            "nullable": false,
+            "default": {
+              "kind": "expression",
+              "sql": "now()"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:public.audit_events",
+          "name": null,
+          "columns": [
+            "column:public.audit_events.id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:public.audit_events.audit_events_org_time_idx",
+            "name": "audit_events_org_time_idx",
+            "columns": [
+              {
+                "column": "column:public.audit_events.org_id",
+                "order": "asc",
+                "nulls": null
+              },
+              {
+                "column": "column:public.audit_events.occurred_at",
+                "order": "desc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          },
+          {
+            "id": "index:public.audit_events.audit_events_payload_idx",
+            "name": "audit_events_payload_idx",
+            "columns": [
+              {
+                "column": "column:public.audit_events.payload",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": "gin",
+            "where": null
+          }
+        ],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:public.audit_events.audit_events_org_id_fkey",
+            "name": "audit_events_org_id_fkey",
+            "columns": [
+              "column:public.audit_events.org_id"
+            ],
+            "refTable": "table:public.organizations",
+            "refColumns": [
+              "column:public.organizations.id"
+            ],
+            "onDelete": "no action",
+            "onUpdate": "no action"
+          },
+          {
+            "id": "fk:public.audit_events.audit_events_actor_id_fkey",
+            "name": "audit_events_actor_id_fkey",
+            "columns": [
+              "column:public.audit_events.actor_id"
+            ],
+            "refTable": "table:public.users",
+            "refColumns": [
+              "column:public.users.id"
+            ],
+            "onDelete": "no action",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      }
+    ],
+    "enums": [
+      {
+        "id": "enum:public.member_role",
+        "name": "member_role",
+        "namespace": "namespace:public",
+        "values": [
+          "owner",
+          "admin",
+          "member",
+          "viewer"
+        ]
+      },
+      {
+        "id": "enum:public.plan_tier",
+        "name": "plan_tier",
+        "namespace": "namespace:public",
+        "values": [
+          "free",
+          "team",
+          "enterprise"
+        ]
+      }
+    ],
+    "version": 1
+  },
+  "diagnostics": [
+    {
+      "severity": "warning",
+      "code": "unsupported-statement",
+      "message": "Ignored CREATE EXTENSION statement",
+      "line": 2,
+      "column": 1
+    },
+    {
+      "severity": "info",
+      "code": "unknown-type",
+      "message": "Type \"char(8)\" of \"api_keys.prefix\" has no logical equivalent; it is kept as a native type",
+      "line": 48,
+      "column": 21
+    },
+    {
+      "severity": "info",
+      "code": "unknown-type",
+      "message": "Type \"text[]\" of \"api_keys.scopes\" has no logical equivalent; it is kept as a native type",
+      "line": 50,
+      "column": 21
+    }
+  ]
+}

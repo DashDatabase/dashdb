@@ -1,0 +1,611 @@
+{
+  "schema": {
+    "id": "schema",
+    "dialect": "mysql",
+    "namespaces": [
+      {
+        "id": "namespace:shop",
+        "name": "shop"
+      }
+    ],
+    "tables": [
+      {
+        "id": "table:shop.customers",
+        "name": "customers",
+        "namespace": "namespace:shop",
+        "columns": [
+          {
+            "id": "column:shop.customers.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "bigint"
+            },
+            "nativeType": "int unsigned",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.customers.email",
+            "name": "email",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 255
+            },
+            "nativeType": "varchar(255)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.customers.name",
+            "name": "name",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 120
+            },
+            "nativeType": "varchar(120)",
+            "nullable": true,
+            "default": {
+              "kind": "literal",
+              "value": null
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.customers.created_at",
+            "name": "created_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": false
+            },
+            "nativeType": "datetime",
+            "nullable": false,
+            "default": {
+              "kind": "expression",
+              "sql": "CURRENT_TIMESTAMP"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:shop.customers",
+          "name": null,
+          "columns": [
+            "column:shop.customers.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [
+          {
+            "id": "unique:shop.customers.customers_email_unique",
+            "name": "customers_email_unique",
+            "columns": [
+              "column:shop.customers.email"
+            ]
+          }
+        ],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": null,
+        "metadata": {
+          "engine": "innodb",
+          "charset": "utf8mb4",
+          "collate": "utf8mb4_0900_ai_ci"
+        }
+      },
+      {
+        "id": "table:shop.products",
+        "name": "products",
+        "namespace": "namespace:shop",
+        "columns": [
+          {
+            "id": "column:shop.products.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "bigint"
+            },
+            "nativeType": "int unsigned",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.products.sku",
+            "name": "sku",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 64
+            },
+            "nativeType": "varchar(64)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.products.title",
+            "name": "title",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 255
+            },
+            "nativeType": "varchar(255)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.products.description",
+            "name": "description",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "mediumtext",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.products.price",
+            "name": "price",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 10,
+              "scale": 2
+            },
+            "nativeType": "decimal(10,2)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.products.weight_grams",
+            "name": "weight_grams",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "int",
+            "nullable": true,
+            "default": {
+              "kind": "literal",
+              "value": null
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.products.is_active",
+            "name": "is_active",
+            "logicalType": {
+              "kind": "boolean"
+            },
+            "nativeType": "tinyint(1)",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": 1
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.products.attributes",
+            "name": "attributes",
+            "logicalType": {
+              "kind": "json"
+            },
+            "nativeType": "json",
+            "nullable": true,
+            "default": {
+              "kind": "literal",
+              "value": null
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:shop.products",
+          "name": null,
+          "columns": [
+            "column:shop.products.id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:shop.products.products_active_title_idx",
+            "name": "products_active_title_idx",
+            "columns": [
+              {
+                "column": "column:shop.products.is_active",
+                "order": "asc",
+                "nulls": null
+              },
+              {
+                "column": "column:shop.products.title",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          },
+          {
+            "id": "index:shop.products.products_search",
+            "name": "products_search",
+            "columns": [
+              {
+                "column": "column:shop.products.title",
+                "order": "asc",
+                "nulls": null
+              },
+              {
+                "column": "column:shop.products.description",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": "fulltext",
+            "where": null
+          }
+        ],
+        "uniques": [
+          {
+            "id": "unique:shop.products.sku",
+            "name": "sku",
+            "columns": [
+              "column:shop.products.sku"
+            ]
+          }
+        ],
+        "foreignKeys": [],
+        "checks": [
+          {
+            "id": "check:shop.products.products_price_chk",
+            "name": "products_price_chk",
+            "expression": "(`price` >= 0)"
+          }
+        ],
+        "comment": "Sellable items",
+        "metadata": {
+          "engine": "innodb",
+          "charset": "utf8mb4"
+        }
+      },
+      {
+        "id": "table:shop.orders",
+        "name": "orders",
+        "namespace": "namespace:shop",
+        "columns": [
+          {
+            "id": "column:shop.orders.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 20,
+              "scale": 0
+            },
+            "nativeType": "bigint unsigned",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": true,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.orders.customer_id",
+            "name": "customer_id",
+            "logicalType": {
+              "kind": "bigint"
+            },
+            "nativeType": "int unsigned",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.orders.status",
+            "name": "status",
+            "logicalType": {
+              "kind": "enum",
+              "enumId": "enum:shop.orders_status"
+            },
+            "nativeType": "enum('cart','placed','paid','shipped','cancelled')",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "cart"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.orders.total",
+            "name": "total",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 12,
+              "scale": 2
+            },
+            "nativeType": "decimal(12,2)",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": 0
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.orders.placed_at",
+            "name": "placed_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": false
+            },
+            "nativeType": "datetime",
+            "nullable": true,
+            "default": {
+              "kind": "literal",
+              "value": null
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.orders.updated_at",
+            "name": "updated_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": true
+            },
+            "nativeType": "timestamp",
+            "nullable": false,
+            "default": {
+              "kind": "expression",
+              "sql": "CURRENT_TIMESTAMP"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {
+              "onUpdate": "CURRENT_TIMESTAMP"
+            }
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:shop.orders",
+          "name": null,
+          "columns": [
+            "column:shop.orders.id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:shop.orders.orders_customer_idx",
+            "name": "orders_customer_idx",
+            "columns": [
+              {
+                "column": "column:shop.orders.customer_id",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          },
+          {
+            "id": "index:shop.orders.orders_status_placed_idx",
+            "name": "orders_status_placed_idx",
+            "columns": [
+              {
+                "column": "column:shop.orders.status",
+                "order": "asc",
+                "nulls": null
+              },
+              {
+                "column": "column:shop.orders.placed_at",
+                "order": "desc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          }
+        ],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:shop.orders.orders_customer_fk",
+            "name": "orders_customer_fk",
+            "columns": [
+              "column:shop.orders.customer_id"
+            ],
+            "refTable": "table:shop.customers",
+            "refColumns": [
+              "column:shop.customers.id"
+            ],
+            "onDelete": "restrict",
+            "onUpdate": "cascade"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {
+          "engine": "innodb",
+          "charset": "utf8mb4"
+        }
+      },
+      {
+        "id": "table:shop.order_items",
+        "name": "order_items",
+        "namespace": "namespace:shop",
+        "columns": [
+          {
+            "id": "column:shop.order_items.order_id",
+            "name": "order_id",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 20,
+              "scale": 0
+            },
+            "nativeType": "bigint unsigned",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.order_items.product_id",
+            "name": "product_id",
+            "logicalType": {
+              "kind": "bigint"
+            },
+            "nativeType": "int unsigned",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.order_items.quantity",
+            "name": "quantity",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "smallint unsigned",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": 1
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:shop.order_items.unit_price",
+            "name": "unit_price",
+            "logicalType": {
+              "kind": "decimal",
+              "precision": 10,
+              "scale": 2
+            },
+            "nativeType": "decimal(10,2)",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:shop.order_items",
+          "name": null,
+          "columns": [
+            "column:shop.order_items.order_id",
+            "column:shop.order_items.product_id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:shop.order_items.order_items_product_idx",
+            "name": "order_items_product_idx",
+            "columns": [
+              {
+                "column": "column:shop.order_items.product_id",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          }
+        ],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:shop.order_items.order_items_order_fk",
+            "name": "order_items_order_fk",
+            "columns": [
+              "column:shop.order_items.order_id"
+            ],
+            "refTable": "table:shop.orders",
+            "refColumns": [
+              "column:shop.orders.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "no action"
+          },
+          {
+            "id": "fk:shop.order_items.order_items_product_fk",
+            "name": "order_items_product_fk",
+            "columns": [
+              "column:shop.order_items.product_id"
+            ],
+            "refTable": "table:shop.products",
+            "refColumns": [
+              "column:shop.products.id"
+            ],
+            "onDelete": "no action",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {
+          "engine": "innodb",
+          "charset": "utf8mb4"
+        }
+      }
+    ],
+    "enums": [
+      {
+        "id": "enum:shop.orders_status",
+        "name": "orders_status",
+        "namespace": "namespace:shop",
+        "values": [
+          "cart",
+          "placed",
+          "paid",
+          "shipped",
+          "cancelled"
+        ]
+      }
+    ],
+    "version": 1
+  },
+  "diagnostics": []
+}

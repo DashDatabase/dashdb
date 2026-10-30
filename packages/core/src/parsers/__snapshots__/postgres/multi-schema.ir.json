@@ -1,0 +1,602 @@
+{
+  "schema": {
+    "id": "schema",
+    "dialect": "postgres",
+    "namespaces": [
+      {
+        "id": "namespace:auth",
+        "name": "auth"
+      },
+      {
+        "id": "namespace:billing",
+        "name": "billing"
+      },
+      {
+        "id": "namespace:app",
+        "name": "app"
+      }
+    ],
+    "tables": [
+      {
+        "id": "table:auth.accounts",
+        "name": "accounts",
+        "namespace": "namespace:auth",
+        "columns": [
+          {
+            "id": "column:auth.accounts.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:auth.accounts.email",
+            "name": "email",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:auth.accounts.password_hash",
+            "name": "password_hash",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:auth.accounts.mfa_enabled",
+            "name": "mfa_enabled",
+            "logicalType": {
+              "kind": "boolean"
+            },
+            "nativeType": "boolean",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": false
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:auth.accounts",
+          "name": null,
+          "columns": [
+            "column:auth.accounts.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [
+          {
+            "id": "unique:auth.accounts.accounts_email_key",
+            "name": "accounts_email_key",
+            "columns": [
+              "column:auth.accounts.email"
+            ]
+          }
+        ],
+        "foreignKeys": [],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:auth.sessions",
+        "name": "sessions",
+        "namespace": "namespace:auth",
+        "columns": [
+          {
+            "id": "column:auth.sessions.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:auth.sessions.account_id",
+            "name": "account_id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:auth.sessions.user_agent",
+            "name": "user_agent",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:auth.sessions.expires_at",
+            "name": "expires_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": true
+            },
+            "nativeType": "timestamptz",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:auth.sessions",
+          "name": null,
+          "columns": [
+            "column:auth.sessions.id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:auth.sessions.sessions_account_idx",
+            "name": "sessions_account_idx",
+            "columns": [
+              {
+                "column": "column:auth.sessions.account_id",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": null
+          }
+        ],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:auth.sessions.sessions_account_id_fkey",
+            "name": "sessions_account_id_fkey",
+            "columns": [
+              "column:auth.sessions.account_id"
+            ],
+            "refTable": "table:auth.accounts",
+            "refColumns": [
+              "column:auth.accounts.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:billing.customers",
+        "name": "customers",
+        "namespace": "namespace:billing",
+        "columns": [
+          {
+            "id": "column:billing.customers.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:billing.customers.account_id",
+            "name": "account_id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:billing.customers.stripe_customer_id",
+            "name": "stripe_customer_id",
+            "logicalType": {
+              "kind": "varchar",
+              "length": 64
+            },
+            "nativeType": "varchar(64)",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:billing.customers",
+          "name": null,
+          "columns": [
+            "column:billing.customers.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [
+          {
+            "id": "unique:billing.customers.customers_account_id_key",
+            "name": "customers_account_id_key",
+            "columns": [
+              "column:billing.customers.account_id"
+            ]
+          },
+          {
+            "id": "unique:billing.customers.customers_stripe_customer_id_key",
+            "name": "customers_stripe_customer_id_key",
+            "columns": [
+              "column:billing.customers.stripe_customer_id"
+            ]
+          }
+        ],
+        "foreignKeys": [
+          {
+            "id": "fk:billing.customers.customers_account_id_fkey",
+            "name": "customers_account_id_fkey",
+            "columns": [
+              "column:billing.customers.account_id"
+            ],
+            "refTable": "table:auth.accounts",
+            "refColumns": [
+              "column:auth.accounts.id"
+            ],
+            "onDelete": "no action",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:billing.invoices",
+        "name": "invoices",
+        "namespace": "namespace:billing",
+        "columns": [
+          {
+            "id": "column:billing.invoices.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:billing.invoices.customer_id",
+            "name": "customer_id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:billing.invoices.status",
+            "name": "status",
+            "logicalType": {
+              "kind": "enum",
+              "enumId": "enum:billing.invoice_status"
+            },
+            "nativeType": "billing.invoice_status",
+            "nullable": false,
+            "default": {
+              "kind": "literal",
+              "value": "draft"
+            },
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:billing.invoices.amount_cents",
+            "name": "amount_cents",
+            "logicalType": {
+              "kind": "int"
+            },
+            "nativeType": "integer",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:billing.invoices.issued_at",
+            "name": "issued_at",
+            "logicalType": {
+              "kind": "timestamp",
+              "withTimeZone": true
+            },
+            "nativeType": "timestamptz",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:billing.invoices",
+          "name": null,
+          "columns": [
+            "column:billing.invoices.id"
+          ]
+        },
+        "indexes": [
+          {
+            "id": "index:billing.invoices.invoices_open_idx",
+            "name": "invoices_open_idx",
+            "columns": [
+              {
+                "column": "column:billing.invoices.customer_id",
+                "order": "asc",
+                "nulls": null
+              }
+            ],
+            "unique": false,
+            "method": null,
+            "where": "status = 'open'"
+          }
+        ],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:billing.invoices.invoices_customer_id_fkey",
+            "name": "invoices_customer_id_fkey",
+            "columns": [
+              "column:billing.invoices.customer_id"
+            ],
+            "refTable": "table:billing.customers",
+            "refColumns": [
+              "column:billing.customers.id"
+            ],
+            "onDelete": "no action",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:app.workspaces",
+        "name": "workspaces",
+        "namespace": "namespace:app",
+        "columns": [
+          {
+            "id": "column:app.workspaces.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:app.workspaces.owner_id",
+            "name": "owner_id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:app.workspaces.billing_customer_id",
+            "name": "billing_customer_id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": true,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:app.workspaces.name",
+            "name": "name",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:app.workspaces",
+          "name": null,
+          "columns": [
+            "column:app.workspaces.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:app.workspaces.workspaces_owner_id_fkey",
+            "name": "workspaces_owner_id_fkey",
+            "columns": [
+              "column:app.workspaces.owner_id"
+            ],
+            "refTable": "table:auth.accounts",
+            "refColumns": [
+              "column:auth.accounts.id"
+            ],
+            "onDelete": "no action",
+            "onUpdate": "no action"
+          },
+          {
+            "id": "fk:app.workspaces.workspaces_billing_customer_id_fkey",
+            "name": "workspaces_billing_customer_id_fkey",
+            "columns": [
+              "column:app.workspaces.billing_customer_id"
+            ],
+            "refTable": "table:billing.customers",
+            "refColumns": [
+              "column:billing.customers.id"
+            ],
+            "onDelete": "set null",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      },
+      {
+        "id": "table:app.accounts",
+        "name": "accounts",
+        "namespace": "namespace:app",
+        "columns": [
+          {
+            "id": "column:app.accounts.id",
+            "name": "id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:app.accounts.workspace_id",
+            "name": "workspace_id",
+            "logicalType": {
+              "kind": "uuid"
+            },
+            "nativeType": "uuid",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          },
+          {
+            "id": "column:app.accounts.label",
+            "name": "label",
+            "logicalType": {
+              "kind": "text"
+            },
+            "nativeType": "text",
+            "nullable": false,
+            "default": null,
+            "autoIncrement": false,
+            "comment": null,
+            "metadata": {}
+          }
+        ],
+        "primaryKey": {
+          "id": "pk:app.accounts",
+          "name": null,
+          "columns": [
+            "column:app.accounts.id"
+          ]
+        },
+        "indexes": [],
+        "uniques": [],
+        "foreignKeys": [
+          {
+            "id": "fk:app.accounts.accounts_workspace_id_fkey",
+            "name": "accounts_workspace_id_fkey",
+            "columns": [
+              "column:app.accounts.workspace_id"
+            ],
+            "refTable": "table:app.workspaces",
+            "refColumns": [
+              "column:app.workspaces.id"
+            ],
+            "onDelete": "cascade",
+            "onUpdate": "no action"
+          }
+        ],
+        "checks": [],
+        "comment": null,
+        "metadata": {}
+      }
+    ],
+    "enums": [
+      {
+        "id": "enum:billing.invoice_status",
+        "name": "invoice_status",
+        "namespace": "namespace:billing",
+        "values": [
+          "draft",
+          "open",
+          "paid",
+          "void"
+        ]
+      }
+    ],
+    "version": 1
+  },
+  "diagnostics": []
+}
