@@ -17,11 +17,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@dashdb/shared": "workspace:*"
+    "@dashdb/shared": "workspace:*",
+    "nanoid": "^5.1.16",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@dashdb/config": "workspace:*",
     "@types/node": "^22.19.0",
+    "@vitest/coverage-v8": "5.0.5",
     "eslint": "^9.39.5",
     "tsup": "^9.0.0",
     "typescript": "~6.0.3",

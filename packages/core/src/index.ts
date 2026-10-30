@@ -36,3 +36,5 @@ export function parseConnectionUrl(url: string): ConnectionTarget {
     database,
   };
 }
+
+export * from './ir';
