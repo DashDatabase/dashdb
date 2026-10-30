@@ -22,12 +22,16 @@ export function invertOperations(ops: readonly Operation[]): Operation[] {
   // Column renames, keyed by the (after) table name they are written with.
   const columnRenames = new Map<
     string,
-    { table: QName; renames: { from: string; to: string }[] }
+    { table: QName; renames: { from: string; to: string; definition?: ColumnDefs }[] }
   >();
   for (const op of ops) {
     if (op.kind !== 'renameColumn') continue;
     const entry = columnRenames.get(qkey(op.table)) ?? { table: op.table, renames: [] };
-    entry.renames.push({ from: op.from, to: op.to });
+    entry.renames.push({
+      from: op.from,
+      to: op.to,
+      ...(op.definition ? { definition: op.definition } : {}),
+    });
     columnRenames.set(qkey(op.table), entry);
   }
   const netColumns = new Map(
@@ -54,7 +58,13 @@ export function invertOperations(ops: readonly Operation[]): Operation[] {
   for (const r of tableRenames) out.push({ kind: 'renameTable', from: r.to, to: r.from });
   for (const { table, renames } of netColumns.values()) {
     for (const r of renames)
-      out.push({ kind: 'renameColumn', table: toBefore(table), from: r.to, to: r.from });
+      out.push({
+        kind: 'renameColumn',
+        table: toBefore(table),
+        from: r.to,
+        to: r.from,
+        ...(r.definition ? { definition: swap(r.definition) } : {}),
+      });
   }
 
   const enumAdds = new Map<string, Extract<Operation, { kind: 'alterEnumAddValue' }>[]>();

@@ -532,7 +532,7 @@ class Differ {
       const ac = at.columns.find((c) => c.id === aId) as Column;
       const definition = { before: this.b.column(bc), after: this.a.column(ac) };
       if (bc.name !== ac.name)
-        this.ops.push({ kind: 'renameColumn', table: to, from: bc.name, to: ac.name });
+        this.ops.push({ kind: 'renameColumn', table: to, from: bc.name, to: ac.name, definition });
       if (!this.sameType(bc, ac)) {
         retyped.add(bc.id);
         this.ops.push({

@@ -143,6 +143,8 @@ export type Operation =
       readonly table: QName;
       readonly from: string;
       readonly to: string;
+      /** The column's definitions, when known (expand/contract plans need its type). */
+      readonly definition?: ColumnDefs;
     }
   | {
       readonly kind: 'alterColumnType';

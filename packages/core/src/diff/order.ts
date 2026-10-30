@@ -1,5 +1,5 @@
 import { compareStrings, qkey } from './defs';
-import type { Operation, OperationKind, QName } from './types';
+import type { ColumnDefs, Operation, OperationKind, QName } from './types';
 
 /*
  * Ordering is a topological sort over a fixed dependency graph between operation kinds,
@@ -99,6 +99,8 @@ function sortKey(op: Sortable): string {
 export interface Rename<T> {
   from: T;
   to: T;
+  /** Carried along unchanged (renameColumn definitions). */
+  definition?: ColumnDefs;
 }
 
 /**
@@ -143,7 +145,11 @@ function sequenceRenames<T>(
     // Every target is still taken: we are in a cycle. Park the first one under a temp name.
     const first = pending[0] as Rename<T>;
     const parked = temp(first.from, ++tempCount);
-    out.push({ from: first.from, to: parked });
+    out.push({
+      from: first.from,
+      to: parked,
+      ...(first.definition ? { definition: first.definition } : {}),
+    });
     first.from = parked;
   }
   return out;
@@ -171,7 +177,11 @@ export function orderOperations(ops: readonly Operation[]): Operation[] {
   for (const op of ops) {
     if (op.kind !== 'renameColumn') continue;
     const entry = byTable.get(qkey(op.table)) ?? { table: op.table, renames: [] };
-    entry.renames.push({ from: op.from, to: op.to });
+    entry.renames.push({
+      from: op.from,
+      to: op.to,
+      ...(op.definition ? { definition: op.definition } : {}),
+    });
     byTable.set(qkey(op.table), entry);
   }
   const columnOps: Operation[] = [...byTable.entries()]
@@ -181,7 +191,13 @@ export function orderOperations(ops: readonly Operation[]): Operation[] {
         netRenames(renames, String, isTempColumn),
         String,
         (_c, n) => `${TEMP_PREFIX}${n}`,
-      ).map((r): Operation => ({ kind: 'renameColumn', table, from: r.from, to: r.to })),
+      ).map((r): Operation => ({
+        kind: 'renameColumn',
+        table,
+        from: r.from,
+        to: r.to,
+        ...(r.definition ? { definition: r.definition } : {}),
+      })),
     );
 
   const at = sorted.findIndex((op) => RANK[op.kind] > RANK.renameColumn);

@@ -5,6 +5,7 @@ import { expectRoundTrip, labels, pg } from './__test-utils__/harness';
 import { normalizeNativeType, nameSimilarity } from './defs';
 import { DiffError, diffSchemas } from './diff';
 import { invertOperations } from './invert';
+import { orderOperations } from './order';
 
 /* Edge cases proposed by the migration-test-writer review that the scenario suites don't cover. */
 
@@ -123,5 +124,35 @@ describe('column definitions on operations', () => {
     expect(down.find((o) => o.kind === 'recreateEnum')).toMatchObject({
       columns: [{ before: { nullable: false }, after: { nullable: true } }],
     });
+  });
+});
+
+describe('renameColumn definitions', () => {
+  it('carries definitions through ordering (including temp names) and swaps them on inversion', () => {
+    const b = pg('CREATE TABLE t (a int, b text);');
+    const swap = renameColumn(renameColumn(b, t(b).id, c(b, 'a'), 'b'), t(b).id, c(b, 'b'), 'a');
+    const { operations } = diffSchemas(b, swap);
+    const renames = operations.filter((o) => o.kind === 'renameColumn');
+    expect(renames.map((o) => [o.from, o.to, o.definition?.after.nativeType])).toEqual([
+      ['a', '__dashdb_tmp_1', 'int'],
+      ['b', 'a', 'text'],
+      ['__dashdb_tmp_1', 'b', 'int'],
+    ]);
+    const inverted = invertOperations(operations).filter((o) => o.kind === 'renameColumn');
+    // Each hop carries the definitions of the whole rename, swapped: before is the after-schema column.
+    expect(
+      inverted.map((o) => [o.from, o.to, o.definition?.before.name, o.definition?.after.name]),
+    ).toEqual([
+      ['a', '__dashdb_tmp_1', 'a', 'b'],
+      ['b', 'a', 'b', 'a'],
+      ['__dashdb_tmp_1', 'b', 'a', 'b'],
+    ]);
+  });
+
+  it('leaves definitions out when the operations have none', () => {
+    const table = { namespace: 'public', name: 't' };
+    const ops = [{ kind: 'renameColumn', table, from: 'a', to: 'b' }] as const;
+    expect(orderOperations(ops)).toEqual(ops);
+    expect(invertOperations(ops)).toEqual([{ kind: 'renameColumn', table, from: 'b', to: 'a' }]);
   });
 });
