@@ -11,15 +11,15 @@ export function BaselinesPanel() {
   const baselines = useEditor((s) => s.baselines);
 
   return (
-    <div className="space-y-4 p-4" data-testid="baselines">
+    <div className="space-y-4 border-t p-4" data-testid="baselines">
       <div className="space-y-1">
         <h3 className="text-sm font-medium">Baselines</h3>
         <p className="text-sm text-text-muted">
-          A baseline freezes the schema as it is now. Migrations are generated from the latest
-          baseline to your current edits. The {MAX_BASELINES} most recent are kept.
+          A baseline freezes the schema as it is now; migrations are generated from one to your
+          current edits. The {MAX_BASELINES} most recent are kept.
         </p>
       </div>
-      <ActionButton action="migration.saveBaseline" size="sm" className="w-full">
+      <ActionButton action="migration.saveBaseline" variant="outline" size="sm" className="w-full">
         <SaveIcon aria-hidden /> Save baseline
       </ActionButton>
       {baselines.length === 0 ? (

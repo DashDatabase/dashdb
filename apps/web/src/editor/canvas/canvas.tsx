@@ -33,6 +33,7 @@ import { useCanvasUi } from './canvas-ui';
 import { ConnectPopover } from './connect-popover';
 import { DeleteTablesDialog } from './delete-dialog';
 import { FpsMeter } from './fps-meter';
+import { MigrationGhosts } from './migration-ghosts';
 import { animatePositions, ARRANGE_DURATION_MS, layoutInWorker } from './layout/auto-layout';
 import { RelationshipMarkers } from './markers';
 import { CanvasContextMenu } from './menus';
@@ -457,6 +458,7 @@ function CanvasFlow({ projectId }: { projectId: string }) {
           </Panel>
         )}
         {tableCount === 0 && <EmptyState />}
+        <MigrationGhosts />
       </ReactFlow>
       <CanvasContextMenu />
       <ConnectPopover />

@@ -22,6 +22,7 @@
     "dexie": "^4.4.7",
     "elkjs": "^0.12.1",
     "immer": "^11.2.9",
+    "jszip": "3.10.1",
     "lucide-react": "^1.65.0",
     "monaco-editor": "0.57.0",
     "next": "^16.4.3",

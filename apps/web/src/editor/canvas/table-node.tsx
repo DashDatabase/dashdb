@@ -18,6 +18,7 @@ import {
   MoreHorizontalIcon,
 } from 'lucide-react';
 import { memo, useState, type KeyboardEvent } from 'react';
+import { cachedCompare, type ChangeKind, type TableChange } from '../migration/visual-diff';
 import { editorStore, useEditor } from '../store';
 import { keepRenameFocus, useCanvasUi } from './canvas-ui';
 import { COLOR_CLASSES, TableMenuItems } from './menus';
@@ -106,7 +107,34 @@ function ColumnIcons({ table, column }: { table: Table; column: Column }) {
   );
 }
 
-function ColumnRow({ table, column }: { table: Table; column: Column }) {
+/** What changed in this table since the Migration panel's "from" schema, while it is shown. */
+function useTableChange(tableId: string): TableChange | null {
+  return useEditor((s) =>
+    s.migrationOverlay && s.doc
+      ? (cachedCompare(s.migrationOverlay, s.doc.schema).tables.get(tableId) ?? null)
+      : null,
+  );
+}
+
+const CHANGE_ROW: Record<ChangeKind, string> = {
+  added: 'bg-success/10 shadow-[inset_3px_0_0_var(--success)]',
+  changed: 'bg-warning/10 shadow-[inset_3px_0_0_var(--warning)]',
+};
+
+const CHANGE_NODE: Record<ChangeKind, string> = {
+  added: 'outline-2 outline-offset-2 outline-success',
+  changed: 'outline-2 outline-offset-2 outline-warning',
+};
+
+function ColumnRow({
+  table,
+  column,
+  change,
+}: {
+  table: Table;
+  column: Column;
+  change: ChangeKind | null;
+}) {
   const renaming = useCanvasUi(
     (s) => s.renaming?.tableId === table.id && s.renaming.columnId === column.id,
   );
@@ -121,8 +149,10 @@ function ColumnRow({ table, column }: { table: Table; column: Column }) {
       data-column={column.name}
       className={cn(
         'relative flex items-center gap-1.5 px-3 text-xs last:rounded-b-lg',
+        change && CHANGE_ROW[change],
         selected && 'bg-primary/10',
       )}
+      data-change={change ?? undefined}
       style={{ height: ROW_HEIGHT }}
       onDoubleClick={(event) => {
         event.stopPropagation();
@@ -180,6 +210,7 @@ function TableNodeView({ data, selected }: NodeProps<TableFlowNode>) {
   const columns = visibleColumns(table, layout.collapsed);
   const hidden = table.columns.length - columns.length;
   const rows = columns.length + (hidden > 0 || columns.length === 0 ? 1 : 0);
+  const change = useTableChange(table.id);
 
   return (
     <article
@@ -187,8 +218,10 @@ function TableNodeView({ data, selected }: NodeProps<TableFlowNode>) {
       data-testid="table-node"
       data-table={table.name}
       data-selected={selected ? 'true' : undefined}
+      data-change={change?.kind}
       className={cn(
         'group/node rounded-lg border bg-surface-raised text-text shadow-sm',
+        change && CHANGE_NODE[change.kind],
         selected && 'border-primary ring-2 ring-primary/40',
       )}
       style={{ width: NODE_WIDTH }}
@@ -267,7 +300,24 @@ function TableNodeView({ data, selected }: NodeProps<TableFlowNode>) {
       ) : (
         <ul>
           {columns.map((column) => (
-            <ColumnRow key={column.id} table={table} column={column} />
+            <ColumnRow
+              key={column.id}
+              table={table}
+              column={column}
+              change={change?.columns.get(column.id) ?? null}
+            />
+          ))}
+          {change?.removedColumns.map((name) => (
+            <li
+              key={`removed:${name}`}
+              data-testid="removed-column"
+              className="flex items-center gap-1.5 bg-danger/10 px-3 font-mono text-xs text-danger-text line-through shadow-[inset_3px_0_0_var(--danger)] last:rounded-b-lg"
+              style={{ height: ROW_HEIGHT }}
+            >
+              <span className="w-10 shrink-0" aria-hidden />
+              <span className="sr-only">Removed column </span>
+              {name}
+            </li>
           ))}
           {columns.length === 0 && hidden === 0 && (
             <li

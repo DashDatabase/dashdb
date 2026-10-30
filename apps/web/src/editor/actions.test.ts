@@ -75,6 +75,7 @@ describe('action registry', () => {
 
     runAction(getAction('migration.generate'), ctx());
     expect(store.getState().rightTab).toBe('migration');
+    expect(store.getState().migrationRequest).toBe(1);
     runAction(getAction('file.import'), ctx());
     expect(store.getState().dialog).toBe('import');
     runAction(getAction('palette.open'), ctx());

@@ -168,7 +168,7 @@ export const ACTIONS = [
     allowInInput: true,
     isEnabled: hasProject,
     run: ({ state }) => {
-      state.setRightTab('migration');
+      state.requestMigration();
     },
   },
   {
@@ -316,7 +316,7 @@ export const ACTIONS = [
     shortcut: 'alt+3',
     allowInInput: true,
     run: ({ state }) => {
-      state.setRightTab('migration');
+      state.requestMigration();
     },
   },
   {

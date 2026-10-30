@@ -69,6 +69,10 @@ export interface EditorState {
   rightTab: RightTab;
   /** Format shown in the Code panel. */
   codeFormat: CodeFormat;
+  /** A migration's "from" schema; while set, the canvas highlights what changed since it. */
+  migrationOverlay: Schema | null;
+  /** Bumped by the Generate migration action; the Migration panel generates when it changes. */
+  migrationRequest: number;
   leftOpen: boolean;
   rightOpen: boolean;
   dialog: EditorDialog | null;
@@ -120,6 +124,9 @@ export interface EditorActions {
   runCanvasCommand: (command: CanvasCommand) => void;
   setRightTab: (tab: RightTab) => void;
   setCodeFormat: (format: CodeFormat) => void;
+  setMigrationOverlay: (schema: Schema | null) => void;
+  /** Opens the Migration panel and asks it to generate. */
+  requestMigration: () => void;
   toggleLeft: () => void;
   toggleRight: () => void;
   openDialog: (dialog: EditorDialog) => void;
@@ -182,6 +189,8 @@ const initialState: EditorState = {
   canvasCenter: null,
   rightTab: 'inspector',
   codeFormat: 'sql',
+  migrationOverlay: null,
+  migrationRequest: 0,
   leftOpen: true,
   rightOpen: true,
   dialog: null,
@@ -545,6 +554,16 @@ export function createEditorStore(options: { now?: () => number } = {}): EditorS
         },
         setCodeFormat: (codeFormat) => {
           set({ codeFormat });
+        },
+        setMigrationOverlay: (migrationOverlay) => {
+          set({ migrationOverlay: migrationOverlay as Draft<Schema> | null });
+        },
+        requestMigration: () => {
+          set((state) => {
+            state.rightTab = 'migration';
+            state.rightOpen = true;
+            state.migrationRequest += 1;
+          });
         },
         toggleLeft: () => {
           set((state) => {

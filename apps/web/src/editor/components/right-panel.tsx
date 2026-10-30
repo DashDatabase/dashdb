@@ -2,6 +2,7 @@
 
 import { ScrollArea, Tabs, TabsContent, TabsList, TabsTrigger } from '@dashdb/ui';
 import { CodePanel } from '../code/code-panel';
+import { MigrationPanel } from '../migration/migration-panel';
 import { useEditor, type RightTab } from '../store';
 import { BaselinesPanel } from './baselines-panel';
 import { Inspector } from './inspector';
@@ -34,11 +35,14 @@ export function RightPanel() {
         <CodePanel />
       </TabsContent>
       {tab !== 'code' && (
-        <ScrollArea className="min-h-0 flex-1">
+        // Radix lays the viewport's content out as a table, which grows to fit wide content
+        // (long SQL lines); a block keeps it at the panel's width so code scrolls on its own.
+        <ScrollArea className="min-h-0 flex-1 [&_[data-slot=scroll-area-viewport]>div]:!block">
           <TabsContent value="inspector">
             <Inspector />
           </TabsContent>
           <TabsContent value="migration">
+            <MigrationPanel />
             <BaselinesPanel />
           </TabsContent>
         </ScrollArea>
