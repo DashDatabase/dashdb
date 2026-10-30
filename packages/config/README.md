@@ -6,8 +6,8 @@ Shared tooling config for the monorepo.
 - `eslint/base`, `eslint/react`, `eslint/next`: ESLint 9 flat config factories (`base`, `reactConfig`, `next`).
   typescript-eslint `strictTypeChecked`, `eslint-plugin-security` and `import/no-cycle` everywhere; React and
   hooks rules in `react` and `next`. Call one with the workspace directory so type-aware rules find its tsconfig.
-- `tailwind/preset.css`: Tailwind v4 theme tokens. Import it after `tailwindcss` in an app stylesheet.
-- `.` (`src/index.ts`): the same tokens as TS constants (`brandColors`) for use in JS.
+
+Design tokens (colors, radius, fonts) live in `@dashdb/ui/styles.css`, not here.
 
 ```jsonc
 // tsconfig.json

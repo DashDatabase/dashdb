@@ -4,24 +4,16 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
     "./tsconfig/base.json": "./tsconfig/base.json",
     "./tsconfig/library.json": "./tsconfig/library.json",
     "./tsconfig/react-library.json": "./tsconfig/react-library.json",
     "./tsconfig/nextjs.json": "./tsconfig/nextjs.json",
     "./eslint/base": "./eslint/base.js",
     "./eslint/react": "./eslint/react.js",
-    "./eslint/next": "./eslint/next.js",
-    "./tailwind/preset.css": "./tailwind/preset.css"
+    "./eslint/next": "./eslint/next.js"
   },
   "scripts": {
-    "build": "tsup",
-    "test": "vitest run",
-    "lint": "eslint . --max-warnings 0",
-    "typecheck": "tsc --noEmit"
+    "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
     "@eslint/js": "^9.39.0",
@@ -38,10 +30,6 @@
     "eslint": "^9.39.0"
   },
   "devDependencies": {
-    "@types/node": "^22.19.0",
-    "eslint": "^9.39.5",
-    "tsup": "^9.0.0",
-    "typescript": "~6.0.3",
-    "vitest": "^5.0.5"
+    "eslint": "^9.39.5"
   }
 }

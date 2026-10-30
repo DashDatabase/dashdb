@@ -1,0 +1,216 @@
+/*
+ * DashDB design tokens. The only place colors are defined.
+ *
+ * Consume from an app after Tailwind:
+ *   @import 'tailwindcss';
+ *   @import '@dashdb/ui/styles.css';
+ *
+ * Themes: light is the default (`:root`); dark applies under `.dark`. A `.light` or `.dark`
+ * class on any element re-scopes its subtree, so both themes can render side by side.
+ */
+@import 'tw-animate-css';
+
+/* `dark:` follows the nearest theme class, so a `.light` island inside a dark page stays light. */
+@custom-variant dark (&:where(.dark, .dark *):not(:where(.light, .light *)));
+
+:root {
+  /* Primitive palette */
+  --indigo-300: #a5b4fc;
+  --indigo-500: #6366f1;
+  --indigo-600: #4f46e5;
+  --indigo-700: #4338ca;
+  --teal-300: #5eead4;
+  --teal-500: #14b8a6;
+  --teal-600: #0d9488;
+  --teal-700: #0f766e;
+  --teal-800: #115e59;
+  --teal-950: #042f2e;
+  --green-300: #86efac;
+  --green-500: #22c55e;
+  --green-700: #15803d;
+  --green-800: #166534;
+  --green-950: #052e16;
+  --amber-300: #fcd34d;
+  --amber-500: #f59e0b;
+  --amber-700: #b45309;
+  --amber-800: #92400e;
+  --amber-950: #1c1003;
+  --red-400: #f87171;
+  --red-600: #dc2626;
+  --red-700: #b91c1c;
+  --white: #ffffff;
+  --gray-50: #f7f7f9;
+  --gray-100: #f0f0f4;
+  --gray-150: #ededf0;
+  --gray-200: #e4e4e9;
+  --gray-300: #d4d4dc;
+  --gray-400: #9b9ba7;
+  --gray-500: #5c5c69;
+  --gray-700: #2e2e37;
+  --gray-750: #26262e;
+  --gray-800: #22222b;
+  --gray-850: #18181e;
+  --gray-900: #111116;
+  --gray-925: #0f0f14;
+  --gray-950: #0a0a0d;
+  --black-rgb: 0 0 0;
+
+  --radius: 8px;
+}
+
+:root,
+.light {
+  color-scheme: light;
+
+  --background: var(--white);
+  --surface: var(--gray-50);
+  --surface-raised: var(--white);
+  --border: var(--gray-200);
+  --input: var(--gray-300);
+  --text: var(--gray-925);
+  --text-muted: var(--gray-500);
+  --highlight: var(--gray-100);
+  --highlight-foreground: var(--gray-925);
+  --overlay: rgb(var(--black-rgb) / 0.4);
+  --ring: var(--indigo-500);
+
+  --primary: var(--indigo-600);
+  --primary-foreground: var(--white);
+  --primary-text: var(--indigo-700);
+  --accent: var(--teal-700);
+  --accent-foreground: var(--white);
+  --accent-text: var(--teal-800);
+  --success: var(--green-700);
+  --success-foreground: var(--white);
+  --success-text: var(--green-800);
+  --warning: var(--amber-700);
+  --warning-foreground: var(--white);
+  --warning-text: var(--amber-800);
+  --danger: var(--red-600);
+  --danger-foreground: var(--white);
+  --danger-text: var(--red-700);
+
+  --shadow-color: var(--black-rgb);
+  --shadow-strength: 0.06;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --background: var(--gray-950);
+  --surface: var(--gray-900);
+  --surface-raised: var(--gray-850);
+  --border: var(--gray-750);
+  --input: var(--gray-700);
+  --text: var(--gray-150);
+  --text-muted: var(--gray-400);
+  --highlight: var(--gray-800);
+  --highlight-foreground: var(--gray-150);
+  --overlay: rgb(var(--black-rgb) / 0.6);
+  --ring: var(--indigo-500);
+
+  --primary: var(--indigo-600);
+  --primary-foreground: var(--white);
+  --primary-text: var(--indigo-300);
+  --accent: var(--teal-500);
+  --accent-foreground: var(--teal-950);
+  --accent-text: var(--teal-300);
+  --success: var(--green-500);
+  --success-foreground: var(--green-950);
+  --success-text: var(--green-300);
+  --warning: var(--amber-500);
+  --warning-foreground: var(--amber-950);
+  --warning-text: var(--amber-300);
+  --danger: var(--red-600);
+  --danger-foreground: var(--white);
+  --danger-text: var(--red-400);
+
+  --shadow-strength: 0.4;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
+  --color-overlay: var(--overlay);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-text: var(--primary-text);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-text: var(--accent-text);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-text: var(--success-text);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-text: var(--warning-text);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-danger-text: var(--danger-text);
+
+  /* shadcn/ui names, aliased onto the tokens above so generated components work unchanged. */
+  --color-foreground: var(--text);
+  --color-muted: var(--surface);
+  --color-muted-foreground: var(--text-muted);
+  --color-card: var(--surface-raised);
+  --color-card-foreground: var(--text);
+  --color-popover: var(--surface-raised);
+  --color-popover-foreground: var(--text);
+  --color-secondary: var(--surface);
+  --color-secondary-foreground: var(--text);
+  --color-destructive: var(--danger);
+
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --shadow-xs: 0 1px 2px rgb(var(--shadow-color) / var(--shadow-strength));
+  --shadow-sm:
+    0 1px 2px rgb(var(--shadow-color) / var(--shadow-strength)),
+    0 1px 3px rgb(var(--shadow-color) / var(--shadow-strength));
+  --shadow-md:
+    0 2px 4px rgb(var(--shadow-color) / var(--shadow-strength)),
+    0 4px 12px rgb(var(--shadow-color) / var(--shadow-strength));
+  --shadow-lg:
+    0 4px 8px rgb(var(--shadow-color) / var(--shadow-strength)),
+    0 12px 32px rgb(var(--shadow-color) / calc(var(--shadow-strength) * 1.5));
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background font-sans text-text antialiased;
+  }
+
+  .light,
+  .dark {
+    @apply text-text;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
