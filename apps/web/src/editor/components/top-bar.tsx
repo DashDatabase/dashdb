@@ -33,8 +33,8 @@ import { GithubIcon } from './github-icon';
 const DIALECT_LABELS = { postgres: 'PostgreSQL', mysql: 'MySQL', sqlite: 'SQLite' } as const;
 
 export function TopBar() {
-  const name = useEditor((s) => s.project?.name ?? '');
-  const dialect = useEditor((s) => s.project?.schema.dialect ?? 'postgres');
+  const name = useEditor((s) => s.doc?.name ?? '');
+  const dialect = useEditor((s) => s.doc?.schema.dialect ?? 'postgres');
   const dialog = useEditor((s) => s.dialog);
   const rename = useEditor((s) => s.rename);
   const closeDialog = useEditor((s) => s.closeDialog);

@@ -33,7 +33,7 @@ import { useEditor } from '../store';
 export function ImportDialog() {
   const open = useEditor((s) => s.dialog === 'import');
   const closeDialog = useEditor((s) => s.closeDialog);
-  const replaceSchema = useEditor((s) => s.replaceSchema);
+  const editSchema = useEditor((s) => s.editSchema);
   const [text, setText] = useState('');
   const [format, setFormat] = useState<ImportFormat>('postgres');
   const [errors, setErrors] = useState<readonly Diagnostic[]>([]);
@@ -64,7 +64,7 @@ export function ImportDialog() {
       setErrors(fatal);
       return;
     }
-    replaceSchema(schema);
+    editSchema('Import schema', () => schema);
     closeDialog();
     reset();
     const warnings = diagnostics.length;

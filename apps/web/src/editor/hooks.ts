@@ -1,11 +1,38 @@
 'use client';
 
-import { useTheme } from '@dashdb/ui';
+import { toast, useTheme } from '@dashdb/ui';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { ACTIONS, runAction, type ActionContext, type EditorAction } from './actions';
 import { isEditableTarget, isMacPlatform, matchesShortcut } from './shortcuts';
+import { downloadText } from '@/lib/download';
+import { fileSlug } from './formats';
+import { PROJECT_FILE_EXTENSION, serializeProjectFile } from './project-file';
+import { saveBaseline } from './projects';
 import { editorStore } from './store';
+
+function saveCurrentBaseline() {
+  const { projectId, doc } = editorStore.getState();
+  if (!projectId || !doc) return;
+  const name = `Baseline ${new Date().toLocaleString()}`;
+  saveBaseline(projectId, doc.schema, name).then(
+    (baselines) => {
+      editorStore.getState().setBaselines(baselines);
+      toast.success('Baseline saved', { description: 'Keeping the 3 most recent baselines.' });
+    },
+    () => toast.error('Could not save the baseline.'),
+  );
+}
+
+function downloadCurrentProject() {
+  const { doc, baselines } = editorStore.getState();
+  if (!doc) return;
+  downloadText(
+    `${fileSlug(doc.name)}${PROJECT_FILE_EXTENSION}`,
+    serializeProjectFile(doc, baselines),
+    'application/json',
+  );
+}
 
 /** Returns a function that builds a fresh ActionContext (current store state) at call time. */
 export function useActionContext(): () => ActionContext {
@@ -20,6 +47,8 @@ export function useActionContext(): () => ActionContext {
       toggleTheme: () => {
         setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
       },
+      saveBaseline: saveCurrentBaseline,
+      downloadProject: downloadCurrentProject,
     }),
     [router, resolvedTheme, setTheme],
   );

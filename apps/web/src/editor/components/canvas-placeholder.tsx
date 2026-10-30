@@ -9,10 +9,10 @@ import { ShortcutKeys } from './action-button';
 
 /** Stand-in for the diagram canvas (P14). Shows which table a focus request targeted. */
 export function CanvasPlaceholder() {
-  const tableCount = useEditor((s) => s.project?.schema.tables.length ?? 0);
+  const tableCount = useEditor((s) => s.doc?.schema.tables.length ?? 0);
   const focused = useEditor((s) => {
     const id = s.focusRequest?.tableId;
-    return id ? s.project?.schema.tables.find((t) => t.id === id)?.name : undefined;
+    return id ? s.doc?.schema.tables.find((t) => t.id === id)?.name : undefined;
   });
   const run = useRunAction();
 

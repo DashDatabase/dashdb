@@ -23,7 +23,7 @@ const GROUP_ORDER: readonly ActionGroup[] = ['File', 'Edit', 'Schema', 'View', '
 export function CommandPalette() {
   const open = useEditor((s) => s.paletteOpen);
   const setPaletteOpen = useEditor((s) => s.setPaletteOpen);
-  const tables = useEditor((s) => s.project?.schema.tables ?? NO_TABLES);
+  const tables = useEditor((s) => s.doc?.schema.tables ?? NO_TABLES);
   const focusTable = useEditor((s) => s.focusTable);
   // Re-render on any state change so isEnabled reflects the current state.
   const state = useEditor((s) => s);

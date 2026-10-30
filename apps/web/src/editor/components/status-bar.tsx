@@ -1,6 +1,6 @@
 'use client';
 
-import { validateSchema, type SchemaProblem } from '@dashdb/core';
+import type { SchemaProblem } from '@dashdb/core';
 import {
   Button,
   Dialog,
@@ -17,23 +17,23 @@ import {
   HardDriveIcon,
   LoaderIcon,
 } from 'lucide-react';
-import { useMemo } from 'react';
 import { problemTableId } from '../schema-text';
 import { useEditor } from '../store';
 
-export function useProblems(): SchemaProblem[] {
-  const schema = useEditor((s) => s.project?.schema);
-  return useMemo(() => (schema ? validateSchema(schema) : []), [schema]);
+/** Validation results, refreshed by the store shortly after each schema change. */
+export function useProblems(): readonly SchemaProblem[] {
+  return useEditor((s) => s.problems);
 }
 
 const SAVE_LABELS = {
   saved: { icon: HardDriveIcon, label: 'Saved locally' },
   saving: { icon: LoaderIcon, label: 'Saving…' },
   error: { icon: CloudOffIcon, label: 'Could not save' },
+  conflict: { icon: CloudOffIcon, label: 'Not saving: changed in another tab' },
 } as const;
 
 export function StatusBar() {
-  const tableCount = useEditor((s) => s.project?.schema.tables.length ?? 0);
+  const tableCount = useEditor((s) => s.doc?.schema.tables.length ?? 0);
   const saveState = useEditor((s) => s.saveState);
   const openDialog = useEditor((s) => s.openDialog);
   const problems = useProblems();
@@ -62,7 +62,7 @@ export function StatusBar() {
       <span
         role="status"
         className={
-          saveState === 'error'
+          saveState === 'error' || saveState === 'conflict'
             ? 'ml-auto flex items-center gap-1.5 text-danger-text'
             : 'ml-auto flex items-center gap-1.5'
         }

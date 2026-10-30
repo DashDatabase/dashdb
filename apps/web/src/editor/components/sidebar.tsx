@@ -61,7 +61,7 @@ const itemClass =
   'flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-sm outline-none hover:bg-highlight focus-visible:ring-[3px] focus-visible:ring-ring/50';
 
 export function Sidebar() {
-  const schema = useEditor((s) => s.project?.schema);
+  const schema = useEditor((s) => s.doc?.schema);
   const selectedTableId = useEditor((s) => s.selection.tableId);
   const searchRequest = useEditor((s) => s.searchRequest);
   const focusTable = useEditor((s) => s.focusTable);

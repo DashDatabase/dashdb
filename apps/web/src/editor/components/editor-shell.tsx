@@ -1,11 +1,14 @@
 'use client';
 
 import { Button, ResizableHandle, ResizablePanel, ResizablePanelGroup, Skeleton } from '@dashdb/ui';
+import { AlertTriangleIcon, CopyIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useEditorShortcuts, useIsDesktop } from '../hooks';
-import { getProject, saveProject, type Project } from '../projects';
+import { getProject, listBaselines, saveProject } from '../projects';
 import { editorStore, useEditor } from '../store';
+import { attachAutosave } from '../store/autosave';
+import { watchProjectTabs } from '../store/tab-sync';
 import { CanvasPlaceholder } from './canvas-placeholder';
 import { CommandPalette } from './command-palette';
 import { ExportDialog } from './export-dialog';
@@ -16,47 +19,94 @@ import { Sidebar } from './sidebar';
 import { ProblemsDialog, StatusBar } from './status-bar';
 import { TopBar } from './top-bar';
 
-const AUTOSAVE_DELAY_MS = 400;
-
-/** Persists the open project to IndexedDB shortly after each change, and on unmount. */
-function useAutosave() {
+/** Autosave plus multi-tab coordination for the loaded project. */
+function usePersistence(projectId: string, active: boolean) {
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    let pending: Project | null = null;
-    // Counts edits so a save that finishes after a newer edit doesn't report "saved".
-    let edits = 0;
-
-    const flush = async () => {
-      timer = undefined;
-      const project = pending;
-      pending = null;
-      if (!project) return;
-      const version = edits;
-      try {
-        await saveProject(project);
-        if (version === edits) editorStore.getState().setSaveState('saved');
-      } catch {
-        editorStore.getState().setSaveState('error');
-      }
-    };
-
-    const unsubscribe = editorStore.subscribe((state, previous) => {
-      // A fresh load is already persisted; only save edits to the same project.
-      if (!state.project || state.project === previous.project) return;
-      if (previous.project?.id !== state.project.id) return;
-      pending = state.project;
-      edits++;
-      if (state.saveState !== 'saving') state.setSaveState('saving');
-      clearTimeout(timer);
-      timer = setTimeout(() => void flush(), AUTOSAVE_DELAY_MS);
+    if (!active) return;
+    const store = editorStore.getState();
+    const tabs = watchProjectTabs(projectId, {
+      onOtherTabs: (count) => {
+        editorStore.getState().setOtherTabs(count);
+      },
+      onRemoteSave: (revision) => {
+        // Another tab wrote a newer copy; saving from here would overwrite it.
+        if (revision > editorStore.getState().revision) {
+          editorStore.getState().setSaveState('conflict');
+        }
+      },
+    });
+    const autosave = attachAutosave(editorStore, async (project) => {
+      const revision = await saveProject(project);
+      tabs.announceSave(revision);
+      return revision;
     });
 
-    return () => {
-      unsubscribe();
-      clearTimeout(timer);
-      void flush();
+    // Flush before the tab goes away or into the background (it may never come back).
+    const flush = () => void autosave.flush();
+    // Closing a tab skips React cleanup, so say goodbye to the other tabs here.
+    const onPageHide = () => {
+      flush();
+      tabs.close();
     };
-  }, []);
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+    window.addEventListener('pagehide', onPageHide);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      window.removeEventListener('pagehide', onPageHide);
+      document.removeEventListener('visibilitychange', onVisibility);
+      void autosave.flush().finally(() => {
+        autosave.dispose();
+      });
+      tabs.close();
+      store.setOtherTabs(0);
+    };
+  }, [projectId, active]);
+}
+
+function TabBanner() {
+  const saveState = useEditor((s) => s.saveState);
+  const otherTabs = useEditor((s) => s.otherTabs);
+
+  if (saveState === 'conflict') {
+    return (
+      <div
+        role="alert"
+        className="flex items-center gap-3 border-b border-destructive/40 bg-danger/10 px-3 py-2 text-sm"
+      >
+        <AlertTriangleIcon className="size-4 shrink-0 text-danger-text" aria-hidden />
+        <span className="flex-1">
+          This project was changed in another tab, so changes here are no longer being saved. Reload
+          to continue from the latest version.
+        </span>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            window.location.reload();
+          }}
+        >
+          Reload
+        </Button>
+      </div>
+    );
+  }
+  if (otherTabs > 0) {
+    return (
+      <div
+        role="status"
+        data-testid="other-tab-warning"
+        className="flex items-center gap-3 border-b bg-warning/10 px-3 py-2 text-sm"
+      >
+        <CopyIcon className="size-4 shrink-0 text-warning-text" aria-hidden />
+        This project is also open in another tab. Edit it in one tab at a time: once one tab saves,
+        the other stops saving.
+      </div>
+    );
+  }
+  return null;
 }
 
 function EditorLayout() {
@@ -67,6 +117,7 @@ function EditorLayout() {
   return (
     <div className="flex h-dvh flex-col bg-background" data-testid="editor">
       <TopBar />
+      <TabBanner />
       <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
         {leftOpen && (
           <>
@@ -97,28 +148,28 @@ function EditorLayout() {
   );
 }
 
-type LoadState = { status: 'loading' } | { status: 'missing' } | { status: 'ready' };
+type LoadState = 'loading' | 'missing' | 'ready';
 
 export function EditorShell({ projectId }: { projectId: string }) {
-  const [load, setLoad] = useState<LoadState>({ status: 'loading' });
-  const project = useEditor((s) => (s.project?.id === projectId ? s.project : null));
+  const [load, setLoad] = useState<LoadState>('loading');
+  const doc = useEditor((s) => (s.projectId === projectId ? s.doc : null));
   const isDesktop = useIsDesktop();
-  useAutosave();
+  usePersistence(projectId, load === 'ready');
 
   useEffect(() => {
     let cancelled = false;
-    getProject(projectId).then(
-      (stored) => {
+    Promise.all([getProject(projectId), listBaselines(projectId)]).then(
+      ([stored, baselines]) => {
         if (cancelled) return;
         if (!stored) {
-          setLoad({ status: 'missing' });
+          setLoad('missing');
           return;
         }
-        editorStore.getState().load(stored);
-        setLoad({ status: 'ready' });
+        editorStore.getState().load(stored, baselines);
+        setLoad('ready');
       },
       () => {
-        if (!cancelled) setLoad({ status: 'missing' });
+        if (!cancelled) setLoad('missing');
       },
     );
     return () => {
@@ -126,11 +177,12 @@ export function EditorShell({ projectId }: { projectId: string }) {
     };
   }, [projectId]);
 
+  const name = doc?.name;
   useEffect(() => {
-    if (project) document.title = `${project.name} · DashDB`;
-  }, [project]);
+    if (name) document.title = `${name} · DashDB`;
+  }, [name]);
 
-  if (load.status === 'missing') {
+  if (load === 'missing') {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-4 p-6 text-center">
         <h1 className="text-xl font-semibold">Project not found</h1>
@@ -143,7 +195,7 @@ export function EditorShell({ projectId }: { projectId: string }) {
       </main>
     );
   }
-  if (load.status === 'loading' || !project) {
+  if (load === 'loading' || !doc) {
     return (
       <div className="flex h-dvh flex-col gap-3 p-3" aria-busy="true" aria-label="Loading project">
         <Skeleton className="h-10 w-full" />
@@ -155,5 +207,5 @@ export function EditorShell({ projectId }: { projectId: string }) {
       </div>
     );
   }
-  return isDesktop ? <EditorLayout /> : <ReadOnlyView project={project} />;
+  return isDesktop ? <EditorLayout /> : <ReadOnlyView project={doc} />;
 }

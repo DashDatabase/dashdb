@@ -43,8 +43,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useId, useRef, useState, type SubmitEvent } from 'react';
 import {
-  IMPORT_ACCEPT,
   MAX_IMPORT_BYTES,
+  PROJECT_IMPORT_ACCEPT,
   detectImportFormat,
   importSchema,
 } from '@/editor/formats';
@@ -57,6 +57,11 @@ import {
   renameProject,
   type Project,
 } from '@/editor/projects';
+import {
+  MAX_PROJECT_FILE_BYTES,
+  importProjectFile,
+  isProjectFileName,
+} from '@/editor/project-file';
 import { relativeTime } from '@/editor/schema-text';
 import { TEMPLATES, schemaFromTemplate, type Template } from '@/editor/templates';
 
@@ -238,6 +243,40 @@ function DeleteDialog({
   );
 }
 
+function ImportErrorsDialog({
+  result,
+  onOpenChange,
+}: {
+  result: { fileName: string; errors: string[] } | null;
+  onOpenChange: (open: boolean) => void;
+}) {
+  return (
+    <Dialog open={result !== null} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Could not import {result?.fileName}</DialogTitle>
+          <DialogDescription>
+            Nothing was changed. Fix these problems in the file and try again.
+          </DialogDescription>
+        </DialogHeader>
+        <ul
+          data-testid="import-errors"
+          className="max-h-72 space-y-1 overflow-y-auto rounded-md border bg-surface p-3 font-mono text-xs text-danger-text"
+        >
+          {result?.errors.map((error, i) => (
+            <li key={`${String(i)}:${error}`}>{error}</li>
+          ))}
+        </ul>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button>Done</Button>
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ProjectCard({
   project,
   onRename,
@@ -299,6 +338,9 @@ export function ProjectsHome() {
   const [creating, setCreating] = useState(false);
   const [renaming, setRenaming] = useState<Project | null>(null);
   const [deleting, setDeleting] = useState<Project | null>(null);
+  const [importErrors, setImportErrors] = useState<{ fileName: string; errors: string[] } | null>(
+    null,
+  );
   const fileRef = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(
@@ -327,6 +369,17 @@ export function ProjectsHome() {
   };
 
   const importFile = async (file: File) => {
+    if (isProjectFileName(file.name) || file.name.toLowerCase().endsWith('.json')) {
+      // Check the size before reading so a huge file is never loaded into memory.
+      if (file.size > MAX_PROJECT_FILE_BYTES) {
+        setImportErrors({ fileName: file.name, errors: ['The file is larger than 10 MB.'] });
+        return;
+      }
+      const result = await importProjectFile(await file.text());
+      if (result.ok) open(result.project);
+      else setImportErrors({ fileName: file.name, errors: result.errors });
+      return;
+    }
     if (file.size > MAX_IMPORT_BYTES) {
       toast.error('That file is larger than 2 MB.');
       return;
@@ -368,7 +421,7 @@ export function ProjectsHome() {
             <input
               ref={fileRef}
               type="file"
-              accept={IMPORT_ACCEPT}
+              accept={PROJECT_IMPORT_ACCEPT}
               className="hidden"
               aria-label="Import schema file"
               data-testid="import-file-input"
@@ -468,6 +521,12 @@ export function ProjectsHome() {
           await renameProject(project.id, name);
           setRenaming(null);
           await refresh();
+        }}
+      />
+      <ImportErrorsDialog
+        result={importErrors}
+        onOpenChange={(next) => {
+          if (!next) setImportErrors(null);
         }}
       />
       <DeleteDialog

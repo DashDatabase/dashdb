@@ -27,21 +27,13 @@ import {
   isExportFormat,
   type ExportFormat,
 } from '../formats';
+import { downloadText } from '@/lib/download';
 import { useEditor } from '../store';
-
-function download(fileName: string, contents: string) {
-  const url = URL.createObjectURL(new Blob([contents], { type: 'text/plain;charset=utf-8' }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  link.click();
-  URL.revokeObjectURL(url);
-}
 
 export function ExportDialog() {
   const open = useEditor((s) => s.dialog === 'export');
   const closeDialog = useEditor((s) => s.closeDialog);
-  const project = useEditor((s) => s.project);
+  const project = useEditor((s) => s.doc);
   const [chosen, setChosen] = useState<ExportFormat | null>(null);
   const [result, setResult] = useState<{ format: ExportFormat; value: SerializeResult } | null>(
     null,
@@ -131,7 +123,8 @@ export function ExportDialog() {
           <Button
             disabled={!output || !project}
             onClick={() => {
-              if (output && project) download(exportFileName(project.name, format), output.code);
+              if (output && project)
+                downloadText(exportFileName(project.name, format), output.code);
             }}
           >
             <DownloadIcon aria-hidden /> Download

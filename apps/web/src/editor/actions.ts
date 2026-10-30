@@ -8,6 +8,10 @@ export interface ActionContext {
   readonly state: EditorState & EditorActions;
   readonly goToProjects: () => void;
   readonly toggleTheme: () => void;
+  /** Stores the current schema as a migration baseline. */
+  readonly saveBaseline: () => void;
+  /** Downloads the whole project as `.dashdb.json`. */
+  readonly downloadProject: () => void;
 }
 
 export interface EditorAction {
@@ -23,7 +27,7 @@ export interface EditorAction {
   readonly run: (ctx: ActionContext) => void;
 }
 
-const hasProject = (state: EditorState) => state.project !== null;
+const hasProject = (state: EditorState) => state.doc !== null;
 
 export const ACTIONS = [
   {
@@ -81,6 +85,18 @@ export const ACTIONS = [
     },
   },
   {
+    id: 'file.exportProject',
+    title: 'Download project file (.dashdb.json)',
+    group: 'File',
+    shortcut: 'mod+shift+s',
+    keywords: ['backup', 'save as', 'json'],
+    allowInInput: true,
+    isEnabled: hasProject,
+    run: ({ downloadProject }) => {
+      downloadProject();
+    },
+  },
+  {
     id: 'file.rename',
     title: 'Rename project',
     group: 'File',
@@ -100,6 +116,18 @@ export const ACTIONS = [
     isEnabled: hasProject,
     run: ({ state }) => {
       state.setRightTab('migration');
+    },
+  },
+  {
+    id: 'migration.saveBaseline',
+    title: 'Save baseline',
+    group: 'Schema',
+    shortcut: 'mod+alt+s',
+    keywords: ['snapshot', 'before', 'checkpoint'],
+    allowInInput: true,
+    isEnabled: hasProject,
+    run: ({ saveBaseline }) => {
+      saveBaseline();
     },
   },
   {

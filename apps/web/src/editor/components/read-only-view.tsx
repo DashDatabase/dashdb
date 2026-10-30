@@ -3,10 +3,10 @@
 import { Badge, LogoMark, ThemeToggle } from '@dashdb/ui';
 import { MonitorIcon } from 'lucide-react';
 import Link from 'next/link';
-import type { Project } from '../projects';
+import type { Project } from '../store/types';
 
 /** Below 1024px the editor is replaced by a read-only outline of the schema. */
-export function ReadOnlyView({ project }: { project: Project }) {
+export function ReadOnlyView({ project }: { project: Pick<Project, 'name' | 'schema'> }) {
   const { schema } = project;
   return (
     <div className="min-h-dvh bg-background">

@@ -46,9 +46,9 @@ function logicalTypeFor(schema: Schema, nativeType: string): LogicalType {
 
 /** Applies an edit and reports a rejected one (e.g. a rename that breaks a reference). */
 function useEdit() {
-  const edit = useEditor((s) => s.edit);
-  return (change: (schema: Schema) => Schema) => {
-    if (!edit(change)) toast.error('That change could not be applied.');
+  const editSchema = useEditor((s) => s.editSchema);
+  return (label: string, change: (schema: Schema) => Schema) => {
+    if (!editSchema(label, change)) toast.error('That change could not be applied.');
   };
 }
 
@@ -66,7 +66,7 @@ function TableForm({ table }: { table: Table }) {
             id={id}
             value={table.name}
             onCommit={(name) => {
-              if (name.trim()) apply((s) => renameTable(s, table.id, name.trim()));
+              if (name.trim()) apply('Rename table', (s) => renameTable(s, table.id, name.trim()));
             }}
           />
         )}
@@ -78,7 +78,9 @@ function TableForm({ table }: { table: Table }) {
             value={table.comment ?? ''}
             placeholder="What is this table for?"
             onCommit={(comment) => {
-              apply((s) => updateTable(s, table.id, { comment: comment.trim() || null }));
+              apply('Edit table comment', (s) =>
+                updateTable(s, table.id, { comment: comment.trim() || null }),
+              );
             }}
           />
         )}
@@ -166,7 +168,8 @@ function ColumnForm({ table, column }: { table: Table; column: Column }) {
             value={column.name}
             className="font-mono"
             onCommit={(name) => {
-              if (name.trim()) apply((s) => renameColumn(s, table.id, column.id, name.trim()));
+              if (name.trim())
+                apply('Rename column', (s) => renameColumn(s, table.id, column.id, name.trim()));
             }}
           />
         )}
@@ -180,7 +183,7 @@ function ColumnForm({ table, column }: { table: Table; column: Column }) {
             onCommit={(raw) => {
               const nativeType = raw.trim();
               if (!nativeType) return;
-              apply((s) =>
+              apply('Change column type', (s) =>
                 updateColumn(s, table.id, column.id, {
                   nativeType,
                   logicalType: logicalTypeFor(s, nativeType),
@@ -199,7 +202,7 @@ function ColumnForm({ table, column }: { table: Table; column: Column }) {
           checked={column.nullable}
           disabled={isPk}
           onCheckedChange={(nullable) => {
-            apply((s) => updateColumn(s, table.id, column.id, { nullable }));
+            apply('Toggle nullable', (s) => updateColumn(s, table.id, column.id, { nullable }));
           }}
         />
       </div>
@@ -211,7 +214,9 @@ function ColumnForm({ table, column }: { table: Table; column: Column }) {
           id={autoId}
           checked={column.autoIncrement}
           onCheckedChange={(autoIncrement) => {
-            apply((s) => updateColumn(s, table.id, column.id, { autoIncrement }));
+            apply('Toggle auto increment', (s) =>
+              updateColumn(s, table.id, column.id, { autoIncrement }),
+            );
           }}
         />
       </div>
@@ -224,7 +229,7 @@ function ColumnForm({ table, column }: { table: Table; column: Column }) {
             className="font-mono"
             onCommit={(raw) => {
               const sql = raw.trim();
-              apply((s) =>
+              apply('Edit column default', (s) =>
                 updateColumn(s, table.id, column.id, {
                   default: sql ? { kind: 'expression', sql } : null,
                 }),
@@ -239,7 +244,7 @@ function ColumnForm({ table, column }: { table: Table; column: Column }) {
             id={id}
             value={column.comment ?? ''}
             onCommit={(comment) => {
-              apply((s) =>
+              apply('Edit column comment', (s) =>
                 updateColumn(s, table.id, column.id, { comment: comment.trim() || null }),
               );
             }}
@@ -251,7 +256,7 @@ function ColumnForm({ table, column }: { table: Table; column: Column }) {
         size="sm"
         className="w-full text-danger-text"
         onClick={() => {
-          apply((s) => removeColumn(s, table.id, column.id));
+          apply('Delete column', (s) => removeColumn(s, table.id, column.id));
         }}
       >
         <Trash2Icon aria-hidden /> Delete column
@@ -261,7 +266,7 @@ function ColumnForm({ table, column }: { table: Table; column: Column }) {
 }
 
 export function Inspector() {
-  const schema = useEditor((s) => s.project?.schema);
+  const schema = useEditor((s) => s.doc?.schema);
   const { tableId, columnId } = useEditor((s) => s.selection);
   const table = schema?.tables.find((t) => t.id === tableId);
   const column = table?.columns.find((c) => c.id === columnId);

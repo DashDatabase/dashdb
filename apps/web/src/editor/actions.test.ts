@@ -1,22 +1,24 @@
-import { createSchema } from '@dashdb/core';
 import { describe, expect, it, vi } from 'vitest';
 import { ACTIONS, getAction, isActionEnabled, runAction, type ActionContext } from './actions';
 import { parseShortcut } from './shortcuts';
 import { createEditorStore } from './store';
+import { testProject } from './test-fixtures';
 
 function context() {
   const store = createEditorStore();
-  store.getState().load({
-    id: 'p',
-    name: 'Shop',
-    schema: createSchema('postgres'),
-    createdAt: 1,
-    updatedAt: 1,
-  });
+  store.getState().load(testProject());
   const goToProjects = vi.fn();
   const toggleTheme = vi.fn();
-  const ctx = (): ActionContext => ({ state: store.getState(), goToProjects, toggleTheme });
-  return { store, ctx, goToProjects, toggleTheme };
+  const saveBaseline = vi.fn();
+  const downloadProject = vi.fn();
+  const ctx = (): ActionContext => ({
+    state: store.getState(),
+    goToProjects,
+    toggleTheme,
+    saveBaseline,
+    downloadProject,
+  });
+  return { store, ctx, goToProjects, toggleTheme, saveBaseline, downloadProject };
 }
 
 describe('action registry', () => {
@@ -53,17 +55,21 @@ describe('action registry', () => {
     expect(runAction(undo, ctx())).toBe(false);
 
     expect(runAction(getAction('schema.addTable'), ctx())).toBe(true);
-    expect(store.getState().project?.schema.tables).toHaveLength(1);
+    expect(store.getState().doc?.schema.tables).toHaveLength(1);
     expect(runAction(undo, ctx())).toBe(true);
-    expect(store.getState().project?.schema.tables).toHaveLength(0);
+    expect(store.getState().doc?.schema.tables).toHaveLength(0);
   });
 
   it('wires navigation, theme, dialogs and tabs', () => {
-    const { store, ctx, goToProjects, toggleTheme } = context();
+    const { store, ctx, goToProjects, toggleTheme, saveBaseline, downloadProject } = context();
     runAction(getAction('navigate.projects'), ctx());
     runAction(getAction('view.toggleTheme'), ctx());
+    runAction(getAction('migration.saveBaseline'), ctx());
+    runAction(getAction('file.exportProject'), ctx());
     expect(goToProjects).toHaveBeenCalledOnce();
     expect(toggleTheme).toHaveBeenCalledOnce();
+    expect(saveBaseline).toHaveBeenCalledOnce();
+    expect(downloadProject).toHaveBeenCalledOnce();
 
     runAction(getAction('migration.generate'), ctx());
     expect(store.getState().rightTab).toBe('migration');

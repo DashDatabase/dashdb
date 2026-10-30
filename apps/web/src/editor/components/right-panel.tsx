@@ -1,9 +1,10 @@
 'use client';
 
 import { ScrollArea, Tabs, TabsContent, TabsList, TabsTrigger } from '@dashdb/ui';
-import { CodeIcon, GitCompareArrowsIcon } from 'lucide-react';
+import { CodeIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEditor, type RightTab } from '../store';
+import { BaselinesPanel } from './baselines-panel';
 import { Inspector } from './inspector';
 
 function isRightTab(value: string): value is RightTab {
@@ -51,11 +52,7 @@ export function RightPanel() {
           />
         </TabsContent>
         <TabsContent value="migration">
-          <ComingSoon
-            icon={<GitCompareArrowsIcon className="size-6 text-text-muted" aria-hidden />}
-            title="Migrations"
-            body="Diff this schema against a baseline and generate a safe migration."
-          />
+          <BaselinesPanel />
         </TabsContent>
       </ScrollArea>
     </Tabs>

@@ -16,6 +16,8 @@ import {
 
 /** File types offered by import pickers. */
 export const IMPORT_ACCEPT = '.sql,.prisma,.dbml,.txt';
+/** The projects home also accepts full project files. */
+export const PROJECT_IMPORT_ACCEPT = `${IMPORT_ACCEPT},.json`;
 /** Files beyond this are rejected before reading; the parsers cap input at 2 MB as well. */
 export const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
 
@@ -67,12 +69,17 @@ export function defaultExportFormat(schema: Schema): ExportFormat {
   return schema.dialect === 'mysql' ? 'mysql' : 'postgres';
 }
 
-/** A filesystem-safe file name for an export, e.g. `my-shop.prisma`. */
-export function exportFileName(projectName: string, format: ExportFormat): string {
-  const base =
+/** A filesystem-safe base name, e.g. `my-shop` for "My Shop!". */
+export function fileSlug(projectName: string): string {
+  return (
     projectName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '') || 'schema';
-  return `${base}.${EXPORT_FORMATS[format].extension}`;
+      .replace(/^-+|-+$/g, '') || 'schema'
+  );
+}
+
+/** A filesystem-safe file name for an export, e.g. `my-shop.prisma`. */
+export function exportFileName(projectName: string, format: ExportFormat): string {
+  return `${fileSlug(projectName)}.${EXPORT_FORMATS[format].extension}`;
 }
