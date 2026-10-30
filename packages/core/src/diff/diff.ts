@@ -15,11 +15,26 @@ import type {
   ColumnTarget,
   DiffOptions,
   DiffResult,
+  ForeignKeyDef,
+  UniqueDef,
   DiffWarning,
   Operation,
   QName,
   RenameCandidate,
 } from './types';
+
+/** Every key MySQL can use as a foreign key's index: primary key, uniques and indexes. */
+function keysOf(table: Table): (readonly Id[])[] {
+  return [
+    table.primaryKey?.columns ?? [],
+    ...table.uniques.map((u) => u.columns),
+    ...table.indexes.map((i) => i.columns.map((c) => c.column)),
+  ];
+}
+
+/** Whether `key` starts with `columns` (so MySQL can use it for a foreign key on them). */
+const covers = (key: readonly Id[], columns: readonly Id[]): boolean =>
+  columns.every((c, i) => key[i] === c);
 
 export class DiffError extends Error {
   constructor(
@@ -482,7 +497,7 @@ class Differ {
       for (const index of t.indexes)
         this.ops.push({ kind: 'createIndex', table: name, index: this.a.index(index) });
       for (const fk of t.foreignKeys)
-        this.ops.push({ kind: 'addForeignKey', table: name, foreignKey: this.a.foreignKey(fk) });
+        this.ops.push({ kind: 'addForeignKey', table: name, ...this.fkOp(this.a, t, fk) });
     }
 
     // Keys that FKs may reference and that this diff drops, and columns whose type changes:
@@ -632,6 +647,7 @@ class Differ {
             kind: 'dropUnique',
             table: from,
             unique: { name: u.name, columns: this.b.names(u.columns) },
+            ...this.soleCover(bt, at, u.columns, 'drop'),
           });
         },
         add: (u) =>
@@ -639,6 +655,7 @@ class Differ {
             kind: 'addUnique',
             table: to,
             unique: { name: u.name, columns: this.a.names(u.columns) },
+            ...this.soleCover(bt, at, u.columns, 'add'),
           }),
       },
     );
@@ -670,9 +687,30 @@ class Differ {
               i.columns.map((c) => c.column),
             ),
           );
-        this.ops.push({ kind: 'dropIndex', table: from, index: this.b.index(i) });
+        this.ops.push({
+          kind: 'dropIndex',
+          table: from,
+          index: this.b.index(i),
+          ...this.soleCover(
+            bt,
+            at,
+            i.columns.map((c) => c.column),
+            'drop',
+          ),
+        });
       },
-      add: (i) => this.ops.push({ kind: 'createIndex', table: to, index: this.a.index(i) }),
+      add: (i) =>
+        this.ops.push({
+          kind: 'createIndex',
+          table: to,
+          index: this.a.index(i),
+          ...this.soleCover(
+            bt,
+            at,
+            i.columns.map((c) => c.column),
+            'add',
+          ),
+        }),
     });
   }
 
@@ -710,6 +748,41 @@ class Differ {
     for (const a of after) if (!kept.has(a.id)) handlers.add(a);
   }
 
+  /** The foreign key's definition, flagged when MySQL backs it with an implicit index. */
+  private fkOp(
+    view: SchemaView,
+    table: Table,
+    fk: ForeignKey,
+  ): { foreignKey: ForeignKeyDef; implicitIndex?: true } {
+    const foreignKey = view.foreignKey(fk);
+    if (this.before.dialect !== 'mysql') return { foreignKey };
+    const covered = keysOf(table).some((key) => covers(key, fk.columns));
+    return covered ? { foreignKey } : { foreignKey, implicitIndex: true };
+  }
+
+  /**
+   * MySQL: the foreign keys (present before and after) that the added or dropped key is the
+   * only explicit index for, on the side where it is missing. `columns` are the key's column
+   * ids in `bt` for a drop and in `at` for an add.
+   */
+  private soleCover(
+    bt: Table,
+    at: Table,
+    columns: readonly Id[],
+    side: 'add' | 'drop',
+  ): { implicitIndexes?: UniqueDef[] } {
+    if (this.before.dialect !== 'mysql') return {};
+    const [here, there, view] = side === 'drop' ? [bt, at, this.b] : [at, bt, this.a];
+    const found = here.foreignKeys.flatMap((fk) => {
+      const other = there.foreignKeys.find((o) => o.name === fk.name);
+      if (!other || !covers(columns, fk.columns)) return [];
+      return keysOf(there).some((key) => covers(key, other.columns))
+        ? []
+        : [{ name: fk.name, columns: view.names(fk.columns) }];
+    });
+    return found.length ? { implicitIndexes: found } : {};
+  }
+
   private diffForeignKeys(bt: Table, at: Table, droppedKeys: Set<string>, retyped: Set<Id>): void {
     const from = this.b.tableName(bt);
     const to = this.a.tableName(at);
@@ -731,9 +804,9 @@ class Differ {
     };
     this.diffElements(bt.foreignKeys, at.foreignKeys, same, {
       drop: (fk) =>
-        this.ops.push({ kind: 'dropForeignKey', table: from, foreignKey: this.b.foreignKey(fk) }),
+        this.ops.push({ kind: 'dropForeignKey', table: from, ...this.fkOp(this.b, bt, fk) }),
       add: (fk) =>
-        this.ops.push({ kind: 'addForeignKey', table: to, foreignKey: this.a.foreignKey(fk) }),
+        this.ops.push({ kind: 'addForeignKey', table: to, ...this.fkOp(this.a, at, fk) }),
     });
   }
 }

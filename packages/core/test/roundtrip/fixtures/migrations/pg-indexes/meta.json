@@ -1,0 +1,4 @@
+{
+  "dialect": "postgres",
+  "description": "plain, unique, partial, descending and multi-column indexes"
+}

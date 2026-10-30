@@ -1,0 +1,34 @@
+CREATE TABLE t1 (
+  id int NOT NULL,
+  c2 int NOT NULL,
+  PRIMARY KEY (id)
+) ENGINE=innodb;
+
+CREATE TABLE t3 (
+  id int NOT NULL,
+  c4 int NOT NULL,
+  c5 int NOT NULL,
+  c6 int,
+  PRIMARY KEY (id)
+) ENGINE=innodb;
+
+CREATE TABLE t10 (
+  id int NOT NULL,
+  c11 date,
+  c14 int,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq13 (c11)
+) ENGINE=innodb;
+
+CREATE TABLE t8 (
+  id int NOT NULL,
+  c9 int NOT NULL,
+  PRIMARY KEY (id)
+) ENGINE=innodb;
+
+CREATE INDEX ix12 ON t10 (c11);
+
+ALTER TABLE t3 ADD CONSTRAINT fk7 FOREIGN KEY (c6) REFERENCES t1 (id);
+
+ALTER TABLE t10 ADD CONSTRAINT fk15 FOREIGN KEY (c14) REFERENCES t3 (id);
+

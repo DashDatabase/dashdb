@@ -8,6 +8,8 @@
 
 ALTER TABLE orders DROP FOREIGN KEY orders_customer_fk;
 
+DROP INDEX orders_customer_fk ON orders;
+
 DROP INDEX orders_total ON orders;
 
 -- IRREVERSIBLE: dropping column default.customers.legacy deletes its values; the down migration recreates it empty

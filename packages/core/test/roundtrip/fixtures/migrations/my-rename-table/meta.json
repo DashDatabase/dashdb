@@ -1,0 +1,5 @@
+{
+  "dialect": "mysql",
+  "description": "rename a table referenced by a foreign key",
+  "renames": ["table:default.users=>default.members"]
+}

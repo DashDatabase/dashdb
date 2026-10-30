@@ -147,23 +147,22 @@ export function invertOperations(ops: readonly Operation[]): Operation[] {
         out.push({ kind: 'addPrimaryKey', table: op.table, primaryKey: op.primaryKey });
         break;
       case 'createIndex':
-        if (!createdTables.has(qkey(op.table)))
-          out.push({ kind: 'dropIndex', table: op.table, index: op.index });
+        if (!createdTables.has(qkey(op.table))) out.push({ ...op, kind: 'dropIndex' });
         break;
       case 'dropIndex':
-        out.push({ kind: 'createIndex', table: op.table, index: op.index });
+        out.push({ ...op, kind: 'createIndex' });
         break;
       case 'addUnique':
-        out.push({ kind: 'dropUnique', table: op.table, unique: op.unique });
+        out.push({ ...op, kind: 'dropUnique' });
         break;
       case 'dropUnique':
-        out.push({ kind: 'addUnique', table: op.table, unique: op.unique });
+        out.push({ ...op, kind: 'addUnique' });
         break;
       case 'addForeignKey':
-        out.push({ kind: 'dropForeignKey', table: op.table, foreignKey: op.foreignKey });
+        out.push({ ...op, kind: 'dropForeignKey' });
         break;
       case 'dropForeignKey':
-        out.push({ kind: 'addForeignKey', table: op.table, foreignKey: op.foreignKey });
+        out.push({ ...op, kind: 'addForeignKey' });
         break;
       case 'addCheck':
         out.push({ kind: 'dropCheck', table: op.table, check: op.check });

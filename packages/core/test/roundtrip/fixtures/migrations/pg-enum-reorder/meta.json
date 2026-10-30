@@ -1,0 +1,4 @@
+{
+  "dialect": "postgres",
+  "description": "reorder enum values"
+}

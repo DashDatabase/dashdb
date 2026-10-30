@@ -7,6 +7,8 @@
 
 ALTER TABLE orders DROP FOREIGN KEY orders_customer_fk;
 --> statement-breakpoint
+DROP INDEX orders_customer_fk ON orders;
+--> statement-breakpoint
 DROP INDEX orders_total ON orders;
 --> statement-breakpoint
 -- IRREVERSIBLE: dropping column default.customers.legacy deletes its values; the down migration recreates it empty

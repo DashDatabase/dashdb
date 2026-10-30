@@ -8,7 +8,11 @@
 
 ALTER TABLE orders DROP FOREIGN KEY orders_customer_fk;
 --> statement-breakpoint
+DROP INDEX orders_customer_fk ON orders;
+--> statement-breakpoint
 ALTER TABLE refunds DROP FOREIGN KEY refunds_order_fk;
+--> statement-breakpoint
+DROP INDEX refunds_order_fk ON refunds;
 --> statement-breakpoint
 DROP INDEX orders_total_status ON orders;
 --> statement-breakpoint

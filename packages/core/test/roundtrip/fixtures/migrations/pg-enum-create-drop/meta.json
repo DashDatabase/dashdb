@@ -1,0 +1,4 @@
+{
+  "dialect": "postgres",
+  "description": "create an enum used by a new column, drop an unused enum"
+}

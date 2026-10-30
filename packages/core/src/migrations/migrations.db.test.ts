@@ -1,7 +1,7 @@
-// Runs generated migrations against real databases (pnpm test:db, after `docker compose up -d`).
+// Runs generated migrations against real databases (pnpm test:db; DATABASE_URL / MYSQL_URL or the Testcontainers).
 import mysql from 'mysql2/promise';
 import postgres from 'postgres';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { diffSchemas } from '../diff/diff';
 import { createSchema } from '../ir/edit';
 import type { Schema } from '../ir/types';
@@ -18,8 +18,8 @@ import type { Statement } from './types';
  * after-schema's tables; after down, the before-schema's.
  */
 
-const PG_URL = process.env.DATABASE_URL ?? 'postgres://dashdb:dashdb@localhost:5432/dashdb';
-const MYSQL_URL = process.env.MYSQL_URL ?? 'mysql://root:dashdb@localhost:3306/dashdb_sample';
+const PG_URL = process.env.DATABASE_URL ?? inject('postgresUrl');
+const MYSQL_URL = process.env.MYSQL_URL ?? inject('mysqlUrl');
 
 const tableNames = (schema: Schema) => {
   const ns = new Map(schema.namespaces.map((n) => [n.id, n.name]));
@@ -27,10 +27,28 @@ const tableNames = (schema: Schema) => {
 };
 
 const fixtures = loadFixtures();
+
+/** Fixtures this environment cannot build, and why (plain postgres:17 / mysql:8.4 images). */
+const UNSUPPORTED: Record<string, string> = {
+  'postgres/ecommerce.sql':
+    'a GIN index on varchar needs an operator class (gin_trgm_ops), which the IR does not model',
+  'introspection/pg-saas.json': 'uses the vector type from pgvector, not in the postgres image',
+};
+
+/** Non-default namespaces the fixtures of a dialect use; reset before every case. */
+const namespacesOf = (dialect: 'postgres' | 'mysql', defaultNamespace: string) => [
+  ...new Set(
+    fixtures
+      .filter((f) => f.schema.dialect === dialect)
+      .flatMap((f) => f.schema.namespaces.map((n) => n.name))
+      .filter((n) => n !== defaultNamespace),
+  ),
+];
+
 const cases = (dialect: 'postgres' | 'mysql', scenario: typeof postgresScenario) => [
   { name: scenario.name, before: scenario.before, after: scenario.after, diff: scenario.diff },
   ...fixtures
-    .filter((f) => f.schema.dialect === dialect)
+    .filter((f) => f.schema.dialect === dialect && !(`${f.format}/${f.file}` in UNSUPPORTED))
     .map((f) => {
       const empty = createSchema(dialect);
       return {
@@ -43,16 +61,20 @@ const cases = (dialect: 'postgres' | 'mysql', scenario: typeof postgresScenario)
 ];
 
 describe('postgres', () => {
-  const sql = postgres(PG_URL, { max: 1, onnotice: () => undefined });
-  const SCHEMA = 'dashdb_migration_test';
-  const extraSchemas = ['auth', 'billing', 'app'];
+  // A database of its own, so `public` is the real public schema (SQL from pg_dump names it).
+  const DATABASE = 'dashdb_migration_test';
+  const admin = postgres(PG_URL, { max: 1, onnotice: () => undefined });
+  const url = new URL(PG_URL);
+  url.pathname = `/${DATABASE}`;
+  const sql = postgres(url.toString(), { max: 1, onnotice: () => undefined });
+  const extraSchemas = namespacesOf('postgres', 'public');
 
   const reset = async () => {
-    for (const s of [SCHEMA, ...extraSchemas])
+    for (const s of ['public', ...extraSchemas])
       await sql.unsafe(`DROP SCHEMA IF EXISTS ${s} CASCADE`);
-    await sql.unsafe(`CREATE SCHEMA ${SCHEMA}`);
-    // Unqualified ("public") names land in the test schema; extensions stay reachable in public.
-    await sql.unsafe(`SET search_path TO ${SCHEMA}, public`);
+    await sql.unsafe('CREATE SCHEMA public');
+    // Extensions live in their own schema, so resetting public keeps them.
+    await sql.unsafe('SET search_path TO public, extensions');
   };
 
   const run = async (statements: readonly Statement[]) => {
@@ -71,21 +93,24 @@ describe('postgres', () => {
 
   const tables = async () => {
     const rows = await sql.unsafe<{ name: string }[]>(
-      `SELECT CASE WHEN table_schema = '${SCHEMA}' THEN 'public' ELSE table_schema END || '.' || table_name AS name
+      `SELECT table_schema || '.' || table_name AS name
        FROM information_schema.tables
-       WHERE table_type = 'BASE TABLE' AND table_schema IN ('${[SCHEMA, ...extraSchemas].join("', '")}')`,
+       WHERE table_type = 'BASE TABLE' AND table_schema IN ('${['public', ...extraSchemas].join("', '")}')`,
     );
     return rows.map((r) => r.name).sort();
   };
 
   beforeAll(async () => {
-    await sql.unsafe('CREATE EXTENSION IF NOT EXISTS citext');
-    await sql.unsafe('CREATE EXTENSION IF NOT EXISTS pg_trgm');
+    await admin.unsafe(`DROP DATABASE IF EXISTS ${DATABASE} WITH (FORCE)`);
+    await admin.unsafe(`CREATE DATABASE ${DATABASE}`);
+    await sql.unsafe('CREATE SCHEMA extensions');
+    await sql.unsafe('CREATE EXTENSION IF NOT EXISTS citext SCHEMA extensions');
+    await sql.unsafe('CREATE EXTENSION IF NOT EXISTS pg_trgm SCHEMA extensions');
   });
   afterAll(async () => {
-    for (const s of [SCHEMA, ...extraSchemas])
-      await sql.unsafe(`DROP SCHEMA IF EXISTS ${s} CASCADE`);
     await sql.end();
+    await admin.unsafe(`DROP DATABASE IF EXISTS ${DATABASE} WITH (FORCE)`);
+    await admin.end();
   });
 
   it.each(cases('postgres', postgresScenario))(
@@ -108,7 +133,7 @@ describe('postgres', () => {
 describe('mysql', () => {
   let connection: mysql.Connection;
   const DATABASE = 'dashdb_migration_test';
-  const extraDatabases = ['shop'];
+  const extraDatabases = namespacesOf('mysql', 'default');
 
   const reset = async () => {
     for (const d of [DATABASE, ...extraDatabases])
@@ -132,6 +157,10 @@ describe('mysql', () => {
 
   beforeAll(async () => {
     connection = await mysql.createConnection({ uri: MYSQL_URL, multipleStatements: true });
+    // WordPress-style schemas use zero-date defaults, as older MySQL installs allow.
+    await connection.query(
+      "SET SESSION sql_mode = REPLACE(REPLACE(@@sql_mode, 'NO_ZERO_IN_DATE', ''), 'NO_ZERO_DATE', '')",
+    );
   });
   afterAll(async () => {
     for (const d of [DATABASE, ...extraDatabases])

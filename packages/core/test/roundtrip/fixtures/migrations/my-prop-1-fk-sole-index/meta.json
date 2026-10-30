@@ -1,0 +1,5 @@
+{
+  "dialect": "mysql",
+  "description": "(property seed 1) dropping the only index of a kept foreign key, after a table rename",
+  "renames": ["table:default.t3=>default.t27"]
+}

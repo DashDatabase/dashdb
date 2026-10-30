@@ -1,0 +1,4 @@
+{
+  "dialect": "postgres",
+  "description": "uuid columns with gen_random_uuid() defaults"
+}

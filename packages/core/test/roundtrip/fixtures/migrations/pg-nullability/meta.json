@@ -1,0 +1,4 @@
+{
+  "dialect": "postgres",
+  "description": "set and drop NOT NULL"
+}

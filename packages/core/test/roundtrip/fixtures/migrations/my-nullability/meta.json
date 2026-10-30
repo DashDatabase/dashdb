@@ -1,0 +1,4 @@
+{
+  "dialect": "mysql",
+  "description": "set and drop NOT NULL"
+}

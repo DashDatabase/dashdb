@@ -1,0 +1,4 @@
+{
+  "dialect": "postgres",
+  "description": "a self-referencing foreign key and two tables referencing each other"
+}

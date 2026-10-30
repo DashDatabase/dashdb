@@ -1,0 +1,5 @@
+{
+  "dialect": "mysql",
+  "description": "swap two table names through a temporary name",
+  "renames": ["table:default.a=>default.b", "table:default.b=>default.a"]
+}

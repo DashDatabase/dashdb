@@ -1,0 +1,4 @@
+{
+  "dialect": "mysql",
+  "description": "plain, unique, descending, multi-column and fulltext indexes"
+}

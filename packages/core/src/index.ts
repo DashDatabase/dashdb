@@ -43,3 +43,4 @@ export * from './serializers';
 export * from './diff';
 export * from './migrations';
 export * from './safety';
+export * from './introspection';

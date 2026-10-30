@@ -1,0 +1,4 @@
+{
+  "dialect": "mysql",
+  "description": "set, change and remove table and column comments"
+}

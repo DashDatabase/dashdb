@@ -1,0 +1,4 @@
+{
+  "dialect": "mysql",
+  "description": "add, change and drop defaults"
+}

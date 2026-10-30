@@ -3,6 +3,7 @@ import { renameTable, updateTable } from '../ir/edit';
 import type { Schema } from '../ir/types';
 import { diffSchemas } from '../diff/diff';
 import { my, pg } from '../diff/__test-utils__/harness';
+import { invertOperations } from '../diff/invert';
 import type { DiffResult, OperationKind } from '../diff/types';
 import { NOW, postgresScenario } from './__test-utils__/scenarios';
 import { generateFileBundle } from './bundle';
@@ -569,12 +570,12 @@ describe('remaining paths', () => {
       statements(
         diff(
           'CREATE TABLE t (a int);',
-          'CREATE TABLE t (a int); CREATE UNIQUE INDEX u ON t (a);',
+          'CREATE TABLE t (a int); CREATE UNIQUE INDEX u ON t (a DESC);',
           my,
         ),
         'mysql',
       ),
-    ).toEqual(['CREATE UNIQUE INDEX u ON t (a);']);
+    ).toEqual(['CREATE UNIQUE INDEX u ON t (a DESC);']);
     const d: DiffResult = {
       operations: [
         {
@@ -615,5 +616,95 @@ describe('remaining paths', () => {
       files.find((f) => f.path.endsWith('_journal.json'))?.contents ?? '{}',
     ) as { entries: { when: number }[] };
     expect(journal.entries[0]?.when).toBeGreaterThanOrEqual(before);
+  });
+});
+
+describe('MySQL implicit foreign key indexes', () => {
+  const fk = 'CONSTRAINT c_p FOREIGN KEY (p) REFERENCES p (id)';
+  const before = (extra = '') =>
+    `CREATE TABLE p (id int PRIMARY KEY); CREATE TABLE c (id int PRIMARY KEY, p int, ${fk})${extra};`;
+  const after = (extra = '') =>
+    `CREATE TABLE p (id int PRIMARY KEY); CREATE TABLE c (id int PRIMARY KEY, p int)${extra};`;
+
+  it('drops the index MySQL created for a key with no covering index', () => {
+    const d = diff(before(), after(), my);
+    expect(d.operations[0]).toMatchObject({ kind: 'dropForeignKey', implicitIndex: true });
+    expect(statements(d, 'mysql')).toEqual([
+      'ALTER TABLE c DROP FOREIGN KEY c_p;',
+      'DROP INDEX c_p ON c;',
+    ]);
+    // Re-adding it in the down migration lets MySQL create the index again.
+    expect(invertOperations(d.operations)[0]).toMatchObject({
+      kind: 'addForeignKey',
+      implicitIndex: true,
+    });
+  });
+
+  it('leaves covered keys alone, and never flags Postgres keys', () => {
+    const covered = diff(
+      `${before()} CREATE INDEX c_p_idx ON c (p);`,
+      `${after()} CREATE INDEX c_p_idx ON c (p);`,
+      my,
+    );
+    expect(covered.operations[0]).not.toHaveProperty('implicitIndex');
+    expect(statements(covered, 'mysql')).toEqual(['ALTER TABLE c DROP FOREIGN KEY c_p;']);
+    expect(diff(before(), after()).operations[0]).not.toHaveProperty('implicitIndex');
+  });
+});
+
+describe('MySQL keys that are the only index of a foreign key', () => {
+  const parent = 'CREATE TABLE p (id int PRIMARY KEY);';
+  const bare = `${parent} CREATE TABLE c (id int PRIMARY KEY, p int, CONSTRAINT c_p FOREIGN KEY (p) REFERENCES p (id));`;
+  const indexed = `${parent} CREATE TABLE c (id int PRIMARY KEY, p int, CONSTRAINT c_p FOREIGN KEY (p) REFERENCES p (id)); CREATE INDEX c_p_idx ON c (p);`;
+  const unique = `${parent} CREATE TABLE c (id int PRIMARY KEY, p int, CONSTRAINT c_p_key UNIQUE (p), CONSTRAINT c_p FOREIGN KEY (p) REFERENCES p (id));`;
+
+  it('gives the foreign key its index back when dropping the index that covered it', () => {
+    const up = diff(bare, indexed, my);
+    expect(up.operations[0]).toMatchObject({
+      kind: 'createIndex',
+      implicitIndexes: [{ name: 'c_p', columns: ['p'] }],
+    });
+    expect(statements(up, 'mysql')).toEqual(['CREATE INDEX c_p_idx ON c (p);']);
+    const down = generateSQL(up, 'mysql').downStatements.map((s) => s.sql);
+    expect(down).toEqual(['ALTER TABLE c ADD INDEX c_p (p), DROP INDEX c_p_idx;']);
+    expect(statements(diff(indexed, bare, my), 'mysql')).toEqual([
+      'ALTER TABLE c ADD INDEX c_p (p), DROP INDEX c_p_idx;',
+    ]);
+  });
+
+  it('does the same for unique keys, and nothing when another key still covers it', () => {
+    expect(statements(diff(unique, bare, my), 'mysql')).toEqual([
+      'ALTER TABLE c ADD INDEX c_p (p), DROP INDEX c_p_key;',
+    ]);
+    const both = `${parent} CREATE TABLE c (id int PRIMARY KEY, p int, CONSTRAINT c_p_key UNIQUE (p), CONSTRAINT c_p FOREIGN KEY (p) REFERENCES p (id)); CREATE INDEX c_p_idx ON c (p);`;
+    expect(statements(diff(both, unique, my), 'mysql')).toEqual(['DROP INDEX c_p_idx ON c;']);
+    expect(statements(diff(both, indexed, my), 'mysql')).toEqual([
+      'ALTER TABLE c DROP INDEX c_p_key;',
+    ]);
+    // Unrelated keys, dropped foreign keys and Postgres are untouched.
+    expect(diff(`${bare} CREATE INDEX c_id ON c (id);`, bare, my).operations[0]).not.toHaveProperty(
+      'implicitIndexes',
+    );
+    expect(
+      diff(indexed, `${parent} CREATE TABLE c (id int PRIMARY KEY, p int);`, my).operations.find(
+        (o) => o.kind === 'dropIndex',
+      ),
+    ).not.toHaveProperty('implicitIndexes');
+    expect(diff(bare, indexed).operations[0]).not.toHaveProperty('implicitIndexes');
+  });
+});
+
+describe('Postgres enum column types', () => {
+  it('writes enum types from their reference: quoted, qualified, arrays kept', () => {
+    const sql = statements(
+      diff(
+        "CREATE SCHEMA app; CREATE TYPE \"PostStatus\" AS ENUM ('A'); CREATE TYPE app.tag AS ENUM ('x'); CREATE TABLE t (id int);",
+        'CREATE SCHEMA app; CREATE TYPE "PostStatus" AS ENUM (\'A\'); CREATE TYPE app.tag AS ENUM (\'x\'); CREATE TABLE t (id int, s "PostStatus", tags app.tag[]);',
+      ),
+    );
+    expect(sql).toEqual([
+      'ALTER TABLE t ADD COLUMN s "PostStatus";',
+      'ALTER TABLE t ADD COLUMN tags app.tag[];',
+    ]);
   });
 });

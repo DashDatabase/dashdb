@@ -1,0 +1,5 @@
+{
+  "dialect": "postgres",
+  "description": "remove an enum value (the type is recreated)",
+  "irreversible": true
+}

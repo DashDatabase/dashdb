@@ -1,0 +1,4 @@
+{
+  "dialect": "postgres",
+  "description": "change identity from ALWAYS to BY DEFAULT and add an identity column"
+}

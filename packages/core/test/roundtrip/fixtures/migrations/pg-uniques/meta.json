@@ -1,0 +1,4 @@
+{
+  "dialect": "postgres",
+  "description": "add and drop unique constraints"
+}

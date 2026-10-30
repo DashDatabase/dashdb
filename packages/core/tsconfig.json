@@ -1,4 +1,4 @@
 {
   "extends": "@dashdb/config/tsconfig/library.json",
-  "include": ["src", "*.config.ts"]
+  "include": ["src", "test", "*.config.ts"]
 }

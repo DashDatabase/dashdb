@@ -1,0 +1,4 @@
+{
+  "dialect": "postgres",
+  "description": "add and drop columns with defaults, add an index"
+}

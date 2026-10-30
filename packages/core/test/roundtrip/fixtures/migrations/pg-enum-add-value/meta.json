@@ -1,0 +1,4 @@
+{
+  "dialect": "postgres",
+  "description": "add enum values in the middle and at the end"
+}

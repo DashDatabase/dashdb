@@ -1,0 +1,4 @@
+{
+  "dialect": "postgres",
+  "description": "set, change and remove table and column comments"
+}

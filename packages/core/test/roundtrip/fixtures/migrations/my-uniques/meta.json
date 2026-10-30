@@ -1,0 +1,4 @@
+{
+  "dialect": "mysql",
+  "description": "add and drop unique keys"
+}

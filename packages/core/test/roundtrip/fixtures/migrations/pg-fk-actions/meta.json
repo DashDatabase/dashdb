@@ -1,0 +1,4 @@
+{
+  "dialect": "postgres",
+  "description": "change foreign key actions and add a SET NULL key"
+}

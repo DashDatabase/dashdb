@@ -1,0 +1,5 @@
+{
+  "dialect": "postgres",
+  "description": "rename an indexed column",
+  "renames": ["column:public.users.name=>public.users.full_name"]
+}

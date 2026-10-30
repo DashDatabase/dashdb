@@ -1,0 +1,4 @@
+{
+  "dialect": "mysql",
+  "description": "timestamps with ON UPDATE CURRENT_TIMESTAMP"
+}

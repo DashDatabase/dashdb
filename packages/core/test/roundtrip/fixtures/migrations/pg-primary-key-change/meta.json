@@ -1,0 +1,4 @@
+{
+  "dialect": "postgres",
+  "description": "change a primary key to composite and add one to a keyless table"
+}

@@ -1,0 +1,4 @@
+{
+  "dialect": "mysql",
+  "description": "add inline enum values in the middle and at the end"
+}

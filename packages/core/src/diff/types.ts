@@ -172,12 +172,66 @@ export type Operation =
     }
   | { readonly kind: 'addPrimaryKey'; readonly table: QName; readonly primaryKey: KeyDef }
   | { readonly kind: 'dropPrimaryKey'; readonly table: QName; readonly primaryKey: KeyDef }
-  | { readonly kind: 'createIndex'; readonly table: QName; readonly index: IndexDef }
-  | { readonly kind: 'dropIndex'; readonly table: QName; readonly index: IndexDef }
-  | { readonly kind: 'addUnique'; readonly table: QName; readonly unique: UniqueDef }
-  | { readonly kind: 'dropUnique'; readonly table: QName; readonly unique: UniqueDef }
-  | { readonly kind: 'addForeignKey'; readonly table: QName; readonly foreignKey: ForeignKeyDef }
-  | { readonly kind: 'dropForeignKey'; readonly table: QName; readonly foreignKey: ForeignKeyDef }
+  | {
+      readonly kind: 'createIndex';
+      readonly table: QName;
+      readonly index: IndexDef;
+      /**
+       * MySQL: kept foreign keys this key is the only index for. Creating it lets MySQL drop
+       * their implicit indexes; dropping it needs them back, so the drop recreates them.
+       */
+      readonly implicitIndexes?: readonly UniqueDef[];
+    }
+  | {
+      readonly kind: 'dropIndex';
+      readonly table: QName;
+      readonly index: IndexDef;
+      /**
+       * MySQL: kept foreign keys this key is the only index for. Creating it lets MySQL drop
+       * their implicit indexes; dropping it needs them back, so the drop recreates them.
+       */
+      readonly implicitIndexes?: readonly UniqueDef[];
+    }
+  | {
+      readonly kind: 'addUnique';
+      readonly table: QName;
+      readonly unique: UniqueDef;
+      /**
+       * MySQL: kept foreign keys this key is the only index for. Creating it lets MySQL drop
+       * their implicit indexes; dropping it needs them back, so the drop recreates them.
+       */
+      readonly implicitIndexes?: readonly UniqueDef[];
+    }
+  | {
+      readonly kind: 'dropUnique';
+      readonly table: QName;
+      readonly unique: UniqueDef;
+      /**
+       * MySQL: kept foreign keys this key is the only index for. Creating it lets MySQL drop
+       * their implicit indexes; dropping it needs them back, so the drop recreates them.
+       */
+      readonly implicitIndexes?: readonly UniqueDef[];
+    }
+  | {
+      readonly kind: 'addForeignKey';
+      readonly table: QName;
+      readonly foreignKey: ForeignKeyDef;
+      /**
+       * MySQL: no other index starts with the key's columns, so MySQL maintains one of its own,
+       * named after the key. It outlives DROP FOREIGN KEY unless it is dropped too.
+       */
+      readonly implicitIndex?: boolean;
+    }
+  | {
+      readonly kind: 'dropForeignKey';
+      readonly table: QName;
+      readonly foreignKey: ForeignKeyDef;
+      /**
+       * MySQL: no other index starts with the key's columns, so MySQL maintains one of its own,
+       * named after the key. It outlives DROP FOREIGN KEY unless it is dropped too.
+       */
+      readonly implicitIndex?: boolean;
+    }
   | { readonly kind: 'addCheck'; readonly table: QName; readonly check: CheckDef }
   | { readonly kind: 'dropCheck'; readonly table: QName; readonly check: CheckDef }
   | {

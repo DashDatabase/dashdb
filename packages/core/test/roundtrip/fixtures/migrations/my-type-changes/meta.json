@@ -1,0 +1,4 @@
+{
+  "dialect": "mysql",
+  "description": "widen and convert column types"
+}

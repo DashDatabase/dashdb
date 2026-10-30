@@ -1,0 +1,4 @@
+{
+  "dialect": "mysql",
+  "description": "type, nullability, default and comment changes on one column"
+}

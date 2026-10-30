@@ -1,0 +1,4 @@
+{
+  "dialect": "postgres",
+  "description": "build a schema from an empty database (down drops everything)"
+}

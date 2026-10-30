@@ -1,0 +1,4 @@
+{
+  "dialect": "postgres",
+  "description": "create a schema with tables and drop another schema"
+}

@@ -1,0 +1,4 @@
+{
+  "dialect": "mysql",
+  "description": "add AUTO_INCREMENT to a primary key"
+}

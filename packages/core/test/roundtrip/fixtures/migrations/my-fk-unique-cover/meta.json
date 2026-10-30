@@ -1,0 +1,4 @@
+{
+  "dialect": "mysql",
+  "description": "a unique key takes over a foreign key's index, and the down migration gives it back"
+}

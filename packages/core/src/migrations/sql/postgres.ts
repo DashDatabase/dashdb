@@ -46,17 +46,28 @@ const tx = (sql: string, extra: Partial<Built> = {}): Built => ({
 });
 const cols = (names: readonly string[]) => names.map(q).join(', ');
 
+/**
+ * A column type. Enum types are written from their reference, quoted and qualified like any
+ * other name: a native spelling such as `PostStatus` would fold to `poststatus` unquoted.
+ */
+export function typeSql(t: Pick<ColumnDef, 'nativeType' | 'logicalType'>): string {
+  return t.logicalType.kind === 'enum' ? tableName(t.logicalType.enum) : t.nativeType;
+}
+
 /** A column definition, e.g. `id serial NOT NULL` or `email varchar(255) DEFAULT 'x'`. */
 export function columnSql(table: QName, c: ColumnDef): string {
   const parts: string[] = [];
-  let type = c.nativeType;
+  let type = typeSql(c);
   const def = c.default;
   const serial = SERIAL_FOR[type];
   const usesSerial =
     c.autoIncrement &&
     serial !== undefined &&
     def?.kind === 'sequence' &&
-    def.name === `${table.name}_${c.name}_seq`;
+    // pg_dump qualifies the sequence with the table's schema: public.t_id_seq is t_id_seq.
+    [`${table.name}_${c.name}_seq`, `${table.namespace}.${table.name}_${c.name}_seq`].includes(
+      def.name,
+    );
   if (usesSerial) type = serial;
   else if (c.metadata.generated) parts.push(`GENERATED ALWAYS AS (${c.metadata.generated}) STORED`);
   else if (c.autoIncrement && def === null) parts.push(identityClause(c.metadata.identity));
@@ -228,7 +239,7 @@ export function postgresStatements(op: Operation, ctx: PostgresContext): Built[]
     case 'alterColumnType': {
       const column = q(op.column);
       const enumInvolved = op.from.logicalType.kind === 'enum' || op.to.logicalType.kind === 'enum';
-      const using = `${column}::${enumInvolved ? 'text::' : ''}${op.to.nativeType}`;
+      const using = `${column}::${enumInvolved ? 'text::' : ''}${typeSql(op.to)}`;
       const alter = (rest: string, extra: Partial<Built> = {}) =>
         tx(`ALTER TABLE ${tableName(op.table)} ALTER COLUMN ${column} ${rest};`, extra);
       // A default of the old type may not cast: drop it around the change and restore it.
@@ -238,7 +249,7 @@ export function postgresStatements(op: Operation, ctx: PostgresContext): Built[]
       const restore = dropFirst ? after.default : null;
       return [
         ...(dropFirst ? [alter('DROP DEFAULT')] : []),
-        alter(`TYPE ${op.to.nativeType} USING ${using}`, { destructive: true }),
+        alter(`TYPE ${typeSql(op.to)} USING ${using}`, { destructive: true }),
         ...(restore ? [alter(`SET DEFAULT ${defaultSql(restore, 'postgres')}`)] : []),
       ];
     }

@@ -1,0 +1,5 @@
+{
+  "dialect": "postgres",
+  "description": "rename a table referenced by a foreign key",
+  "renames": ["table:public.users=>public.members"]
+}

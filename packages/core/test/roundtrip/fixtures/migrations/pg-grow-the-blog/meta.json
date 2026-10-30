@@ -1,0 +1,5 @@
+{
+  "dialect": "postgres",
+  "description": "the P08 grow_the_blog scenario",
+  "renames": ["table:public.users=>public.app_users"]
+}

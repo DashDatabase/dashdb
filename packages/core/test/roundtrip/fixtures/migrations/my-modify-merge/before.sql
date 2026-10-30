@@ -1,0 +1,1 @@
+CREATE TABLE items (id int NOT NULL PRIMARY KEY, qty int) ENGINE=InnoDB;

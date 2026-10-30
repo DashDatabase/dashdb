@@ -1,0 +1,5 @@
+{
+  "dialect": "mysql",
+  "description": "rename an indexed column",
+  "renames": ["column:default.users.name=>default.users.full_name"]
+}

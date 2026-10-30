@@ -1,0 +1,5 @@
+{
+  "dialect": "postgres",
+  "description": "swap two column names through a temporary name",
+  "renames": ["column:public.points.x=>public.points.y", "column:public.points.y=>public.points.x"]
+}

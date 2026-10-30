@@ -12,6 +12,7 @@ export default defineConfig({
         'src/diff/**/*.ts',
         'src/migrations/**/*.ts',
         'src/safety/**/*.ts',
+        'src/introspection/**/*.ts',
       ],
       exclude: [
         'src/**/*.test.ts',

@@ -29,13 +29,17 @@
   },
   "devDependencies": {
     "@dashdb/config": "workspace:*",
+    "@testcontainers/mysql": "^12.2.1",
+    "@testcontainers/postgresql": "^12.2.1",
     "@types/node": "^22.19.0",
     "@vitest/coverage-v8": "5.0.5",
     "drizzle-orm": "^0.45.4",
     "eslint": "^9.39.5",
+    "fast-check": "^4.10.2",
     "mysql2": "3.24.6",
     "postgres": "^3.4.9",
     "prisma": "7.10.1",
+    "testcontainers": "^12.2.1",
     "tsup": "^9.0.0",
     "typescript": "~6.0.3",
     "vitest": "^5.0.5"

@@ -1,0 +1,5 @@
+{
+  "dialect": "mysql",
+  "description": "the P08 grow_the_shop scenario",
+  "renames": ["table:default.customers=>default.clients"]
+}

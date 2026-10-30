@@ -88,10 +88,9 @@ model Tag {
       ['B', 'varchar(191)'],
     ]);
     expect(join?.primaryKey).toBeNull();
-    expect(join?.indexes.map((i) => [i.name, i.unique])).toEqual([
-      ['_Tagging_AB_unique', true],
-      ['_Tagging_B_index', false],
-    ]);
+    // A plain unique index is a UNIQUE constraint on MySQL.
+    expect(join?.uniques.map((u) => u.name)).toEqual(['_Tagging_AB_unique']);
+    expect(join?.indexes.map((i) => [i.name, i.unique])).toEqual([['_Tagging_B_index', false]]);
   });
 
   it('reports unknown types, relations to unknown models and composite-id m-n relations', () => {

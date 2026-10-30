@@ -1,0 +1,4 @@
+{
+  "dialect": "postgres",
+  "description": "widen and convert column types"
+}

@@ -1,0 +1,5 @@
+{
+  "dialect": "mysql",
+  "description": "remove an inline enum value",
+  "irreversible": true
+}

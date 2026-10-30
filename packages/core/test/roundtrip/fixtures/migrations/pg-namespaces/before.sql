@@ -1,0 +1,3 @@
+CREATE SCHEMA old;
+CREATE TABLE old.archive (id int PRIMARY KEY);
+CREATE TABLE users (id int PRIMARY KEY);

@@ -1,0 +1,2 @@
+CREATE TABLE b (id int NOT NULL PRIMARY KEY, x int) ENGINE=InnoDB;
+CREATE TABLE a (id int NOT NULL PRIMARY KEY, y varchar(10)) ENGINE=InnoDB;

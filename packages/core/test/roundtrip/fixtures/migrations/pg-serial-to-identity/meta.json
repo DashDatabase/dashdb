@@ -1,0 +1,4 @@
+{
+  "dialect": "postgres",
+  "description": "switch a serial key to an identity column"
+}

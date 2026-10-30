@@ -1,0 +1,1 @@
+CREATE TABLE orders (id int NOT NULL AUTO_INCREMENT PRIMARY KEY, total decimal(10,2)) ENGINE=InnoDB;

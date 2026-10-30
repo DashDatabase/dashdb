@@ -1,0 +1,4 @@
+{
+  "dialect": "postgres",
+  "description": "create a table with a foreign key and drop another"
+}

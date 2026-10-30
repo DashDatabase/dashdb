@@ -1,0 +1,4 @@
+{
+  "dialect": "mysql",
+  "description": "a self-referencing foreign key"
+}

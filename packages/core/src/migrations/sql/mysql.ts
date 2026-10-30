@@ -1,5 +1,5 @@
 import { qkey } from '../../diff/defs';
-import type { ColumnDef, Operation, QName, TableDef } from '../../diff/types';
+import type { ColumnDef, Operation, QName, TableDef, UniqueDef } from '../../diff/types';
 import { actionSql, defaultSql, quoteMysql as q, sqlString } from '../../serializers/sql-common';
 
 /** Namespace the MySQL parser uses for tables without a database qualifier. */
@@ -77,6 +77,14 @@ function indexSql(
  * a single MODIFY with the final definition, and enum value changes restate each column that
  * uses the enum. MySQL enums are inline, so creating or dropping one needs no statement.
  */
+/**
+ * `ADD INDEX` clauses giving foreign keys back the index MySQL keeps for them, named after the
+ * key as MySQL names it, so the key that covered them can be dropped in the same statement.
+ */
+function restoreImplicit(keys: readonly UniqueDef[]): string {
+  return keys.map((k) => `ADD INDEX ${q(k.name)} (${k.columns.map(q).join(', ')}), `).join('');
+}
+
 export function mysqlStatements(ops: readonly Operation[]): MysqlBuilt[] {
   // Group the operations that become one statement: enum value changes per enum, and column
   // changes per column. Each group is emitted once, where its first operation stands.
@@ -187,13 +195,19 @@ export function mysqlStatements(ops: readonly Operation[]): MysqlBuilt[] {
       case 'createIndex':
         return one(indexSql(op.table, op.index));
       case 'dropIndex':
-        return one(`DROP INDEX ${q(op.index.name)} ON ${tableName(op.table)};`);
+        return one(
+          op.implicitIndexes
+            ? `ALTER TABLE ${tableName(op.table)} ${restoreImplicit(op.implicitIndexes)}DROP INDEX ${q(op.index.name)};`
+            : `DROP INDEX ${q(op.index.name)} ON ${tableName(op.table)};`,
+        );
       case 'addUnique':
         return one(
           `ALTER TABLE ${tableName(op.table)} ADD CONSTRAINT ${q(op.unique.name)} UNIQUE (${cols(op.unique.columns)});`,
         );
       case 'dropUnique':
-        return one(`ALTER TABLE ${tableName(op.table)} DROP INDEX ${q(op.unique.name)};`);
+        return one(
+          `ALTER TABLE ${tableName(op.table)} ${restoreImplicit(op.implicitIndexes ?? [])}DROP INDEX ${q(op.unique.name)};`,
+        );
       case 'addForeignKey': {
         const fk = op.foreignKey;
         const onDelete = fk.onDelete === 'no action' ? '' : ` ON DELETE ${actionSql(fk.onDelete)}`;
@@ -203,7 +217,10 @@ export function mysqlStatements(ops: readonly Operation[]): MysqlBuilt[] {
         );
       }
       case 'dropForeignKey':
-        return one(`ALTER TABLE ${tableName(op.table)} DROP FOREIGN KEY ${q(op.foreignKey.name)};`);
+        one(`ALTER TABLE ${tableName(op.table)} DROP FOREIGN KEY ${q(op.foreignKey.name)};`);
+        // The index MySQL created for the key stays behind on its own.
+        if (op.implicitIndex) one(`DROP INDEX ${q(op.foreignKey.name)} ON ${tableName(op.table)};`);
+        return;
       case 'addCheck':
         return one(
           `ALTER TABLE ${tableName(op.table)} ADD CONSTRAINT ${q(op.check.name)} CHECK (${op.check.expression});`,

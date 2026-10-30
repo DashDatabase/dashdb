@@ -1,6 +1,6 @@
 import type { ColumnDef, Operation, QName } from '../diff/types';
 import { columnSql as mysqlColumnSql, tableName as mysqlTable } from '../migrations/sql/mysql';
-import { tableName as pgTable } from '../migrations/sql/postgres';
+import { tableName as pgTable, typeSql } from '../migrations/sql/postgres';
 import type { MigrationDialect } from '../migrations/types';
 import { defaultSql, quoteMysql, quotePostgres } from '../serializers/sql-common';
 import { SafetyError } from './types';
@@ -119,7 +119,7 @@ export function planExpandContract(
     case 'renameColumn': {
       const { table, from, to } = operation;
       const def = operation.definition?.after ?? null;
-      const type = def?.nativeType ?? '<type>';
+      const type = def ? (dialect === 'postgres' ? typeSql(def) : def.nativeType) : '<type>';
       return {
         operation: operation.kind,
         steps: [
@@ -159,7 +159,7 @@ export function planExpandContract(
     case 'alterColumnType': {
       const { table, column } = operation;
       const target = `${column}_new`;
-      const type = operation.to.nativeType;
+      const type = dialect === 'postgres' ? typeSql(operation.to) : operation.to.nativeType;
       const enumInvolved =
         operation.from.logicalType.kind === 'enum' || operation.to.logicalType.kind === 'enum';
       const value =

@@ -408,6 +408,26 @@ export function finalize(draft: DraftSchema, options: ParseOptions = {}): ParseR
       }
     }
 
+    if (draft.dialect === 'mysql') {
+      // MySQL has no difference between a UNIQUE constraint and a plain UNIQUE index (the
+      // catalogs list both as constraints), so a plain one is canonically a constraint.
+      table.indexes = table.indexes.filter((index, i) => {
+        const plain =
+          index.unique &&
+          index.method === null &&
+          index.where === null &&
+          index.columns.every((c) => c.order === 'asc' && c.nulls === null);
+        if (!plain) return true;
+        const columns = index.columns.map((c) => c.name);
+        table.uniques.push({
+          name: index.name ?? defaultName(draft.dialect, 'index', table.name, columns, i + 1),
+          columns,
+          loc: index.loc,
+        });
+        return false;
+      });
+    }
+
     const indexes: Index[] = [];
     table.indexes.forEach((index, i) => {
       const resolved = resolveColumns(
