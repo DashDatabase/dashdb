@@ -4,3 +4,12 @@ const DEFAULT_API_URL = 'http://localhost:8787';
 export function getApiUrl(value: string | undefined = process.env.NEXT_PUBLIC_API_URL): string {
   return (value?.trim() || DEFAULT_API_URL).replace(/\/+$/, '');
 }
+
+const DEFAULT_GITHUB_URL = 'https://github.com/dashdb/dashdb';
+
+/** Public source repository, linked from the editor's star button. */
+export function getGithubUrl(
+  value: string | undefined = process.env.NEXT_PUBLIC_GITHUB_URL,
+): string {
+  return value?.trim() || DEFAULT_GITHUB_URL;
+}

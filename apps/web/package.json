@@ -15,12 +15,16 @@
   },
   "dependencies": {
     "@dashdb/api-client": "workspace:*",
+    "@dashdb/core": "workspace:*",
     "@dashdb/shared": "workspace:*",
     "@dashdb/ui": "workspace:*",
+    "idb-keyval": "^6.3.0",
     "lucide-react": "^1.65.0",
     "next": "^16.4.3",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "zod": "^4.6.7",
+    "zustand": "^5.0.16"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
@@ -31,6 +35,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "eslint": "^9.39.5",
+    "fake-indexeddb": "^6.2.7",
     "sharp": "^0.35.5",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.3",
