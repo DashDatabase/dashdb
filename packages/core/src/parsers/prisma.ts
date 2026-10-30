@@ -35,7 +35,7 @@ const DEFAULT_NAMESPACE: Record<IrDialect, string> = {
   sqlite: 'main',
 };
 
-type Scalar =
+export type PrismaScalar =
   'String' | 'Boolean' | 'Int' | 'BigInt' | 'Float' | 'Decimal' | 'DateTime' | 'Json' | 'Bytes';
 const SCALARS = new Set<string>([
   'String',
@@ -50,7 +50,7 @@ const SCALARS = new Set<string>([
 ]);
 
 /** Native types Prisma Migrate uses for each scalar when there is no `@db.*` attribute. */
-const PRISMA_NATIVE: Record<IrDialect, Record<Scalar, string>> = {
+export const PRISMA_NATIVE: Record<IrDialect, Record<PrismaScalar, string>> = {
   postgres: {
     String: 'text',
     Boolean: 'boolean',
@@ -87,7 +87,7 @@ const PRISMA_NATIVE: Record<IrDialect, Record<Scalar, string>> = {
 };
 
 /** SQLite types are affinities, so the logical type comes from the Prisma scalar instead. */
-const SQLITE_LOGICAL: Record<Scalar, LogicalType> = {
+const SQLITE_LOGICAL: Record<PrismaScalar, LogicalType> = {
   String: { kind: 'text' },
   Boolean: { kind: 'boolean' },
   Int: { kind: 'int' },
@@ -100,7 +100,7 @@ const SQLITE_LOGICAL: Record<Scalar, LogicalType> = {
 };
 
 /** `@db.*` attribute names whose SQL spelling is not simply the lowercased name. */
-const DB_ATTRIBUTE_NATIVE: Record<string, string> = {
+export const DB_ATTRIBUTE_NATIVE: Record<string, string> = {
   DoublePrecision: 'double precision',
   UnsignedTinyInt: 'tinyint unsigned',
   UnsignedSmallInt: 'smallint unsigned',
@@ -493,7 +493,7 @@ class PrismaConverter {
       // Unsupported("geometry(Point, 4326)")
       column.nativeType = unquote(type.params?.[0]) ?? type.name;
     } else if (SCALARS.has(type)) {
-      const scalar = type as Scalar;
+      const scalar = type as PrismaScalar;
       column.nativeType = this.dbAttributeNative(field) ?? PRISMA_NATIVE[dialect][scalar];
       if (dialect === 'sqlite') column.logicalType = SQLITE_LOGICAL[scalar];
     } else if (this.enums.has(type)) {

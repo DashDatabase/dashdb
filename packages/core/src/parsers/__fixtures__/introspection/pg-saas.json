@@ -15,7 +15,7 @@
     { "schema": "public", "table": "members", "name": "email", "position": 3, "type": "text", "nullable": false, "default": null, "comment": "Login address" },
     { "schema": "public", "table": "members", "name": "is_admin", "position": 4, "type": "boolean", "nullable": false, "default": "false" },
     { "schema": "public", "table": "documents", "name": "title", "position": 2, "type": "text", "nullable": false, "default": "'Untitled'::text" },
-    { "schema": "public", "table": "documents", "name": "id", "position": 1, "type": "bigint", "nullable": false, "identity": true },
+    { "schema": "public", "table": "documents", "name": "id", "position": 1, "type": "bigint", "nullable": false, "identity": "a" },
     { "schema": "public", "table": "documents", "name": "workspace_id", "position": 3, "type": "uuid", "nullable": false },
     { "schema": "public", "table": "documents", "name": "author_id", "position": 4, "type": "integer", "nullable": true },
     { "schema": "public", "table": "documents", "name": "body", "position": 5, "type": "jsonb", "nullable": false, "default": "'{}'::jsonb" },

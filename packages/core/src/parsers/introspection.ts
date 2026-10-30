@@ -38,8 +38,11 @@ export const introspectedColumnSchema = z.object({
   nullable: z.boolean(),
   /** The default as SQL text (`pg_get_expr` / `COLUMN_DEFAULT`). */
   default: nullableText,
-  /** Postgres identity column. */
-  identity: z.boolean().optional(),
+  /** Postgres identity column: `attidentity` as words or its `a` / `d` code. */
+  identity: z
+    .enum(['always', 'by default', 'a', 'd'])
+    .nullish()
+    .transform((v) => (v === 'a' ? 'always' : v === 'd' ? 'by default' : (v ?? null))),
   /** MySQL `EXTRA` (`auto_increment`, `DEFAULT_GENERATED on update CURRENT_TIMESTAMP`, …). */
   extra: nullableText,
   comment: nullableText,
@@ -213,9 +216,9 @@ export function parseIntrospectionJSON(
     const column = draftColumn(c.name, c.type, START, {
       nullable: c.nullable,
       comment: c.comment ?? null,
-      autoIncrement: c.identity === true || extra.includes('auto_increment'),
+      autoIncrement: c.identity != null || extra.includes('auto_increment'),
     });
-    if (c.identity) column.metadata.identity = 'true';
+    if (c.identity) column.metadata.identity = c.identity;
     if (extra.includes('on update')) column.metadata.onUpdate = 'CURRENT_TIMESTAMP';
     if (c.default != null) {
       column.default =
@@ -317,7 +320,7 @@ export function parseIntrospectionJSON(
       })),
       unique: index.unique,
       method: index.method?.toLowerCase() ?? null,
-      where: index.predicate ?? null,
+      where: index.predicate ? unwrapParens(index.predicate) : null,
       loc: START,
     });
   }
@@ -327,8 +330,14 @@ export function parseIntrospectionJSON(
 
 /** `CHECK ((amount >= 0))` → `amount >= 0`. */
 function checkExpression(definition: string): string {
-  let text = definition.trim().replace(/^CHECK\s*/i, '');
-  while (/^\(.*\)$/s.test(text) && balanced(text.slice(1, -1))) text = text.slice(1, -1).trim();
+  return unwrapParens(definition.trim().replace(/^CHECK\s*/i, ''));
+}
+
+/** `((deleted_at IS NULL))` → `deleted_at IS NULL`: catalogs wrap expressions in parentheses. */
+function unwrapParens(expression: string): string {
+  let text = expression.trim();
+  while (text.startsWith('(') && text.endsWith(')') && balanced(text.slice(1, -1)))
+    text = text.slice(1, -1).trim();
   return text;
 }
 

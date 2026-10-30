@@ -234,7 +234,7 @@
             "autoIncrement": true,
             "comment": null,
             "metadata": {
-              "identity": "true"
+              "identity": "always"
             }
           },
           {
@@ -385,7 +385,7 @@
             ],
             "unique": false,
             "method": "btree",
-            "where": "(deleted_at IS NULL)"
+            "where": "deleted_at IS NULL"
           },
           {
             "id": "index:public.documents.documents_body_idx",

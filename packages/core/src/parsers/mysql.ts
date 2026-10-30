@@ -99,6 +99,8 @@ interface MysqlAst {
   readonly index_type?: string | null;
   readonly index_columns?: readonly ColumnRef[];
   readonly index_using?: { type: string } | null;
+  /** `USING BTREE` written after the column list lands here instead of in `index_using`. */
+  readonly index_options?: readonly { keyword: string; type: string }[] | null;
 }
 
 const NUMERIC_TYPES = new Set([
@@ -467,7 +469,9 @@ function createIndex(draft: DraftSchema, ast: MysqlAst, loc: SourceLocation, db:
     method:
       kind === 'fulltext' || kind === 'spatial'
         ? kind
-        : (ast.index_using?.type.toLowerCase() ?? null),
+        : ((
+            ast.index_using ?? ast.index_options?.find((o) => o.keyword === 'using')
+          )?.type.toLowerCase() ?? null),
     where: null,
     loc,
   });

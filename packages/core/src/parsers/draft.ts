@@ -246,10 +246,10 @@ export class DraftSchema {
 // finalize
 // ---------------------------------------------------------------------------------------------
 
-type NameKind = 'unique' | 'foreignKey' | 'check' | 'index';
+export type NameKind = 'unique' | 'foreignKey' | 'check' | 'index';
 
 /** Default constraint/index names, following each database's own conventions. */
-function defaultName(
+export function defaultName(
   dialect: IrDialect,
   kind: NameKind,
   table: string,
