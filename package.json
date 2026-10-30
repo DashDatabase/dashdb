@@ -38,5 +38,10 @@
       "prettier --write"
     ],
     "*.{json,jsonc,md,css,yml,yaml,html,txt}": "prettier --write --ignore-unknown"
+  },
+  "pnpm": {
+    "overrides": {
+      "dompurify@<3.4.17": "3.4.17"
+    }
   }
 }
