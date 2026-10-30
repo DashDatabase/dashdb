@@ -380,15 +380,24 @@ class Differ {
   private enumColumns(afterEnumId: Id): ColumnTarget[] {
     const targets: ColumnTarget[] = [];
     for (const [bt, at] of this.tableMap) {
+      const beforeTable = this.b.model.table(bt);
       const afterTable = this.a.model.table(at);
-      const kept = new Set(this.columnMaps.get(bt)?.values());
+      // after column id → before column, for the columns that existed before.
+      const kept = new Map(
+        [...(this.columnMaps.get(bt) as Map<Id, Id>)].map(([b, a]) => [
+          a,
+          beforeTable.columns.find((c) => c.id === b) as Column,
+        ]),
+      );
       for (const c of afterTable.columns) {
-        if (
-          c.logicalType.kind === 'enum' &&
-          c.logicalType.enumId === afterEnumId &&
-          kept.has(c.id)
-        ) {
-          targets.push({ table: this.a.tableName(afterTable), column: c.name });
+        const before = kept.get(c.id);
+        if (c.logicalType.kind === 'enum' && c.logicalType.enumId === afterEnumId && before) {
+          targets.push({
+            table: this.a.tableName(afterTable),
+            column: c.name,
+            before: this.b.column(before),
+            after: this.a.column(c),
+          });
         }
       }
     }
@@ -521,6 +530,7 @@ class Differ {
     for (const [bId, aId] of columnMap) {
       const bc = bt.columns.find((c) => c.id === bId) as Column;
       const ac = at.columns.find((c) => c.id === aId) as Column;
+      const definition = { before: this.b.column(bc), after: this.a.column(ac) };
       if (bc.name !== ac.name)
         this.ops.push({ kind: 'renameColumn', table: to, from: bc.name, to: ac.name });
       if (!this.sameType(bc, ac)) {
@@ -531,6 +541,7 @@ class Differ {
           column: ac.name,
           from: { nativeType: bc.nativeType, logicalType: this.b.typeRef(bc.logicalType) },
           to: { nativeType: ac.nativeType, logicalType: this.a.typeRef(ac.logicalType) },
+          definition,
         });
       }
       const fromState = this.state(bc);
@@ -546,6 +557,7 @@ class Differ {
           column: ac.name,
           from: fromState,
           to: toState,
+          definition,
         });
       }
       if (bc.nullable !== ac.nullable) {
@@ -560,6 +572,7 @@ class Differ {
           column: ac.name,
           from: bc.nullable,
           to: ac.nullable,
+          definition,
         });
       }
       if (bc.comment !== ac.comment) {
@@ -569,6 +582,7 @@ class Differ {
           column: ac.name,
           from: bc.comment,
           to: ac.comment,
+          definition,
         });
       }
     }
@@ -579,6 +593,7 @@ class Differ {
         column: null,
         from: bt.comment,
         to: at.comment,
+        definition: null,
       });
 
     // Primary key: an unnamed key matches any name.

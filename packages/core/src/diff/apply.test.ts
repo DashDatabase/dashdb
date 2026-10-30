@@ -42,6 +42,8 @@ const tableDef = (q: QName, extra: Partial<TableDef> = {}): TableDef => ({
   metadata: {},
   ...extra,
 });
+/** Column definitions carried by alter ops; applyOperations does not read them. */
+const defs = { before: column('x'), after: column('x') };
 const fk = {
   name: 'n',
   columns: ['x'],
@@ -79,7 +81,7 @@ const invalid: [string, Operation, RegExp][] = [
       enum: mood,
       from: ['a', 'b'],
       to: ['a'],
-      columns: [{ table: T, column: 'x' }],
+      columns: [{ table: T, column: 'x', ...defs }],
     },
     /does not use/,
   ],
@@ -162,6 +164,7 @@ const invalid: [string, Operation, RegExp][] = [
     'type differs',
     {
       kind: 'alterColumnType',
+      definition: defs,
       table: T,
       column: 'x',
       from: { nativeType: 'text', logicalType: { kind: 'text' } },
@@ -173,6 +176,7 @@ const invalid: [string, Operation, RegExp][] = [
     'type to unknown enum',
     {
       kind: 'alterColumnType',
+      definition: defs,
       table: T,
       column: 'x',
       from: { nativeType: 'int', logicalType: { kind: 'int' } },
@@ -187,6 +191,7 @@ const invalid: [string, Operation, RegExp][] = [
     'default differs',
     {
       kind: 'alterColumnDefault',
+      definition: defs,
       table: T,
       column: 'x',
       from: { default: null, autoIncrement: true, identity: null },
@@ -274,12 +279,12 @@ const invalid: [string, Operation, RegExp][] = [
   ],
   [
     'table comment differs',
-    { kind: 'setComment', table: T, column: null, from: 'other', to: 'x' },
+    { kind: 'setComment', table: T, column: null, from: 'other', to: 'x', definition: null },
     /differs/,
   ],
   [
     'column comment differs',
-    { kind: 'setComment', table: T, column: 'x', from: 'other', to: 'x' },
+    { kind: 'setComment', table: T, column: 'x', from: 'other', to: 'x', definition: defs },
     /differs/,
   ],
 ];
@@ -332,7 +337,7 @@ describe('applyOperations preconditions', () => {
       { kind: 'renameTable', from: U, to: { namespace: 'app', name: 'users' } },
       { kind: 'renameColumn', table: T, from: 'y', to: 'why' },
       { kind: 'renameColumn', table: { namespace: 'app', name: 'users' }, from: 'code', to: 'c' },
-      { kind: 'setComment', table: T, column: 'x', from: null, to: 'X' },
+      { kind: 'setComment', table: T, column: 'x', from: null, to: 'X', definition: defs },
     ]);
     const expected = pg(`CREATE TYPE mood AS ENUM ('a', 'b');
 CREATE SCHEMA app;

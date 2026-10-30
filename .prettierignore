@@ -10,3 +10,4 @@ packages/db/migrations
 CLAUDE.md
 **/__snapshots__
 **/__fixtures__
+**/__golden__

@@ -506,7 +506,16 @@ CREATE TABLE t (u_id int REFERENCES u, m m); CREATE INDEX t_i ON t (u_id);`);
         /still references/,
       ],
       [
-        [{ kind: 'alterColumnNullability', table: t, column: 'u_id', from: false, to: true }],
+        [
+          {
+            kind: 'alterColumnNullability',
+            table: t,
+            column: 'u_id',
+            from: false,
+            to: true,
+            definition: { before: col, after: col },
+          },
+        ],
         /differs/,
       ],
       [[{ kind: 'dropNamespace', name: 'public' }], /cannot be dropped/],

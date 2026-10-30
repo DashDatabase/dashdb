@@ -82,7 +82,16 @@ export interface EnumDef extends QName {
   readonly values: readonly string[];
 }
 
-export interface ColumnTarget {
+/**
+ * A column's full definition before and after the migration. Carried by operations that a
+ * dialect may only be able to express by restating the whole column (MySQL `MODIFY COLUMN`).
+ */
+export interface ColumnDefs {
+  readonly before: ColumnDef;
+  readonly after: ColumnDef;
+}
+
+export interface ColumnTarget extends ColumnDefs {
   readonly table: QName;
   readonly column: string;
 }
@@ -141,6 +150,7 @@ export type Operation =
       readonly column: string;
       readonly from: ColumnType;
       readonly to: ColumnType;
+      readonly definition: ColumnDefs;
     }
   | {
       readonly kind: 'alterColumnNullability';
@@ -148,6 +158,7 @@ export type Operation =
       readonly column: string;
       readonly from: boolean;
       readonly to: boolean;
+      readonly definition: ColumnDefs;
     }
   | {
       readonly kind: 'alterColumnDefault';
@@ -155,6 +166,7 @@ export type Operation =
       readonly column: string;
       readonly from: ColumnState;
       readonly to: ColumnState;
+      readonly definition: ColumnDefs;
     }
   | { readonly kind: 'addPrimaryKey'; readonly table: QName; readonly primaryKey: KeyDef }
   | { readonly kind: 'dropPrimaryKey'; readonly table: QName; readonly primaryKey: KeyDef }
@@ -173,6 +185,8 @@ export type Operation =
       readonly column: string | null;
       readonly from: string | null;
       readonly to: string | null;
+      /** The column's definitions; null for a table comment. */
+      readonly definition: ColumnDefs | null;
     };
 
 export type OperationKind = Operation['kind'];

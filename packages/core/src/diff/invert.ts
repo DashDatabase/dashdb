@@ -1,6 +1,8 @@
 import { qkey } from './defs';
 import { isTempColumn, isTempTable, netRenames, orderOperations } from './order';
-import type { ColumnTarget, Operation, QName } from './types';
+import type { ColumnDefs, ColumnTarget, Operation, QName } from './types';
+
+const swap = (defs: ColumnDefs): ColumnDefs => ({ before: defs.after, after: defs.before });
 
 /**
  * The down migration: the inverse of each operation, re-ordered. Drops and creates swap,
@@ -39,6 +41,8 @@ export function invertOperations(ops: readonly Operation[]): Operation[] {
   const targetBack = (t: ColumnTarget): ColumnTarget => ({
     table: toBefore(t.table),
     column: columnBack(t.table, t.column),
+    before: t.after,
+    after: t.before,
   });
 
   // Indexes created on new tables go away with the table when it is dropped again.
@@ -113,6 +117,7 @@ export function invertOperations(ops: readonly Operation[]): Operation[] {
           column: columnBack(op.table, op.column),
           from: op.to,
           to: op.from,
+          definition: swap(op.definition),
         } as Operation);
         break;
       case 'setComment':
@@ -122,6 +127,7 @@ export function invertOperations(ops: readonly Operation[]): Operation[] {
           column: op.column === null ? null : columnBack(op.table, op.column),
           from: op.to,
           to: op.from,
+          definition: op.definition && swap(op.definition),
         });
         break;
       case 'addPrimaryKey':

@@ -1,3 +1,4 @@
 # Parser fixtures and snapshots are compared byte-for-byte.
 packages/core/src/parsers/__fixtures__/** text eol=lf
 packages/core/src/parsers/__snapshots__/** text eol=lf
+packages/core/src/migrations/__golden__/** text eol=lf

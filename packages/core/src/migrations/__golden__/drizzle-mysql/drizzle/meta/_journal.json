@@ -1,0 +1,13 @@
+{
+  "version": "5",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1793361600000,
+      "tag": "0000_grow_the_shop",
+      "breakpoints": true
+    }
+  ]
+}

@@ -31,7 +31,7 @@ describe('edge cases', () => {
     let a = renameColumn(b, t(b).id, c(b, 'a'), 'z');
     a = updateColumn(a, t(b).id, c(b, 'a'), { comment: 'new' });
     const result = expectRoundTrip(b, a);
-    expect(result.operations).toEqual([
+    expect(result.operations).toMatchObject([
       { kind: 'renameColumn', table: { namespace: 'public', name: 't' }, from: 'a', to: 'z' },
       {
         kind: 'setComment',
@@ -41,7 +41,7 @@ describe('edge cases', () => {
         to: 'new',
       },
     ]);
-    expect(invertOperations(result.operations)).toEqual([
+    expect(invertOperations(result.operations)).toMatchObject([
       { kind: 'renameColumn', table: { namespace: 'public', name: 't' }, from: 'z', to: 'a' },
       {
         kind: 'setComment',
@@ -96,5 +96,32 @@ describe('edge cases', () => {
     expect(nameSimilarity('Order-Items', 'order_items')).toBe(1);
     expect(nameSimilarity('', '')).toBe(1);
     expect(nameSimilarity('abc', 'xyz')).toBe(0);
+  });
+});
+
+describe('column definitions on operations', () => {
+  it('carry the full before/after column, swapped by inversion', () => {
+    const result = expectRoundTrip(
+      pg("CREATE TYPE m AS ENUM ('a'); CREATE TABLE t (x int, e m);"),
+      pg("CREATE TYPE m AS ENUM ('a', 'b'); CREATE TABLE t (x bigint NOT NULL, e m NOT NULL);"),
+    );
+    const alter = result.operations.find((o) => o.kind === 'alterColumnType');
+    expect(alter).toMatchObject({
+      definition: {
+        before: { nativeType: 'int', nullable: true },
+        after: { nativeType: 'bigint', nullable: false },
+      },
+    });
+    const add = result.operations.find((o) => o.kind === 'alterEnumAddValue');
+    expect(add).toMatchObject({
+      columns: [{ before: { nullable: true }, after: { nullable: false } }],
+    });
+    const down = invertOperations(result.operations);
+    expect(down.find((o) => o.kind === 'alterColumnType')).toMatchObject({
+      definition: { before: { nativeType: 'bigint' }, after: { nativeType: 'int' } },
+    });
+    expect(down.find((o) => o.kind === 'recreateEnum')).toMatchObject({
+      columns: [{ before: { nullable: false }, after: { nullable: true } }],
+    });
   });
 });

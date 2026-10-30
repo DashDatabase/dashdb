@@ -33,7 +33,7 @@ describe('every operation type', () => {
       "CREATE TYPE s AS ENUM ('draft', 'paid'); CREATE TABLE t (x s);",
       "CREATE TYPE s AS ENUM ('draft', 'open', 'paid', 'void'); CREATE TABLE t (x s);",
     );
-    expect(result).toEqual([
+    expect(result).toMatchObject([
       {
         kind: 'alterEnumAddValue',
         enum: { namespace: 'public', name: 's' },
@@ -146,7 +146,7 @@ describe('every operation type', () => {
         "CREATE TABLE t (a int); COMMENT ON TABLE t IS 'old';",
         "CREATE TABLE t (a int); COMMENT ON TABLE t IS 'new'; COMMENT ON COLUMN t.a IS 'A';",
       ),
-    ).toEqual([
+    ).toMatchObject([
       {
         kind: 'setComment',
         table: { namespace: 'public', name: 't' },

@@ -115,8 +115,8 @@ describe('orderOperations', () => {
   it('keeps input order for operations with the same rank and key', () => {
     const t = { namespace: 'public', name: 't' };
     const ops: Operation[] = [
-      { kind: 'setComment', table: t, column: null, from: null, to: 'a' },
-      { kind: 'setComment', table: t, column: null, from: 'a', to: 'b' },
+      { kind: 'setComment', table: t, column: null, from: null, to: 'a', definition: null },
+      { kind: 'setComment', table: t, column: null, from: 'a', to: 'b', definition: null },
     ];
     expect(orderOperations(ops)).toEqual(ops);
   });
