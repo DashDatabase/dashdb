@@ -43,3 +43,45 @@ export function layoutFor(schema: Schema, existing: Layout = { nodes: {} }): Lay
   }
   return { nodes };
 }
+
+/** A table node (272px wide) plus a margin; candidate spots are one footprint apart. */
+const FOOTPRINT = { width: 352, height: 224 };
+/** Closer than this to an existing node counts as overlapping it. */
+const CLEARANCE = { width: 304, height: 176 };
+
+/** Grid cells around the centre, nearest first, preferring the same row and the right side. */
+function* nearbyCells(rings: number): Generator<[number, number]> {
+  for (let r = 0; r <= rings; r++) {
+    const ring: [number, number][] = [];
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) === r) ring.push([dx, dy]);
+      }
+    }
+    const score = ([dx, dy]: [number, number]) =>
+      (Math.abs(dx) + Math.abs(dy)) * 4 + (dy === 0 ? 0 : 2) + (dx < 0 ? 1 : 0);
+    yield* ring.sort((a, b) => score(a) - score(b));
+  }
+}
+
+/** A grid-aligned spot near `center` (where a new node is centred) that no node occupies. */
+export function freePosition(
+  layout: Layout,
+  center: { x: number; y: number },
+): { x: number; y: number } {
+  const snap = (v: number) => Math.round(v / 16) * 16;
+  const base = {
+    x: snap(center.x - FOOTPRINT.width / 2),
+    y: snap(center.y - FOOTPRINT.height / 2),
+  };
+  const nodes = Object.values(layout.nodes);
+  for (const [dx, dy] of nearbyCells(6)) {
+    const x = base.x + dx * FOOTPRINT.width;
+    const y = base.y + dy * FOOTPRINT.height;
+    const taken = nodes.some(
+      (n) => Math.abs(n.x - x) < CLEARANCE.width && Math.abs(n.y - y) < CLEARANCE.height,
+    );
+    if (!taken) return { x, y };
+  }
+  return base;
+}

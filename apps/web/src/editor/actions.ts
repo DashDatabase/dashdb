@@ -1,5 +1,13 @@
 // The editor's action registry. Every user-facing command lives here once, with a keyboard
 // shortcut, so the command palette, toolbar buttons and key handler all stay in sync.
+import {
+  copySelection,
+  duplicateSelection,
+  pasteClipboard,
+  selectedTableIds,
+  type PasteOutcome,
+} from './canvas/operations';
+import { readClipboard } from './canvas/clipboard';
 import type { EditorActions, EditorState } from './store';
 
 export type ActionGroup = 'File' | 'Edit' | 'Schema' | 'View' | 'Navigate';
@@ -12,6 +20,8 @@ export interface ActionContext {
   readonly saveBaseline: () => void;
   /** Downloads the whole project as `.dashdb.json`. */
   readonly downloadProject: () => void;
+  /** Shows a paste that could not happen (e.g. tables from another database type). */
+  readonly reportPaste: (outcome: PasteOutcome) => void;
 }
 
 export interface EditorAction {
@@ -28,6 +38,8 @@ export interface EditorAction {
 }
 
 const hasProject = (state: EditorState) => state.doc !== null;
+const hasTables = (state: EditorState) => (state.doc?.schema.tables.length ?? 0) > 0;
+const hasSelectedTables = (state: EditorState) => selectedTableIds(state).length > 0;
 
 export const ACTIONS = [
   {
@@ -58,6 +70,47 @@ export const ACTIONS = [
     isEnabled: (state) => state.future.length > 0,
     run: ({ state }) => {
       state.redo();
+    },
+  },
+  {
+    id: 'edit.copy',
+    title: 'Copy selected tables',
+    group: 'Edit',
+    shortcut: 'mod+c',
+    isEnabled: hasSelectedTables,
+    run: ({ state }) => {
+      copySelection(state);
+    },
+  },
+  {
+    id: 'edit.paste',
+    title: 'Paste tables',
+    group: 'Edit',
+    shortcut: 'mod+v',
+    isEnabled: (state) => state.doc !== null && readClipboard() !== null,
+    run: ({ state, reportPaste }) => {
+      reportPaste(pasteClipboard(state));
+    },
+  },
+  {
+    id: 'edit.duplicate',
+    title: 'Duplicate selected tables',
+    group: 'Edit',
+    shortcut: 'mod+d',
+    keywords: ['copy', 'clone'],
+    isEnabled: hasSelectedTables,
+    run: ({ state, reportPaste }) => {
+      reportPaste(duplicateSelection(state));
+    },
+  },
+  {
+    id: 'edit.selectAll',
+    title: 'Select all tables',
+    group: 'Edit',
+    shortcut: 'mod+a',
+    isEnabled: hasTables,
+    run: ({ state }) => {
+      state.runCanvasCommand('selectAll');
     },
   },
   {
@@ -165,13 +218,35 @@ export const ACTIONS = [
   },
   {
     id: 'schema.deleteTable',
-    title: 'Delete selected table',
+    title: 'Delete selected tables…',
     group: 'Schema',
     shortcut: 'mod+backspace',
     keywords: ['remove', 'drop'],
-    isEnabled: (state) => state.selection.tableId !== null,
+    isEnabled: hasSelectedTables,
     run: ({ state }) => {
-      state.removeSelectedTable();
+      state.requestDeleteTables(selectedTableIds(state));
+    },
+  },
+  {
+    id: 'view.arrange',
+    title: 'Arrange tables automatically',
+    group: 'View',
+    shortcut: 'mod+shift+a',
+    keywords: ['layout', 'auto', 'tidy', 'organize'],
+    isEnabled: hasTables,
+    run: ({ state }) => {
+      state.runCanvasCommand('arrange');
+    },
+  },
+  {
+    id: 'view.fitView',
+    title: 'Fit diagram to view',
+    group: 'View',
+    shortcut: 'shift+1',
+    keywords: ['zoom', 'show all'],
+    isEnabled: hasTables,
+    run: ({ state }) => {
+      state.runCanvasCommand('fitView');
     },
   },
   {

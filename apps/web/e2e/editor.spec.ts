@@ -145,7 +145,9 @@ test.describe('editor', () => {
     await sidebar.getByLabel('Search tables').fill('post');
     await expect(sidebar.getByRole('button', { name: /^users\s*\d+$/ })).toBeHidden();
     await sidebar.getByRole('button', { name: /^posts\s*\d+$/ }).click();
-    await expect(page.getByTestId('canvas')).toContainText('Focused on posts');
+    await expect(
+      page.getByTestId('canvas').locator('[data-testid="table-node"][data-table="posts"]'),
+    ).toHaveAttribute('data-selected', 'true');
     await expect(page.getByTestId('inspector').getByLabel('Table name')).toHaveValue('posts');
     await expect(sidebar.getByText('post_status')).toBeVisible();
 

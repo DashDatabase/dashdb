@@ -34,6 +34,7 @@ export function ImportDialog() {
   const open = useEditor((s) => s.dialog === 'import');
   const closeDialog = useEditor((s) => s.closeDialog);
   const editSchema = useEditor((s) => s.editSchema);
+  const runCanvasCommand = useEditor((s) => s.runCanvasCommand);
   const [text, setText] = useState('');
   const [format, setFormat] = useState<ImportFormat>('postgres');
   const [errors, setErrors] = useState<readonly Diagnostic[]>([]);
@@ -64,7 +65,7 @@ export function ImportDialog() {
       setErrors(fatal);
       return;
     }
-    editSchema('Import schema', () => schema);
+    if (editSchema('Import schema', () => schema)) runCanvasCommand('arrange');
     closeDialog();
     reset();
     const warnings = diagnostics.length;

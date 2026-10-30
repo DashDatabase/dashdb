@@ -319,3 +319,70 @@ describe('ui state', () => {
     expect(state().past).toEqual([]);
   });
 });
+
+describe('canvas actions', () => {
+  it('places a new table near the canvas centre without covering existing ones', () => {
+    state().setCanvasCenter({ x: 500, y: 300 });
+    const first = state().addTable() ?? '';
+    const second = state().addTable() ?? '';
+    const nodes = state().doc?.layout.nodes ?? {};
+    expect(nodes[first]).toMatchObject({ x: 320, y: 192 });
+    // The next table goes beside it, on the same row.
+    expect(nodes[second]).toMatchObject({ x: 672, y: 192 });
+    // Placement is part of the same undo step as the table itself.
+    state().undo();
+    expect(schema().tables).toHaveLength(1);
+    expect(Object.keys(state().doc?.layout.nodes ?? {})).toEqual([first]);
+  });
+
+  it('removes several tables as one undo step and prunes the canvas selection', () => {
+    const a = state().addTable() ?? '';
+    const b = state().addTable() ?? '';
+    const c = state().addTable() ?? '';
+    state().setCanvasSelection([a, b, c]);
+    state().removeTables([a, b, 'missing']);
+    expect(schema().tables.map((t) => t.id)).toEqual([c]);
+    expect(state().canvasSelection).toEqual([c]);
+    expect(state().past.at(-1)?.label).toBe('Delete tables');
+
+    state().undo();
+    expect(schema().tables).toHaveLength(3);
+    state().setCanvasSelection([a, b]);
+    state().redo();
+    expect(state().canvasSelection).toEqual([]);
+    state().removeTables(['missing']);
+    expect(state().past.at(-1)?.label).toBe('Delete tables');
+  });
+
+  it('asks for confirmation before deleting and clears the request on close', () => {
+    const a = state().addTable() ?? '';
+    state().requestDeleteTables([]);
+    expect(state().dialog).toBeNull();
+    state().requestDeleteTables([a]);
+    expect(state()).toMatchObject({ dialog: 'deleteTables', pendingDelete: [a] });
+    state().closeDialog();
+    expect(state()).toMatchObject({ dialog: null, pendingDelete: [] });
+    expect(schema().tables).toHaveLength(1);
+  });
+
+  it('moves many nodes as one undo step', () => {
+    const a = state().addTable() ?? '';
+    const b = state().addTable() ?? '';
+    const entries = state().past.length;
+    state().setNodePositions(
+      { [a]: { x: 10, y: 20 }, [b]: { x: 30, y: 40 }, gone: { x: 0, y: 0 } },
+      'Arrange tables',
+    );
+    expect(state().doc?.layout.nodes[a]).toMatchObject({ x: 10, y: 20 });
+    expect(state().past).toHaveLength(entries + 1);
+    state().undo();
+    expect(state().doc?.layout.nodes[b]).toMatchObject({ x: 300, y: 0 });
+  });
+
+  it('issues canvas commands without touching history', () => {
+    state().runCanvasCommand('arrange');
+    state().runCanvasCommand('fitView');
+    expect(state().canvasCommand).toEqual({ command: 'fitView', nonce: 2 });
+    expect(state().past).toEqual([]);
+  });
+});

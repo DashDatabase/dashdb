@@ -7,9 +7,9 @@ import { useEffect, useState } from 'react';
 import { useEditorShortcuts, useIsDesktop } from '../hooks';
 import { getProject, listBaselines, saveProject } from '../projects';
 import { editorStore, useEditor } from '../store';
+import { Canvas } from '../canvas/canvas';
 import { attachAutosave } from '../store/autosave';
 import { watchProjectTabs } from '../store/tab-sync';
-import { CanvasPlaceholder } from './canvas-placeholder';
 import { CommandPalette } from './command-palette';
 import { ExportDialog } from './export-dialog';
 import { ImportDialog } from './import-dialog';
@@ -128,7 +128,7 @@ function EditorLayout() {
           </>
         )}
         <ResizablePanel id="panel-canvas" minSize="30%">
-          <CanvasPlaceholder />
+          <Canvas />
         </ResizablePanel>
         {rightOpen && (
           <>

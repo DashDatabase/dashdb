@@ -11,12 +11,14 @@ function context() {
   const toggleTheme = vi.fn();
   const saveBaseline = vi.fn();
   const downloadProject = vi.fn();
+  const reportPaste = vi.fn();
   const ctx = (): ActionContext => ({
     state: store.getState(),
     goToProjects,
     toggleTheme,
     saveBaseline,
     downloadProject,
+    reportPaste,
   });
   return { store, ctx, goToProjects, toggleTheme, saveBaseline, downloadProject };
 }

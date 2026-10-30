@@ -8,6 +8,7 @@ import { isEditableTarget, isMacPlatform, matchesShortcut } from './shortcuts';
 import { downloadText } from '@/lib/download';
 import { fileSlug } from './formats';
 import { PROJECT_FILE_EXTENSION, serializeProjectFile } from './project-file';
+import type { PasteOutcome } from './canvas/operations';
 import { saveBaseline } from './projects';
 import { editorStore } from './store';
 
@@ -22,6 +23,12 @@ function saveCurrentBaseline() {
     },
     () => toast.error('Could not save the baseline.'),
   );
+}
+
+export function reportPaste(outcome: PasteOutcome): void {
+  if (outcome === 'dialect') {
+    toast.error('Tables copied from another database type cannot be pasted here.');
+  }
 }
 
 function downloadCurrentProject() {
@@ -49,6 +56,7 @@ export function useActionContext(): () => ActionContext {
       },
       saveBaseline: saveCurrentBaseline,
       downloadProject: downloadCurrentProject,
+      reportPaste,
     }),
     [router, resolvedTheme, setTheme],
   );

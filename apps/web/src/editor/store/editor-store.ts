@@ -17,7 +17,7 @@ import { createStore, type StoreApi } from 'zustand/vanilla';
 import { immer } from 'zustand/middleware/immer';
 import { normalizeProjectName } from '../project-name';
 import { record, stepBack, stepForward, type History, type HistoryEntry } from './history';
-import { layoutFor, syncLayout } from './layout';
+import { freePosition, layoutFor, syncLayout } from './layout';
 import { reconcile } from './reconcile';
 import type {
   Baseline,
@@ -33,7 +33,9 @@ enablePatches();
 
 export const VALIDATION_DELAY_MS = 150;
 
-export type EditorDialog = 'import' | 'export' | 'problems' | 'rename';
+export type EditorDialog = 'import' | 'export' | 'problems' | 'rename' | 'deleteTables';
+/** One-shot requests the canvas fulfils (it owns the viewport). */
+export type CanvasCommand = 'fitView' | 'zoomIn' | 'zoomOut' | 'arrange' | 'selectAll';
 export type SaveState = 'saved' | 'saving' | 'error' | 'conflict';
 
 export interface EditOptions {
@@ -56,6 +58,13 @@ export interface EditorState {
 
   selection: Selection;
   focusRequest: { tableId: Id; nonce: number } | null;
+  /** Tables selected on the canvas (may be several); `selection` tracks the primary one. */
+  canvasSelection: readonly Id[];
+  /** Tables awaiting confirmation in the delete dialog. */
+  pendingDelete: readonly Id[];
+  canvasCommand: { command: CanvasCommand; nonce: number } | null;
+  /** Flow coordinates at the middle of the visible canvas; new tables are placed near it. */
+  canvasCenter: { x: number; y: number } | null;
   rightTab: RightTab;
   leftOpen: boolean;
   rightOpen: boolean;
@@ -84,16 +93,28 @@ export interface EditorActions {
   addEnum: () => Id | null;
   addColumn: (tableId: Id) => Id | null;
   removeSelectedTable: () => void;
+  /** Removes tables (and every foreign key that points at them) as one undo step. */
+  removeTables: (tableIds: readonly Id[]) => void;
+  /** Opens the delete confirmation for the given tables. */
+  requestDeleteTables: (tableIds: readonly Id[]) => void;
 
   moveNode: (tableId: Id, position: { x: number; y: number }) => void;
   setNodeCollapsed: (tableId: Id, collapsed: boolean) => void;
   setNodeColor: (tableId: Id, color: NodeColor) => void;
+  /** Moves many nodes as one undo step (arrange, multi-drag, paste). */
+  setNodePositions: (
+    positions: Readonly<Record<Id, { x: number; y: number }>>,
+    label: string,
+  ) => void;
 
   setBaselines: (baselines: readonly Baseline[]) => void;
   setRevision: (revision: number) => void;
 
   select: (tableId: Id | null, columnId?: Id | null) => void;
   focusTable: (tableId: Id) => void;
+  setCanvasSelection: (tableIds: readonly Id[]) => void;
+  setCanvasCenter: (center: { x: number; y: number } | null) => void;
+  runCanvasCommand: (command: CanvasCommand) => void;
   setRightTab: (tab: RightTab) => void;
   toggleLeft: () => void;
   toggleRight: () => void;
@@ -151,6 +172,10 @@ const initialState: EditorState = {
   baselines: [],
   selection: { tableId: null, columnId: null },
   focusRequest: null,
+  canvasSelection: [],
+  pendingDelete: [],
+  canvasCommand: null,
+  canvasCenter: null,
   rightTab: 'inspector',
   leftOpen: true,
   rightOpen: true,
@@ -188,6 +213,10 @@ export function createEditorStore(options: { now?: () => number } = {}): EditorS
           state.past = nextHistory.past as Draft<HistoryEntry>[];
           state.future = nextHistory.future as Draft<HistoryEntry>[];
           state.selection = validSelection(doc.schema, state.selection);
+          if (state.canvasSelection.length > 0) {
+            const ids = new Set(doc.schema.tables.map((t) => t.id));
+            state.canvasSelection = state.canvasSelection.filter((id) => ids.has(id));
+          }
         });
         if (schemaChanged) validateSoon();
       };
@@ -226,6 +255,8 @@ export function createEditorStore(options: { now?: () => number } = {}): EditorS
         label: string,
         edit: (schema: Schema) => Schema,
         opts?: EditOptions,
+        /** Adjusts the layout in the same undo step (e.g. placing a new table). */
+        arrange?: (layout: Draft<ProjectDocument['layout']>) => void,
       ) => {
         const { doc } = get();
         if (!doc) return false;
@@ -235,6 +266,7 @@ export function createEditorStore(options: { now?: () => number } = {}): EditorS
           (draft) => {
             reconcile(draft, 'schema', next);
             syncLayout(draft.layout, next);
+            arrange?.(draft.layout);
           },
           opts,
         );
@@ -359,30 +391,40 @@ export function createEditorStore(options: { now?: () => number } = {}): EditorS
           if (!doc) return null;
           // Written inside the edit callback; an object keeps TypeScript's narrowing honest.
           const created: { tableId: Id | null } = { tableId: null };
-          const ok = changeSchema('Add table', (current) => {
-            const { schema, namespaceId } = withDefaultNamespace(current);
-            const name = uniqueName(
-              'new_table',
-              schema.tables.filter((t) => t.namespace === namespaceId).map((t) => t.name),
-            );
-            const withTable = addTable(schema, {
-              name,
-              namespace: namespaceId,
-              columns: [
-                {
-                  name: 'id',
-                  logicalType: { kind: 'bigint' },
-                  nativeType: nativeType(schema, 'bigint'),
-                  nullable: false,
-                },
-              ],
-            });
-            const table = withTable.tables.at(-1);
-            const id = table?.columns[0]?.id;
-            if (!table || !id) throw new Error('Table was not created');
-            created.tableId = table.id;
-            return setPrimaryKey(withTable, table.id, { columns: [id] });
-          });
+          const center = get().canvasCenter;
+          const position = center ? freePosition(doc.layout, center) : null;
+          const ok = changeSchema(
+            'Add table',
+            (current) => {
+              const { schema, namespaceId } = withDefaultNamespace(current);
+              const name = uniqueName(
+                'new_table',
+                schema.tables.filter((t) => t.namespace === namespaceId).map((t) => t.name),
+              );
+              const withTable = addTable(schema, {
+                name,
+                namespace: namespaceId,
+                columns: [
+                  {
+                    name: 'id',
+                    logicalType: { kind: 'bigint' },
+                    nativeType: nativeType(schema, 'bigint'),
+                    nullable: false,
+                  },
+                ],
+              });
+              const table = withTable.tables.at(-1);
+              const id = table?.columns[0]?.id;
+              if (!table || !id) throw new Error('Table was not created');
+              created.tableId = table.id;
+              return setPrimaryKey(withTable, table.id, { columns: [id] });
+            },
+            undefined,
+            (layout) => {
+              const node = created.tableId ? layout.nodes[created.tableId] : undefined;
+              if (node && position) Object.assign(node, position);
+            },
+          );
           const { tableId } = created;
           if (!ok || !tableId) return null;
           get().focusTable(tableId);
@@ -430,6 +472,23 @@ export function createEditorStore(options: { now?: () => number } = {}): EditorS
           const { tableId } = get().selection;
           if (tableId) changeSchema('Delete table', (schema) => removeTable(schema, tableId));
         },
+        removeTables: (tableIds) => {
+          const { doc } = get();
+          if (!doc) return;
+          const existing = new Set(doc.schema.tables.map((t) => t.id));
+          const ids = tableIds.filter((id) => existing.has(id));
+          if (ids.length === 0) return;
+          changeSchema(ids.length === 1 ? 'Delete table' : 'Delete tables', (schema) =>
+            ids.reduce(removeTable, schema),
+          );
+          set((state) => {
+            state.canvasSelection = state.canvasSelection.filter((id) => !ids.includes(id));
+          });
+        },
+        requestDeleteTables: (tableIds) => {
+          if (tableIds.length === 0) return;
+          set({ pendingDelete: [...tableIds], dialog: 'deleteTables', paletteOpen: false });
+        },
 
         moveNode: (tableId, { x, y }) => {
           setNode(tableId, 'Move table', { x, y }, `move:${tableId}`);
@@ -439,6 +498,14 @@ export function createEditorStore(options: { now?: () => number } = {}): EditorS
         },
         setNodeColor: (tableId, color) => {
           setNode(tableId, 'Change table color', { color });
+        },
+        setNodePositions: (positions, label) => {
+          change(label, (draft) => {
+            for (const [id, { x, y }] of Object.entries(positions)) {
+              const node = draft.layout.nodes[id];
+              if (node && (node.x !== x || node.y !== y)) Object.assign(node, { x, y });
+            }
+          });
         },
 
         setBaselines: (baselines) => {
@@ -455,6 +522,17 @@ export function createEditorStore(options: { now?: () => number } = {}): EditorS
           set((state) => {
             state.selection = { tableId, columnId: null };
             state.focusRequest = { tableId, nonce: (state.focusRequest?.nonce ?? 0) + 1 };
+          });
+        },
+        setCanvasSelection: (tableIds) => {
+          set({ canvasSelection: [...tableIds] });
+        },
+        setCanvasCenter: (canvasCenter) => {
+          set({ canvasCenter });
+        },
+        runCanvasCommand: (command) => {
+          set((state) => {
+            state.canvasCommand = { command, nonce: (state.canvasCommand?.nonce ?? 0) + 1 };
           });
         },
         setRightTab: (rightTab) => {
@@ -474,7 +552,7 @@ export function createEditorStore(options: { now?: () => number } = {}): EditorS
           set({ dialog, paletteOpen: false });
         },
         closeDialog: () => {
-          set({ dialog: null });
+          set({ dialog: null, pendingDelete: [] });
         },
         setPaletteOpen: (paletteOpen) => {
           set({ paletteOpen });

@@ -62,6 +62,7 @@ import {
   importProjectFile,
   isProjectFileName,
 } from '@/editor/project-file';
+import { markForArrange } from '@/editor/canvas/arrange-intent';
 import { relativeTime } from '@/editor/schema-text';
 import { TEMPLATES, schemaFromTemplate, type Template } from '@/editor/templates';
 
@@ -364,8 +365,16 @@ export function ProjectsHome() {
     open(await createProject({ name, dialect }));
   };
 
+  /** Opens a project whose tables have no layout yet, arranging them on arrival. */
+  const openArranged = (project: Project) => {
+    markForArrange(project.id);
+    open(project);
+  };
+
   const fromTemplate = async (template: Template) => {
-    open(await createProject({ name: template.name, schema: schemaFromTemplate(template) }));
+    openArranged(
+      await createProject({ name: template.name, schema: schemaFromTemplate(template) }),
+    );
   };
 
   const importFile = async (file: File) => {
@@ -390,7 +399,7 @@ export function ProjectsHome() {
       toast.error(`Could not import ${file.name}`, { description: diagnostics[0]?.message });
       return;
     }
-    open(await createProject({ name: file.name.replace(/\.[^.]+$/, ''), schema }));
+    openArranged(await createProject({ name: file.name.replace(/\.[^.]+$/, ''), schema }));
   };
 
   return (
