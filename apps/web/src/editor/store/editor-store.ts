@@ -15,6 +15,7 @@ import {
 import { applyPatches, enablePatches, produceWithPatches, type Draft, type Patch } from 'immer';
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import { immer } from 'zustand/middleware/immer';
+import type { CodeFormat } from '../code/code-formats';
 import { normalizeProjectName } from '../project-name';
 import { record, stepBack, stepForward, type History, type HistoryEntry } from './history';
 import { freePosition, layoutFor, syncLayout } from './layout';
@@ -66,6 +67,8 @@ export interface EditorState {
   /** Flow coordinates at the middle of the visible canvas; new tables are placed near it. */
   canvasCenter: { x: number; y: number } | null;
   rightTab: RightTab;
+  /** Format shown in the Code panel. */
+  codeFormat: CodeFormat;
   leftOpen: boolean;
   rightOpen: boolean;
   dialog: EditorDialog | null;
@@ -116,6 +119,7 @@ export interface EditorActions {
   setCanvasCenter: (center: { x: number; y: number } | null) => void;
   runCanvasCommand: (command: CanvasCommand) => void;
   setRightTab: (tab: RightTab) => void;
+  setCodeFormat: (format: CodeFormat) => void;
   toggleLeft: () => void;
   toggleRight: () => void;
   openDialog: (dialog: EditorDialog) => void;
@@ -177,6 +181,7 @@ const initialState: EditorState = {
   canvasCommand: null,
   canvasCenter: null,
   rightTab: 'inspector',
+  codeFormat: 'sql',
   leftOpen: true,
   rightOpen: true,
   dialog: null,
@@ -537,6 +542,9 @@ export function createEditorStore(options: { now?: () => number } = {}): EditorS
         },
         setRightTab: (rightTab) => {
           set({ rightTab, rightOpen: true });
+        },
+        setCodeFormat: (codeFormat) => {
+          set({ codeFormat });
         },
         toggleLeft: () => {
           set((state) => {

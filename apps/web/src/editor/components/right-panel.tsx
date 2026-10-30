@@ -1,24 +1,13 @@
 'use client';
 
 import { ScrollArea, Tabs, TabsContent, TabsList, TabsTrigger } from '@dashdb/ui';
-import { CodeIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { CodePanel } from '../code/code-panel';
 import { useEditor, type RightTab } from '../store';
 import { BaselinesPanel } from './baselines-panel';
 import { Inspector } from './inspector';
 
 function isRightTab(value: string): value is RightTab {
   return value === 'inspector' || value === 'code' || value === 'migration';
-}
-
-function ComingSoon({ icon, title, body }: { icon: ReactNode; title: string; body: string }) {
-  return (
-    <div className="flex flex-col items-center gap-2 px-6 py-12 text-center">
-      {icon}
-      <p className="font-medium">{title}</p>
-      <p className="text-sm text-text-muted">{body}</p>
-    </div>
-  );
 }
 
 export function RightPanel() {
@@ -40,21 +29,20 @@ export function RightPanel() {
           <TabsTrigger value="migration">Migration</TabsTrigger>
         </TabsList>
       </div>
-      <ScrollArea className="min-h-0 flex-1">
-        <TabsContent value="inspector">
-          <Inspector />
-        </TabsContent>
-        <TabsContent value="code">
-          <ComingSoon
-            icon={<CodeIcon className="size-6 text-text-muted" aria-hidden />}
-            title="Live code"
-            body="SQL, Prisma, Drizzle and DBML for this schema, updated as you edit."
-          />
-        </TabsContent>
-        <TabsContent value="migration">
-          <BaselinesPanel />
-        </TabsContent>
-      </ScrollArea>
+      {/* The code editor scrolls itself and needs the panel's full height. */}
+      <TabsContent value="code" className="min-h-0 flex-1">
+        <CodePanel />
+      </TabsContent>
+      {tab !== 'code' && (
+        <ScrollArea className="min-h-0 flex-1">
+          <TabsContent value="inspector">
+            <Inspector />
+          </TabsContent>
+          <TabsContent value="migration">
+            <BaselinesPanel />
+          </TabsContent>
+        </ScrollArea>
+      )}
     </Tabs>
   );
 }
