@@ -10,6 +10,7 @@ const allowed = new Set([
   'packages/ui/src/styles/globals.css', // the token definitions themselves
   'packages/ui/src/tokens.test.ts', // the patterns below
   'apps/web/src/app/icon.svg', // generated from the tokens by apps/web/scripts/generate-icons.mjs
+  'apps/web/src/lib/brand-colors.ts', // token values for OG images (Satori can't read CSS variables)
 ]);
 
 const literal = /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab|lab|lch)\(/i;

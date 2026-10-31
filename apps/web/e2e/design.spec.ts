@@ -49,7 +49,7 @@ test.describe('/design', () => {
 test.describe('theme toggle', () => {
   test('persists the chosen theme across reloads and pages', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
-    await page.goto('/');
+    await page.goto('/design');
     await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
 
     await chooseTheme(page, 'Dark');
@@ -57,8 +57,10 @@ test.describe('theme toggle', () => {
 
     await page.reload();
     await expect(page.locator('html')).toHaveClass(/\bdark\b/);
-    await page.goto('/design');
+    // The marketing pages have no toggle, but apply the stored choice before first paint.
+    await page.goto('/');
     await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+    await page.goto('/design');
 
     await chooseTheme(page, 'Light');
     await page.reload();

@@ -1,6 +1,7 @@
 # Performance and accessibility
 
-Budgets for the editor, how they are measured, and the numbers as of P18 (2026-10-31).
+Budgets for the editor and the marketing site, how they are measured, and the numbers as of P19
+(2026-10-31).
 
 ## Budget: editor JavaScript on first load
 
@@ -11,7 +12,8 @@ disabled) straight to an editor URL, counting every script until the network goe
 | -------------------------------------- | -------------------- | ------ |
 | Before P18                             | 3,952.8 KB           | 13     |
 | After splitting `@dashdb/core`         | 433.4 KB             | 13     |
-| **P18** (plus lazy dialogs and panels) | **397.8 KB**         | 15     |
+| P18 (plus lazy dialogs and panels)     | 397.8 KB             | 15     |
+| **P19** (UI providers out of the root) | **387.8 KB**         | 16     |
 
 Measure it yourself (production build; the script starts `next start` on port 3107):
 
@@ -102,3 +104,45 @@ What P18 added for keyboard and screen-reader users:
 - Arrow keys, Home and End move between the sidebar's tables, enums and relationships.
 - A polite live region announces edits, undo and redo ("Undid add column") and tour progress.
 - Canvas controls are labelled, and scrollable regions are focusable.
+
+## Marketing site (P19)
+
+**Lighthouse 95+ in all four categories, mobile, on `/` and `/pricing`; no editor code.**
+
+| Page       | Performance | Accessibility | Best practices | SEO | LCP    | TBT   | CLS |
+| ---------- | ----------- | ------------- | -------------- | --- | ------ | ----- | --- |
+| `/`        | **99**      | **100**       | **100**        | 100 | 2.27 s | 49 ms | 0   |
+| `/pricing` | **100**     | **100**       | **100**        | 100 | 0.91 s | 47 ms | 0   |
+
+Lighthouse's default mobile profile (Moto G Power, 4x CPU slowdown, simulated slow 4G):
+
+```sh
+pnpm --filter @dashdb/web build
+pnpm --filter @dashdb/web lighthouse:marketing   # exits 1 below 95 in any category
+pnpm --filter @dashdb/web bundle:marketing       # exits 1 if editor code reaches a marketing page
+```
+
+Every marketing page loads **139 KB gzipped** of JavaScript, almost all of it the Next.js and
+React runtime; the editor's first load is 387.8 KB, and `/app` on a first visit (which builds
+the starter project with the parsers) is about 3.5 MB. `bundle:marketing` fetches each page's
+scripts and searches them for strings only editor code contains (Dexie, Immer, React Flow, Radix,
+Sonner, Monaco, ELK, the parsers and the editor's storage keys), using `/app` as a control.
+
+What keeps it that way:
+
+- **The root layout is minimal.** Tooltip and toast providers, and React Flow's stylesheet, live
+  in the `/app` (and `/design`) layouts. `@dashdb/ui` is one client bundle, so marketing
+  components are plain server-rendered markup; the logo comes from `@dashdb/ui/server`.
+- **Server components do the work at build time.** The migration showcase runs the real diff,
+  SQL generator and safety rules through `@dashdb/core` while the page is built; the browser gets
+  HTML. The FAQ uses `<details>`, so it needs no JavaScript.
+- **Only two client components:** the waitlist form (a server action, which also works without
+  JavaScript) and the demo video.
+- **The demo video never competes with the first paint.** On phones the demo sits at the fold,
+  so its poster can be the LCP element: it is a responsive `next/image` with
+  `fetchPriority="high"` (a 22 KB variant on a phone). The 390 KB video is attached only when
+  half the frame is visible. Tuning took the home page's LCP from 3.2 s (video playing at the
+  fold, poster found late at low priority) to a steady 2.27 s.
+- **Only Inter is preloaded.** JetBrains Mono (code snippets) is fetched when CSS uses it.
+- Fonts are self-hosted by `next/font` with metric-adjusted fallbacks, and every image has
+  intrinsic dimensions: CLS is 0.

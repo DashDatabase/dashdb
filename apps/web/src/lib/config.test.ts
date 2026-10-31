@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getApiUrl, getGithubUrl } from './config';
+import { getApiUrl, getGithubUrl, getSiteUrl, githubRepoSlug } from './config';
 
 describe('getApiUrl', () => {
   it('falls back to the local API', () => {
@@ -13,7 +13,24 @@ describe('getApiUrl', () => {
 
 describe('getGithubUrl', () => {
   it('falls back to the default repository', () => {
-    expect(getGithubUrl(' ')).toBe('https://github.com/dashdb/dashdb');
+    expect(getGithubUrl(' ')).toBe('https://github.com/DashDatabase/dashdb');
     expect(getGithubUrl('https://github.com/acme/dashdb')).toBe('https://github.com/acme/dashdb');
+  });
+});
+
+describe('githubRepoSlug', () => {
+  it('extracts owner/repo from github.com URLs only', () => {
+    expect(githubRepoSlug('https://github.com/DashDatabase/dashdb')).toBe('DashDatabase/dashdb');
+    expect(githubRepoSlug('https://github.com/acme/db.js.git/')).toBe('acme/db.js');
+    expect(githubRepoSlug('https://gitlab.com/acme/dashdb')).toBeNull();
+    expect(githubRepoSlug('https://github.com/acme')).toBeNull();
+    expect(githubRepoSlug('https://github.com/acme/x/../../evil')).toBeNull();
+  });
+});
+
+describe('getSiteUrl', () => {
+  it('falls back to the production origin and strips trailing slashes', () => {
+    expect(getSiteUrl(undefined)).toBe('https://dashdb.dev');
+    expect(getSiteUrl('http://localhost:3000/')).toBe('http://localhost:3000');
   });
 });

@@ -1,28 +1,5 @@
 @import 'tailwindcss';
 @import '@dashdb/ui/styles.css';
-@import '@xyflow/react/dist/style.css';
 
 /* Shared components ship as JS, so Tailwind has to scan their source for class names. */
 @source '../../../../packages/ui/src';
-
-/* React Flow's default styles, re-tinted with DashDB tokens so both themes follow the design system. */
-.react-flow {
-  --xy-background-color: var(--background);
-  --xy-background-pattern-color: var(--border);
-  --xy-edge-stroke: var(--text-muted);
-  --xy-edge-stroke-selected: var(--primary);
-  --xy-connectionline-stroke: var(--primary);
-  --xy-connectionline-stroke-width: 1.75;
-  --xy-handle-background-color: var(--primary);
-  --xy-handle-border-color: var(--background);
-  --xy-minimap-background-color: var(--surface);
-  --xy-minimap-mask-background-color: rgb(var(--black-rgb) / 0.08);
-  --xy-minimap-node-background-color: var(--border);
-  --xy-controls-button-background-color: var(--surface-raised);
-  --xy-controls-button-background-color-hover: var(--highlight);
-  --xy-controls-button-color: var(--text);
-  --xy-controls-button-color-hover: var(--text);
-  --xy-controls-button-border-color: var(--border);
-  --xy-selection-background-color: color-mix(in oklab, var(--primary) 8%, transparent);
-  --xy-selection-border: 1px dashed var(--primary);
-}

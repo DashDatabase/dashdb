@@ -8,6 +8,13 @@
       "when": 1792937859017,
       "tag": "0000_brainy_magma",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793448203356,
+      "tag": "0001_waitlist_signups",
+      "breakpoints": true
     }
   ]
 }

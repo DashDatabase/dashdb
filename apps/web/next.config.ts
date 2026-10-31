@@ -1,3 +1,4 @@
+import createMDX from '@next/mdx';
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
@@ -13,4 +14,7 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// MDX content (the changelog) is imported by pages and compiled at build time.
+const withMDX = createMDX({});
+
+export default withMDX(nextConfig);
