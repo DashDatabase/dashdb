@@ -112,3 +112,19 @@ test.describe('code panel', () => {
     await expect(editor(page)).toContainText('pgTable');
   });
 });
+
+test('typing in the code editor never triggers single-key shortcuts', async ({ page }) => {
+  await createProject(page, 'Typing');
+  await page.keyboard.press('t');
+  await expect(page.getByTestId('table-count')).toHaveText('1 table');
+  await openCode(page, 'SQL');
+  await editor(page).click();
+  await page.keyboard.press('ControlOrMeta+End');
+  // Every plain-key shortcut: add table, add enum, add column, delete, focus, search, help.
+  await page.keyboard.type('\n-- tnNcf/? and table names\n');
+  await page.keyboard.press('Backspace');
+  await page.keyboard.press('Delete');
+  await expect(editor(page)).toContainText('-- tnNcf/? and table names');
+  await expect(page.getByTestId('table-count')).toHaveText('1 table');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+});

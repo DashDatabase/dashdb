@@ -92,7 +92,11 @@ export function isEditableTarget(target: EventTarget | null): boolean {
     target.isContentEditable ||
     target instanceof HTMLInputElement ||
     target instanceof HTMLTextAreaElement ||
-    target instanceof HTMLSelectElement
+    target instanceof HTMLSelectElement ||
+    // Code editors take keystrokes on a plain element: Monaco uses the EditContext API in
+    // Chromium (a <div>, neither contenteditable nor a textarea).
+    ('editContext' in target && target.editContext != null) ||
+    target.closest('.monaco-editor, [role="textbox"]') !== null
   );
 }
 

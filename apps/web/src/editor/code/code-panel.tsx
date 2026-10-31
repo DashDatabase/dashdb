@@ -154,7 +154,8 @@ export function CodePanel() {
         </Button>
       </div>
       <div className="relative min-h-0 flex-1">
-        <div ref={containerRef} className="absolute inset-0" data-testid="code-editor" />
+        {/* `nokey`: React Flow ignores keys typed here (it would take Space for panning). */}
+        <div ref={containerRef} className="nokey absolute inset-0" data-testid="code-editor" />
         {status.kind === 'load-failed' && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-surface p-6 text-center">
             <p className="text-sm text-text-muted">The code editor could not be loaded.</p>
