@@ -1,0 +1,1044 @@
+{
+  "format": "dashdb.project",
+  "version": 1,
+  "exportedAt": "2026-10-31T16:37:11.340Z",
+  "template": {
+    "title": "Two-sided marketplace",
+    "description": "Buyers and sellers in one user table, listings with images, orders with platform fees, reviews, seller payouts and disputes.",
+    "tags": ["marketplace", "e-commerce", "payments", "reviews"],
+    "dialect": "postgres",
+    "tablesCount": 8,
+    "decisions": [
+      {
+        "title": "One user table, an optional seller profile",
+        "body": "Everyone signs up as a user; selling adds a one-to-one seller_profiles row keyed by user_id. Buyers who never sell carry no empty seller columns, and seller-only data such as the payout account and commission rate has a clear home."
+      },
+      {
+        "title": "The platform fee is recorded per order",
+        "body": "orders store both the price and the platform_fee_cents taken at checkout. Commission rates change over time, and payouts and accounting need the fee that applied to that sale, not today's rate."
+      },
+      {
+        "title": "One review per order",
+        "body": "reviews.order_id is unique, so only buyers who completed a purchase can review, and only once. Ratings are checked to be between 1 and 5 by the database, not just the form."
+      },
+      {
+        "title": "Payouts group earnings by period",
+        "body": "Sellers are paid in batches, so payouts cover a date range per seller rather than mirroring individual orders. That matches how payment providers transfer money and keeps reconciliation to one row per transfer."
+      }
+    ]
+  },
+  "project": {
+    "name": "Two-sided marketplace",
+    "schema": {
+      "id": "schema",
+      "dialect": "postgres",
+      "namespaces": [
+        {
+          "id": "namespace:public",
+          "name": "public"
+        }
+      ],
+      "tables": [
+        {
+          "id": "table:public.users",
+          "name": "users",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.users.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "users_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.users.email",
+              "name": "email",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 255
+              },
+              "nativeType": "varchar(255)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.users.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.users.created_at",
+              "name": "created_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.users",
+            "name": null,
+            "columns": ["column:public.users.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.users.users_email_key",
+              "name": "users_email_key",
+              "columns": ["column:public.users.email"]
+            }
+          ],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.seller_profiles",
+          "name": "seller_profiles",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.seller_profiles.user_id",
+              "name": "user_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.seller_profiles.shop_name",
+              "name": "shop_name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 80
+              },
+              "nativeType": "varchar(80)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.seller_profiles.payout_account_ref",
+              "name": "payout_account_ref",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 128
+              },
+              "nativeType": "varchar(128)",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.seller_profiles.commission_rate",
+              "name": "commission_rate",
+              "logicalType": {
+                "kind": "decimal",
+                "precision": 5,
+                "scale": 4
+              },
+              "nativeType": "numeric(5,4)",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": 0.1
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.seller_profiles.verified_at",
+              "name": "verified_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.seller_profiles",
+            "name": null,
+            "columns": ["column:public.seller_profiles.user_id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.seller_profiles.seller_profiles_shop_name_key",
+              "name": "seller_profiles_shop_name_key",
+              "columns": ["column:public.seller_profiles.shop_name"]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "id": "fk:public.seller_profiles.seller_profiles_user_id_fkey",
+              "name": "seller_profiles_user_id_fkey",
+              "columns": ["column:public.seller_profiles.user_id"],
+              "refTable": "table:public.users",
+              "refColumns": ["column:public.users.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": "Only users who sell have a row here",
+          "metadata": {}
+        },
+        {
+          "id": "table:public.listings",
+          "name": "listings",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.listings.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "listings_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.listings.seller_id",
+              "name": "seller_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.listings.title",
+              "name": "title",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 140
+              },
+              "nativeType": "varchar(140)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.listings.description",
+              "name": "description",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.listings.price_cents",
+              "name": "price_cents",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.listings.status",
+              "name": "status",
+              "logicalType": {
+                "kind": "enum",
+                "enumId": "enum:public.listing_status"
+              },
+              "nativeType": "listing_status",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": "draft"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.listings.created_at",
+              "name": "created_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.listings",
+            "name": null,
+            "columns": ["column:public.listings.id"]
+          },
+          "indexes": [
+            {
+              "id": "index:public.listings.listings_seller_status_idx",
+              "name": "listings_seller_status_idx",
+              "columns": [
+                {
+                  "column": "column:public.listings.seller_id",
+                  "order": "asc",
+                  "nulls": null
+                },
+                {
+                  "column": "column:public.listings.status",
+                  "order": "asc",
+                  "nulls": null
+                }
+              ],
+              "unique": false,
+              "method": null,
+              "where": null
+            }
+          ],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.listings.listings_seller_id_fkey",
+              "name": "listings_seller_id_fkey",
+              "columns": ["column:public.listings.seller_id"],
+              "refTable": "table:public.seller_profiles",
+              "refColumns": ["column:public.seller_profiles.user_id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [
+            {
+              "id": "check:public.listings.listings_price_cents_check",
+              "name": "listings_price_cents_check",
+              "expression": "price_cents > 0"
+            }
+          ],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.listing_images",
+          "name": "listing_images",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.listing_images.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "listing_images_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.listing_images.listing_id",
+              "name": "listing_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.listing_images.url",
+              "name": "url",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.listing_images.position",
+              "name": "position",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "smallint",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": 0
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.listing_images",
+            "name": null,
+            "columns": ["column:public.listing_images.id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.listing_images.listing_images_listing_id_fkey",
+              "name": "listing_images_listing_id_fkey",
+              "columns": ["column:public.listing_images.listing_id"],
+              "refTable": "table:public.listings",
+              "refColumns": ["column:public.listings.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.orders",
+          "name": "orders",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.orders.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "orders_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.orders.buyer_id",
+              "name": "buyer_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.orders.listing_id",
+              "name": "listing_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.orders.price_cents",
+              "name": "price_cents",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.orders.platform_fee_cents",
+              "name": "platform_fee_cents",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.orders.status",
+              "name": "status",
+              "logicalType": {
+                "kind": "enum",
+                "enumId": "enum:public.order_status"
+              },
+              "nativeType": "order_status",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": "pending"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.orders.created_at",
+              "name": "created_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.orders",
+            "name": null,
+            "columns": ["column:public.orders.id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.orders.orders_buyer_id_fkey",
+              "name": "orders_buyer_id_fkey",
+              "columns": ["column:public.orders.buyer_id"],
+              "refTable": "table:public.users",
+              "refColumns": ["column:public.users.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.orders.orders_listing_id_fkey",
+              "name": "orders_listing_id_fkey",
+              "columns": ["column:public.orders.listing_id"],
+              "refTable": "table:public.listings",
+              "refColumns": ["column:public.listings.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.reviews",
+          "name": "reviews",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.reviews.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "reviews_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.reviews.order_id",
+              "name": "order_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.reviews.rating",
+              "name": "rating",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "smallint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.reviews.body",
+              "name": "body",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.reviews.created_at",
+              "name": "created_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.reviews",
+            "name": null,
+            "columns": ["column:public.reviews.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.reviews.reviews_order_id_key",
+              "name": "reviews_order_id_key",
+              "columns": ["column:public.reviews.order_id"]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "id": "fk:public.reviews.reviews_order_id_fkey",
+              "name": "reviews_order_id_fkey",
+              "columns": ["column:public.reviews.order_id"],
+              "refTable": "table:public.orders",
+              "refColumns": ["column:public.orders.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [
+            {
+              "id": "check:public.reviews.reviews_rating_check",
+              "name": "reviews_rating_check",
+              "expression": "rating BETWEEN 1 AND 5"
+            }
+          ],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.payouts",
+          "name": "payouts",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.payouts.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "payouts_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.payouts.seller_id",
+              "name": "seller_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.payouts.amount_cents",
+              "name": "amount_cents",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.payouts.period_start",
+              "name": "period_start",
+              "logicalType": {
+                "kind": "date"
+              },
+              "nativeType": "date",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.payouts.period_end",
+              "name": "period_end",
+              "logicalType": {
+                "kind": "date"
+              },
+              "nativeType": "date",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.payouts.paid_at",
+              "name": "paid_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.payouts",
+            "name": null,
+            "columns": ["column:public.payouts.id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.payouts.payouts_seller_id_fkey",
+              "name": "payouts_seller_id_fkey",
+              "columns": ["column:public.payouts.seller_id"],
+              "refTable": "table:public.seller_profiles",
+              "refColumns": ["column:public.seller_profiles.user_id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.disputes",
+          "name": "disputes",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.disputes.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "disputes_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.disputes.order_id",
+              "name": "order_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.disputes.opened_by",
+              "name": "opened_by",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.disputes.reason",
+              "name": "reason",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.disputes.resolution",
+              "name": "resolution",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.disputes.opened_at",
+              "name": "opened_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.disputes.resolved_at",
+              "name": "resolved_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.disputes",
+            "name": null,
+            "columns": ["column:public.disputes.id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.disputes.disputes_order_id_fkey",
+              "name": "disputes_order_id_fkey",
+              "columns": ["column:public.disputes.order_id"],
+              "refTable": "table:public.orders",
+              "refColumns": ["column:public.orders.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.disputes.disputes_opened_by_fkey",
+              "name": "disputes_opened_by_fkey",
+              "columns": ["column:public.disputes.opened_by"],
+              "refTable": "table:public.users",
+              "refColumns": ["column:public.users.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        }
+      ],
+      "enums": [
+        {
+          "id": "enum:public.listing_status",
+          "name": "listing_status",
+          "namespace": "namespace:public",
+          "values": ["draft", "active", "sold", "archived"]
+        },
+        {
+          "id": "enum:public.order_status",
+          "name": "order_status",
+          "namespace": "namespace:public",
+          "values": ["pending", "paid", "shipped", "completed", "refunded"]
+        }
+      ],
+      "version": 1
+    },
+    "layout": {
+      "nodes": {
+        "table:public.users": {
+          "x": 16,
+          "y": 64,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.seller_profiles": {
+          "x": 384,
+          "y": 176,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.listings": {
+          "x": 752,
+          "y": 384,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.listing_images": {
+          "x": 1120,
+          "y": 464,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.orders": {
+          "x": 1120,
+          "y": 16,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.reviews": {
+          "x": 1488,
+          "y": 16,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.payouts": {
+          "x": 752,
+          "y": 128,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.disputes": {
+          "x": 1488,
+          "y": 480,
+          "collapsed": false,
+          "color": "default"
+        }
+      }
+    },
+    "baselines": []
+  }
+}

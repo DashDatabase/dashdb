@@ -3,6 +3,7 @@
 //
 //   pnpm --filter @dashdb/web lighthouse              # editor: accessibility, best practices
 //   pnpm --filter @dashdb/web lighthouse:marketing    # / and /pricing: all four categories, mobile
+//   ... --paths=/templates,/templates/crm             # marketing mode on other pages
 //   ... --json                                        # machine-readable (either mode)
 //
 // Editor mode gates accessibility (P18), marketing mode every category (P19); both exit 1 below 95.
@@ -20,8 +21,12 @@ const PORT = Number(process.env.LIGHTHOUSE_PORT ?? 3108);
 const DEBUG_PORT = 9333;
 const BASE = `http://localhost:${String(PORT)}`;
 const MIN_SCORE = 95;
-const args = new Set(process.argv.slice(2));
-const marketing = args.has('--marketing');
+const argv = process.argv.slice(2);
+const args = new Set(argv);
+/** `--paths=/a,/b` replaces the default marketing pages. */
+const pathsArg = argv.find((a) => a.startsWith('--paths='));
+const MARKETING_PATHS = pathsArg ? pathsArg.slice('--paths='.length).split(',') : ['/', '/pricing'];
+const marketing = args.has('--marketing') || pathsArg !== undefined;
 
 const log = (message) => {
   process.stderr.write(`[lighthouse] ${message}\n`);
@@ -122,7 +127,7 @@ async function auditEditor(context) {
 
 async function auditMarketing() {
   const results = [];
-  for (const path of ['/', '/pricing']) {
+  for (const path of MARKETING_PATHS) {
     log(`auditing ${path} (mobile)`);
     results.push(await audit(`${BASE}${path}`, MARKETING_FLAGS));
   }

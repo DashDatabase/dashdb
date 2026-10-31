@@ -1,0 +1,962 @@
+{
+  "format": "dashdb.project",
+  "version": 1,
+  "exportedAt": "2026-10-31T16:40:31.975Z",
+  "template": {
+    "title": "Inventory and warehousing",
+    "description": "Warehouses with bin locations, products, suppliers, purchase orders, a stock movement ledger and current stock levels per bin.",
+    "tags": ["inventory", "warehouse", "supply-chain", "ledger"],
+    "dialect": "postgres",
+    "tablesCount": 8,
+    "decisions": [
+      {
+        "title": "A movement ledger is the source of truth",
+        "body": "Every change in stock is an append-only row in stock_movements: positive for receipts and returns, negative for shipments. Audits, \"what did we have on March 1st\" and shrinkage reports all come from summing the ledger."
+      },
+      {
+        "title": "Stock levels are a fast cache of the ledger",
+        "body": "stock_levels holds on_hand and reserved per product and bin, updated in the same transaction as each movement. Pickers and checkout read one row instead of summing history, and the ledger can rebuild it if it ever drifts."
+      },
+      {
+        "title": "Reservations cannot exceed stock",
+        "body": "A CHECK keeps reserved at or below on_hand, so the database itself refuses to promise more units than are on the shelf, even if two orders race."
+      },
+      {
+        "title": "Purchase order lines track partial receipts",
+        "body": "Each line keeps quantity_ordered and quantity_received, and unit cost with four decimal places for accurate landed costs. Receiving a partial delivery updates the line and writes receipt movements that point back to the purchase order."
+      }
+    ]
+  },
+  "project": {
+    "name": "Inventory and warehousing",
+    "schema": {
+      "id": "schema",
+      "dialect": "postgres",
+      "namespaces": [
+        {
+          "id": "namespace:public",
+          "name": "public"
+        }
+      ],
+      "tables": [
+        {
+          "id": "table:public.warehouses",
+          "name": "warehouses",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.warehouses.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "warehouses_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.warehouses.code",
+              "name": "code",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 8
+              },
+              "nativeType": "varchar(8)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.warehouses.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.warehouses",
+            "name": null,
+            "columns": ["column:public.warehouses.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.warehouses.warehouses_code_key",
+              "name": "warehouses_code_key",
+              "columns": ["column:public.warehouses.code"]
+            }
+          ],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.bins",
+          "name": "bins",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.bins.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "bins_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.bins.warehouse_id",
+              "name": "warehouse_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.bins.code",
+              "name": "code",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 20
+              },
+              "nativeType": "varchar(20)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.bins",
+            "name": null,
+            "columns": ["column:public.bins.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.bins.bins_warehouse_id_code_key",
+              "name": "bins_warehouse_id_code_key",
+              "columns": ["column:public.bins.warehouse_id", "column:public.bins.code"]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "id": "fk:public.bins.bins_warehouse_id_fkey",
+              "name": "bins_warehouse_id_fkey",
+              "columns": ["column:public.bins.warehouse_id"],
+              "refTable": "table:public.warehouses",
+              "refColumns": ["column:public.warehouses.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": "Shelf or pallet locations inside a warehouse",
+          "metadata": {}
+        },
+        {
+          "id": "table:public.products",
+          "name": "products",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.products.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "products_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.products.sku",
+              "name": "sku",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 40
+              },
+              "nativeType": "varchar(40)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.products.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.products.unit",
+              "name": "unit",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 12
+              },
+              "nativeType": "varchar(12)",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": "each"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.products.reorder_point",
+              "name": "reorder_point",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": 0
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.products",
+            "name": null,
+            "columns": ["column:public.products.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.products.products_sku_key",
+              "name": "products_sku_key",
+              "columns": ["column:public.products.sku"]
+            }
+          ],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.suppliers",
+          "name": "suppliers",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.suppliers.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "suppliers_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.suppliers.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.suppliers.email",
+              "name": "email",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 255
+              },
+              "nativeType": "varchar(255)",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.suppliers.lead_time_days",
+              "name": "lead_time_days",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "smallint",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": 7
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.suppliers",
+            "name": null,
+            "columns": ["column:public.suppliers.id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.purchase_orders",
+          "name": "purchase_orders",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.purchase_orders.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "purchase_orders_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.purchase_orders.supplier_id",
+              "name": "supplier_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.purchase_orders.warehouse_id",
+              "name": "warehouse_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.purchase_orders.status",
+              "name": "status",
+              "logicalType": {
+                "kind": "enum",
+                "enumId": "enum:public.po_status"
+              },
+              "nativeType": "po_status",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": "draft"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.purchase_orders.ordered_at",
+              "name": "ordered_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.purchase_orders.expected_at",
+              "name": "expected_at",
+              "logicalType": {
+                "kind": "date"
+              },
+              "nativeType": "date",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.purchase_orders",
+            "name": null,
+            "columns": ["column:public.purchase_orders.id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.purchase_orders.purchase_orders_supplier_id_fkey",
+              "name": "purchase_orders_supplier_id_fkey",
+              "columns": ["column:public.purchase_orders.supplier_id"],
+              "refTable": "table:public.suppliers",
+              "refColumns": ["column:public.suppliers.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.purchase_orders.purchase_orders_warehouse_id_fkey",
+              "name": "purchase_orders_warehouse_id_fkey",
+              "columns": ["column:public.purchase_orders.warehouse_id"],
+              "refTable": "table:public.warehouses",
+              "refColumns": ["column:public.warehouses.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.purchase_order_lines",
+          "name": "purchase_order_lines",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.purchase_order_lines.purchase_order_id",
+              "name": "purchase_order_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.purchase_order_lines.product_id",
+              "name": "product_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.purchase_order_lines.quantity_ordered",
+              "name": "quantity_ordered",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.purchase_order_lines.quantity_received",
+              "name": "quantity_received",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": 0
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.purchase_order_lines.unit_cost",
+              "name": "unit_cost",
+              "logicalType": {
+                "kind": "decimal",
+                "precision": 12,
+                "scale": 4
+              },
+              "nativeType": "numeric(12,4)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.purchase_order_lines",
+            "name": null,
+            "columns": [
+              "column:public.purchase_order_lines.purchase_order_id",
+              "column:public.purchase_order_lines.product_id"
+            ]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.purchase_order_lines.purchase_order_lines_purchase_order_id_fkey",
+              "name": "purchase_order_lines_purchase_order_id_fkey",
+              "columns": ["column:public.purchase_order_lines.purchase_order_id"],
+              "refTable": "table:public.purchase_orders",
+              "refColumns": ["column:public.purchase_orders.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.purchase_order_lines.purchase_order_lines_product_id_fkey",
+              "name": "purchase_order_lines_product_id_fkey",
+              "columns": ["column:public.purchase_order_lines.product_id"],
+              "refTable": "table:public.products",
+              "refColumns": ["column:public.products.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [
+            {
+              "id": "check:public.purchase_order_lines.purchase_order_lines_quantity_ordered_check",
+              "name": "purchase_order_lines_quantity_ordered_check",
+              "expression": "quantity_ordered > 0"
+            }
+          ],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.stock_movements",
+          "name": "stock_movements",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.stock_movements.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "stock_movements_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.stock_movements.product_id",
+              "name": "product_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.stock_movements.bin_id",
+              "name": "bin_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.stock_movements.quantity",
+              "name": "quantity",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.stock_movements.reason",
+              "name": "reason",
+              "logicalType": {
+                "kind": "enum",
+                "enumId": "enum:public.movement_reason"
+              },
+              "nativeType": "movement_reason",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.stock_movements.purchase_order_id",
+              "name": "purchase_order_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.stock_movements.reference",
+              "name": "reference",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 64
+              },
+              "nativeType": "varchar(64)",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.stock_movements.moved_at",
+              "name": "moved_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.stock_movements",
+            "name": null,
+            "columns": ["column:public.stock_movements.id"]
+          },
+          "indexes": [
+            {
+              "id": "index:public.stock_movements.stock_movements_product_time_idx",
+              "name": "stock_movements_product_time_idx",
+              "columns": [
+                {
+                  "column": "column:public.stock_movements.product_id",
+                  "order": "asc",
+                  "nulls": null
+                },
+                {
+                  "column": "column:public.stock_movements.moved_at",
+                  "order": "asc",
+                  "nulls": null
+                }
+              ],
+              "unique": false,
+              "method": null,
+              "where": null
+            }
+          ],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.stock_movements.stock_movements_product_id_fkey",
+              "name": "stock_movements_product_id_fkey",
+              "columns": ["column:public.stock_movements.product_id"],
+              "refTable": "table:public.products",
+              "refColumns": ["column:public.products.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.stock_movements.stock_movements_bin_id_fkey",
+              "name": "stock_movements_bin_id_fkey",
+              "columns": ["column:public.stock_movements.bin_id"],
+              "refTable": "table:public.bins",
+              "refColumns": ["column:public.bins.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.stock_movements.stock_movements_purchase_order_id_fkey",
+              "name": "stock_movements_purchase_order_id_fkey",
+              "columns": ["column:public.stock_movements.purchase_order_id"],
+              "refTable": "table:public.purchase_orders",
+              "refColumns": ["column:public.purchase_orders.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [
+            {
+              "id": "check:public.stock_movements.stock_movements_quantity_check",
+              "name": "stock_movements_quantity_check",
+              "expression": "quantity <> 0"
+            }
+          ],
+          "comment": "Append-only ledger: positive in, negative out",
+          "metadata": {}
+        },
+        {
+          "id": "table:public.stock_levels",
+          "name": "stock_levels",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.stock_levels.product_id",
+              "name": "product_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.stock_levels.bin_id",
+              "name": "bin_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.stock_levels.on_hand",
+              "name": "on_hand",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": 0
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.stock_levels.reserved",
+              "name": "reserved",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": 0
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.stock_levels",
+            "name": null,
+            "columns": [
+              "column:public.stock_levels.product_id",
+              "column:public.stock_levels.bin_id"
+            ]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.stock_levels.stock_levels_product_id_fkey",
+              "name": "stock_levels_product_id_fkey",
+              "columns": ["column:public.stock_levels.product_id"],
+              "refTable": "table:public.products",
+              "refColumns": ["column:public.products.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.stock_levels.stock_levels_bin_id_fkey",
+              "name": "stock_levels_bin_id_fkey",
+              "columns": ["column:public.stock_levels.bin_id"],
+              "refTable": "table:public.bins",
+              "refColumns": ["column:public.bins.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [
+            {
+              "id": "check:public.stock_levels.stock_levels_check",
+              "name": "stock_levels_check",
+              "expression": "reserved <= on_hand"
+            }
+          ],
+          "comment": null,
+          "metadata": {}
+        }
+      ],
+      "enums": [
+        {
+          "id": "enum:public.movement_reason",
+          "name": "movement_reason",
+          "namespace": "namespace:public",
+          "values": ["receipt", "shipment", "transfer", "adjustment", "return"]
+        },
+        {
+          "id": "enum:public.po_status",
+          "name": "po_status",
+          "namespace": "namespace:public",
+          "values": ["draft", "ordered", "partially_received", "received", "cancelled"]
+        }
+      ],
+      "version": 1
+    },
+    "layout": {
+      "nodes": {
+        "table:public.warehouses": {
+          "x": 16,
+          "y": 48,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.bins": {
+          "x": 384,
+          "y": 16,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.products": {
+          "x": 384,
+          "y": 256,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.suppliers": {
+          "x": 16,
+          "y": 576,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.purchase_orders": {
+          "x": 384,
+          "y": 512,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.purchase_order_lines": {
+          "x": 752,
+          "y": 528,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.stock_movements": {
+          "x": 752,
+          "y": 208,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.stock_levels": {
+          "x": 752,
+          "y": 16,
+          "collapsed": false,
+          "color": "default"
+        }
+      }
+    },
+    "baselines": []
+  }
+}

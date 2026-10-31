@@ -70,3 +70,62 @@ export function serializeJsonLd(data: JsonLdObject | readonly JsonLdObject[]): s
     .replace(/\u2028/g, '\\u2028')
     .replace(/\u2029/g, '\\u2029');
 }
+
+export interface CollectionItem {
+  readonly name: string;
+  readonly path: string;
+}
+
+/** A gallery page: the collection and its items in order. */
+export function collectionPageLd(
+  page: SitePage,
+  items: readonly CollectionItem[],
+  siteUrl: string = getSiteUrl(),
+): JsonLdObject {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: page.title,
+    description: page.description,
+    url: absoluteUrl(page.path, siteUrl),
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: items.length,
+      itemListElement: items.map((item, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: item.name,
+        url: absoluteUrl(item.path, siteUrl),
+      })),
+    },
+  };
+}
+
+export interface CreativeWorkInput {
+  readonly name: string;
+  readonly description: string;
+  readonly path: string;
+  readonly image: string;
+  readonly keywords: readonly string[];
+  readonly author?: string;
+}
+
+/** A free, reusable work such as a schema template. */
+export function creativeWorkLd(
+  work: CreativeWorkInput,
+  siteUrl: string = getSiteUrl(),
+): JsonLdObject {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CreativeWork',
+    name: work.name,
+    description: work.description,
+    url: absoluteUrl(work.path, siteUrl),
+    image: absoluteUrl(work.image, siteUrl),
+    keywords: work.keywords.join(', '),
+    isAccessibleForFree: true,
+    author: work.author
+      ? { '@type': 'Person', name: work.author }
+      : { '@type': 'Organization', name: SITE.name },
+  };
+}

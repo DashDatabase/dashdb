@@ -9,6 +9,7 @@
     "next-env.d.ts",
     "src",
     "e2e",
+    "scripts/**/*.ts",
     "*.config.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   breadcrumbListLd,
+  collectionPageLd,
+  creativeWorkLd,
   faqPageLd,
   serializeJsonLd,
   softwareApplicationLd,
@@ -58,5 +60,51 @@ describe('serializeJsonLd', () => {
     const out = serializeJsonLd(hostile);
     expect(out).not.toMatch(/[<>&\u2028]/);
     expect(JSON.parse(out)).toEqual(hostile);
+  });
+});
+
+describe('gallery structured data', () => {
+  it('lists collection items in order with absolute URLs', () => {
+    const ld = collectionPageLd(
+      getPage('templates'),
+      [
+        { name: 'CRM', path: '/templates/crm' },
+        { name: 'LMS', path: '/templates/lms' },
+      ],
+      SITE,
+    );
+    expect(ld).toMatchObject({
+      '@type': 'CollectionPage',
+      url: `${SITE}/templates`,
+      mainEntity: {
+        '@type': 'ItemList',
+        numberOfItems: 2,
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'CRM', url: `${SITE}/templates/crm` },
+          { '@type': 'ListItem', position: 2, name: 'LMS', url: `${SITE}/templates/lms` },
+        ],
+      },
+    });
+  });
+
+  it('describes a free creative work, credited to its author or to DashDB', () => {
+    const work = {
+      name: 'CRM',
+      description: 'Companies and deals.',
+      path: '/templates/crm',
+      image: '/templates/crm/preview.svg',
+      keywords: ['crm', 'sales'],
+    };
+    expect(creativeWorkLd(work, SITE)).toMatchObject({
+      '@type': 'CreativeWork',
+      image: `${SITE}/templates/crm/preview.svg`,
+      keywords: 'crm, sales',
+      isAccessibleForFree: true,
+      author: { '@type': 'Organization', name: 'DashDB' },
+    });
+    expect(creativeWorkLd({ ...work, author: 'ada' }, SITE).author).toEqual({
+      '@type': 'Person',
+      name: 'ada',
+    });
   });
 });

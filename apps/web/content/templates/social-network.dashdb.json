@@ -1,0 +1,950 @@
+{
+  "format": "dashdb.project",
+  "version": 1,
+  "exportedAt": "2026-10-31T16:40:20.269Z",
+  "template": {
+    "title": "Social network",
+    "description": "Users and profiles, follows, posts with replies and media, likes, notifications and blocks: the tables behind a timeline app.",
+    "tags": ["social", "feed", "notifications", "community"],
+    "dialect": "postgres",
+    "tablesCount": 8,
+    "decisions": [
+      {
+        "title": "Follows are a self-referencing join table",
+        "body": "follows links users to users with a composite primary key, so nobody can follow the same account twice, and a CHECK stops users following themselves. A second index on following_id makes \"who follows me\" as fast as \"who do I follow\"."
+      },
+      {
+        "title": "No stored like or follower counts",
+        "body": "Counts are derived with indexed COUNT queries instead of counter columns, which drift out of sync under concurrent writes. When a hot account needs it, add a cached counter later; the source of truth stays the rows."
+      },
+      {
+        "title": "Unread notifications have their own index",
+        "body": "The notification badge only asks for unread rows. A partial index WHERE read_at IS NULL keeps that query quick, however many old notifications a user has accumulated."
+      },
+      {
+        "title": "Replies are posts",
+        "body": "A reply is a post with reply_to_id set, so threads, quoting and media work the same everywhere. If the original is deleted, replies stay and simply lose their parent."
+      }
+    ]
+  },
+  "project": {
+    "name": "Social network",
+    "schema": {
+      "id": "schema",
+      "dialect": "postgres",
+      "namespaces": [
+        {
+          "id": "namespace:public",
+          "name": "public"
+        }
+      ],
+      "tables": [
+        {
+          "id": "table:public.users",
+          "name": "users",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.users.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "users_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.users.handle",
+              "name": "handle",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 30
+              },
+              "nativeType": "varchar(30)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.users.email",
+              "name": "email",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 255
+              },
+              "nativeType": "varchar(255)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.users.created_at",
+              "name": "created_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.users",
+            "name": null,
+            "columns": ["column:public.users.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.users.users_handle_key",
+              "name": "users_handle_key",
+              "columns": ["column:public.users.handle"]
+            },
+            {
+              "id": "unique:public.users.users_email_key",
+              "name": "users_email_key",
+              "columns": ["column:public.users.email"]
+            }
+          ],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.profiles",
+          "name": "profiles",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.profiles.user_id",
+              "name": "user_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.profiles.display_name",
+              "name": "display_name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 80
+              },
+              "nativeType": "varchar(80)",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.profiles.bio",
+              "name": "bio",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 280
+              },
+              "nativeType": "varchar(280)",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.profiles.avatar_url",
+              "name": "avatar_url",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.profiles.is_private",
+              "name": "is_private",
+              "logicalType": {
+                "kind": "boolean"
+              },
+              "nativeType": "boolean",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": false
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.profiles",
+            "name": null,
+            "columns": ["column:public.profiles.user_id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.profiles.profiles_user_id_fkey",
+              "name": "profiles_user_id_fkey",
+              "columns": ["column:public.profiles.user_id"],
+              "refTable": "table:public.users",
+              "refColumns": ["column:public.users.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.follows",
+          "name": "follows",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.follows.follower_id",
+              "name": "follower_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.follows.following_id",
+              "name": "following_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.follows.created_at",
+              "name": "created_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.follows",
+            "name": null,
+            "columns": ["column:public.follows.follower_id", "column:public.follows.following_id"]
+          },
+          "indexes": [
+            {
+              "id": "index:public.follows.follows_following_idx",
+              "name": "follows_following_idx",
+              "columns": [
+                {
+                  "column": "column:public.follows.following_id",
+                  "order": "asc",
+                  "nulls": null
+                }
+              ],
+              "unique": false,
+              "method": null,
+              "where": null
+            }
+          ],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.follows.follows_follower_id_fkey",
+              "name": "follows_follower_id_fkey",
+              "columns": ["column:public.follows.follower_id"],
+              "refTable": "table:public.users",
+              "refColumns": ["column:public.users.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.follows.follows_following_id_fkey",
+              "name": "follows_following_id_fkey",
+              "columns": ["column:public.follows.following_id"],
+              "refTable": "table:public.users",
+              "refColumns": ["column:public.users.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [
+            {
+              "id": "check:public.follows.follows_check",
+              "name": "follows_check",
+              "expression": "follower_id <> following_id"
+            }
+          ],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.posts",
+          "name": "posts",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.posts.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "posts_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.posts.author_id",
+              "name": "author_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.posts.reply_to_id",
+              "name": "reply_to_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.posts.body",
+              "name": "body",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 500
+              },
+              "nativeType": "varchar(500)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.posts.created_at",
+              "name": "created_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.posts",
+            "name": null,
+            "columns": ["column:public.posts.id"]
+          },
+          "indexes": [
+            {
+              "id": "index:public.posts.posts_author_time_idx",
+              "name": "posts_author_time_idx",
+              "columns": [
+                {
+                  "column": "column:public.posts.author_id",
+                  "order": "asc",
+                  "nulls": null
+                },
+                {
+                  "column": "column:public.posts.created_at",
+                  "order": "asc",
+                  "nulls": null
+                }
+              ],
+              "unique": false,
+              "method": null,
+              "where": null
+            }
+          ],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.posts.posts_author_id_fkey",
+              "name": "posts_author_id_fkey",
+              "columns": ["column:public.posts.author_id"],
+              "refTable": "table:public.users",
+              "refColumns": ["column:public.users.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.posts.posts_reply_to_id_fkey",
+              "name": "posts_reply_to_id_fkey",
+              "columns": ["column:public.posts.reply_to_id"],
+              "refTable": "table:public.posts",
+              "refColumns": ["column:public.posts.id"],
+              "onDelete": "set null",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.post_media",
+          "name": "post_media",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.post_media.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "post_media_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.post_media.post_id",
+              "name": "post_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.post_media.url",
+              "name": "url",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.post_media.kind",
+              "name": "kind",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 16
+              },
+              "nativeType": "varchar(16)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.post_media.position",
+              "name": "position",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "smallint",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": 0
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.post_media",
+            "name": null,
+            "columns": ["column:public.post_media.id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.post_media.post_media_post_id_fkey",
+              "name": "post_media_post_id_fkey",
+              "columns": ["column:public.post_media.post_id"],
+              "refTable": "table:public.posts",
+              "refColumns": ["column:public.posts.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.likes",
+          "name": "likes",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.likes.user_id",
+              "name": "user_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.likes.post_id",
+              "name": "post_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.likes.created_at",
+              "name": "created_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.likes",
+            "name": null,
+            "columns": ["column:public.likes.user_id", "column:public.likes.post_id"]
+          },
+          "indexes": [
+            {
+              "id": "index:public.likes.likes_post_idx",
+              "name": "likes_post_idx",
+              "columns": [
+                {
+                  "column": "column:public.likes.post_id",
+                  "order": "asc",
+                  "nulls": null
+                }
+              ],
+              "unique": false,
+              "method": null,
+              "where": null
+            }
+          ],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.likes.likes_user_id_fkey",
+              "name": "likes_user_id_fkey",
+              "columns": ["column:public.likes.user_id"],
+              "refTable": "table:public.users",
+              "refColumns": ["column:public.users.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.likes.likes_post_id_fkey",
+              "name": "likes_post_id_fkey",
+              "columns": ["column:public.likes.post_id"],
+              "refTable": "table:public.posts",
+              "refColumns": ["column:public.posts.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.notifications",
+          "name": "notifications",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.notifications.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "notifications_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.notifications.recipient_id",
+              "name": "recipient_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.notifications.actor_id",
+              "name": "actor_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.notifications.post_id",
+              "name": "post_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.notifications.kind",
+              "name": "kind",
+              "logicalType": {
+                "kind": "enum",
+                "enumId": "enum:public.notification_kind"
+              },
+              "nativeType": "notification_kind",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.notifications.read_at",
+              "name": "read_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.notifications.created_at",
+              "name": "created_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.notifications",
+            "name": null,
+            "columns": ["column:public.notifications.id"]
+          },
+          "indexes": [
+            {
+              "id": "index:public.notifications.notifications_unread_idx",
+              "name": "notifications_unread_idx",
+              "columns": [
+                {
+                  "column": "column:public.notifications.recipient_id",
+                  "order": "asc",
+                  "nulls": null
+                },
+                {
+                  "column": "column:public.notifications.created_at",
+                  "order": "asc",
+                  "nulls": null
+                }
+              ],
+              "unique": false,
+              "method": null,
+              "where": "read_at IS NULL"
+            }
+          ],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.notifications.notifications_recipient_id_fkey",
+              "name": "notifications_recipient_id_fkey",
+              "columns": ["column:public.notifications.recipient_id"],
+              "refTable": "table:public.users",
+              "refColumns": ["column:public.users.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.notifications.notifications_actor_id_fkey",
+              "name": "notifications_actor_id_fkey",
+              "columns": ["column:public.notifications.actor_id"],
+              "refTable": "table:public.users",
+              "refColumns": ["column:public.users.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.notifications.notifications_post_id_fkey",
+              "name": "notifications_post_id_fkey",
+              "columns": ["column:public.notifications.post_id"],
+              "refTable": "table:public.posts",
+              "refColumns": ["column:public.posts.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.blocks",
+          "name": "blocks",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.blocks.blocker_id",
+              "name": "blocker_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.blocks.blocked_id",
+              "name": "blocked_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.blocks",
+            "name": null,
+            "columns": ["column:public.blocks.blocker_id", "column:public.blocks.blocked_id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.blocks.blocks_blocker_id_fkey",
+              "name": "blocks_blocker_id_fkey",
+              "columns": ["column:public.blocks.blocker_id"],
+              "refTable": "table:public.users",
+              "refColumns": ["column:public.users.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.blocks.blocks_blocked_id_fkey",
+              "name": "blocks_blocked_id_fkey",
+              "columns": ["column:public.blocks.blocked_id"],
+              "refTable": "table:public.users",
+              "refColumns": ["column:public.users.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        }
+      ],
+      "enums": [
+        {
+          "id": "enum:public.notification_kind",
+          "name": "notification_kind",
+          "namespace": "namespace:public",
+          "values": ["follow", "like", "comment", "mention"]
+        }
+      ],
+      "version": 1
+    },
+    "layout": {
+      "nodes": {
+        "table:public.users": {
+          "x": 16,
+          "y": 96,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.profiles": {
+          "x": 416,
+          "y": 704,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.follows": {
+          "x": 416,
+          "y": 528,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.posts": {
+          "x": 416,
+          "y": 304,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.post_media": {
+          "x": 784,
+          "y": 304,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.likes": {
+          "x": 784,
+          "y": 832,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.notifications": {
+          "x": 784,
+          "y": 16,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.blocks": {
+          "x": 416,
+          "y": 160,
+          "collapsed": false,
+          "color": "default"
+        }
+      }
+    },
+    "baselines": []
+  }
+}

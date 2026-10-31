@@ -1,0 +1,840 @@
+{
+  "format": "dashdb.project",
+  "version": 1,
+  "exportedAt": "2026-10-31T16:40:43.069Z",
+  "template": {
+    "title": "Product analytics events",
+    "description": "Event tracking for a product: projects, anonymous and known identities, sessions, raw events with JSON properties and daily rollups.",
+    "tags": ["analytics", "events", "tracking", "time-series"],
+    "dialect": "postgres",
+    "tablesCount": 6,
+    "decisions": [
+      {
+        "title": "Events are append-only with JSON properties",
+        "body": "Each event is one immutable row with a name and a jsonb bag of properties. New event types need no migration, and the event_definitions catalog records which names exist so the UI can list them without scanning the events table."
+      },
+      {
+        "title": "A BRIN index for time ranges",
+        "body": "Events arrive roughly in time order, which is exactly what a BRIN index exploits: it is a tiny fraction of a B-tree's size, yet narrows \"last 7 days\" queries to the right blocks. A B-tree on (project_id, name, occurred_at) serves funnel queries for one event."
+      },
+      {
+        "title": "Identities join anonymous and known users",
+        "body": "Visitors start with an anonymous_id; signing in sets user_id on the same identity, so events from before sign-up stay attached to the person. The unique (project_id, anonymous_id) makes identify calls idempotent."
+      },
+      {
+        "title": "Dashboards read rollups",
+        "body": "daily_event_counts stores one row per project, day and event name, filled by a scheduled job. Charts read a few hundred rows instead of millions of events; raw events remain for ad-hoc questions."
+      }
+    ]
+  },
+  "project": {
+    "name": "Product analytics events",
+    "schema": {
+      "id": "schema",
+      "dialect": "postgres",
+      "namespaces": [
+        {
+          "id": "namespace:public",
+          "name": "public"
+        }
+      ],
+      "tables": [
+        {
+          "id": "table:public.projects",
+          "name": "projects",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.projects.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "projects_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.projects.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.projects.write_key_hash",
+              "name": "write_key_hash",
+              "logicalType": {
+                "kind": "bytes"
+              },
+              "nativeType": "bytea",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.projects.created_at",
+              "name": "created_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.projects",
+            "name": null,
+            "columns": ["column:public.projects.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.projects.projects_write_key_hash_key",
+              "name": "projects_write_key_hash_key",
+              "columns": ["column:public.projects.write_key_hash"]
+            }
+          ],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.identities",
+          "name": "identities",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.identities.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "identities_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.identities.project_id",
+              "name": "project_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.identities.anonymous_id",
+              "name": "anonymous_id",
+              "logicalType": {
+                "kind": "uuid"
+              },
+              "nativeType": "uuid",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.identities.user_id",
+              "name": "user_id",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 128
+              },
+              "nativeType": "varchar(128)",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.identities.first_seen_at",
+              "name": "first_seen_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.identities.traits",
+              "name": "traits",
+              "logicalType": {
+                "kind": "json"
+              },
+              "nativeType": "jsonb",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": "{}"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.identities",
+            "name": null,
+            "columns": ["column:public.identities.id"]
+          },
+          "indexes": [
+            {
+              "id": "index:public.identities.identities_user_idx",
+              "name": "identities_user_idx",
+              "columns": [
+                {
+                  "column": "column:public.identities.project_id",
+                  "order": "asc",
+                  "nulls": null
+                },
+                {
+                  "column": "column:public.identities.user_id",
+                  "order": "asc",
+                  "nulls": null
+                }
+              ],
+              "unique": false,
+              "method": null,
+              "where": null
+            }
+          ],
+          "uniques": [
+            {
+              "id": "unique:public.identities.identities_project_id_anonymous_id_key",
+              "name": "identities_project_id_anonymous_id_key",
+              "columns": [
+                "column:public.identities.project_id",
+                "column:public.identities.anonymous_id"
+              ]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "id": "fk:public.identities.identities_project_id_fkey",
+              "name": "identities_project_id_fkey",
+              "columns": ["column:public.identities.project_id"],
+              "refTable": "table:public.projects",
+              "refColumns": ["column:public.projects.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.sessions",
+          "name": "sessions",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.sessions.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "uuid"
+              },
+              "nativeType": "uuid",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.sessions.identity_id",
+              "name": "identity_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.sessions.started_at",
+              "name": "started_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.sessions.ended_at",
+              "name": "ended_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.sessions.referrer",
+              "name": "referrer",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.sessions.utm_source",
+              "name": "utm_source",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 100
+              },
+              "nativeType": "varchar(100)",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.sessions.utm_campaign",
+              "name": "utm_campaign",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 100
+              },
+              "nativeType": "varchar(100)",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.sessions.device",
+              "name": "device",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 20
+              },
+              "nativeType": "varchar(20)",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.sessions",
+            "name": null,
+            "columns": ["column:public.sessions.id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.sessions.sessions_identity_id_fkey",
+              "name": "sessions_identity_id_fkey",
+              "columns": ["column:public.sessions.identity_id"],
+              "refTable": "table:public.identities",
+              "refColumns": ["column:public.identities.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.event_definitions",
+          "name": "event_definitions",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.event_definitions.project_id",
+              "name": "project_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.event_definitions.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 100
+              },
+              "nativeType": "varchar(100)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.event_definitions.description",
+              "name": "description",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.event_definitions.first_seen_at",
+              "name": "first_seen_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.event_definitions",
+            "name": null,
+            "columns": [
+              "column:public.event_definitions.project_id",
+              "column:public.event_definitions.name"
+            ]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.event_definitions.event_definitions_project_id_fkey",
+              "name": "event_definitions_project_id_fkey",
+              "columns": ["column:public.event_definitions.project_id"],
+              "refTable": "table:public.projects",
+              "refColumns": ["column:public.projects.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": "Catalog of event names seen per project",
+          "metadata": {}
+        },
+        {
+          "id": "table:public.events",
+          "name": "events",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.events.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {
+                "identity": "always"
+              }
+            },
+            {
+              "id": "column:public.events.project_id",
+              "name": "project_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.events.session_id",
+              "name": "session_id",
+              "logicalType": {
+                "kind": "uuid"
+              },
+              "nativeType": "uuid",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.events.identity_id",
+              "name": "identity_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.events.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 100
+              },
+              "nativeType": "varchar(100)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.events.properties",
+              "name": "properties",
+              "logicalType": {
+                "kind": "json"
+              },
+              "nativeType": "jsonb",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": "{}"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.events.occurred_at",
+              "name": "occurred_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.events.received_at",
+              "name": "received_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.events",
+            "name": null,
+            "columns": ["column:public.events.id"]
+          },
+          "indexes": [
+            {
+              "id": "index:public.events.events_occurred_brin",
+              "name": "events_occurred_brin",
+              "columns": [
+                {
+                  "column": "column:public.events.occurred_at",
+                  "order": "asc",
+                  "nulls": null
+                }
+              ],
+              "unique": false,
+              "method": "brin",
+              "where": null
+            },
+            {
+              "id": "index:public.events.events_project_name_time_idx",
+              "name": "events_project_name_time_idx",
+              "columns": [
+                {
+                  "column": "column:public.events.project_id",
+                  "order": "asc",
+                  "nulls": null
+                },
+                {
+                  "column": "column:public.events.name",
+                  "order": "asc",
+                  "nulls": null
+                },
+                {
+                  "column": "column:public.events.occurred_at",
+                  "order": "asc",
+                  "nulls": null
+                }
+              ],
+              "unique": false,
+              "method": null,
+              "where": null
+            }
+          ],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.events.events_project_id_fkey",
+              "name": "events_project_id_fkey",
+              "columns": ["column:public.events.project_id"],
+              "refTable": "table:public.projects",
+              "refColumns": ["column:public.projects.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.events.events_session_id_fkey",
+              "name": "events_session_id_fkey",
+              "columns": ["column:public.events.session_id"],
+              "refTable": "table:public.sessions",
+              "refColumns": ["column:public.sessions.id"],
+              "onDelete": "set null",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.events.events_identity_id_fkey",
+              "name": "events_identity_id_fkey",
+              "columns": ["column:public.events.identity_id"],
+              "refTable": "table:public.identities",
+              "refColumns": ["column:public.identities.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.daily_event_counts",
+          "name": "daily_event_counts",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.daily_event_counts.project_id",
+              "name": "project_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.daily_event_counts.day",
+              "name": "day",
+              "logicalType": {
+                "kind": "date"
+              },
+              "nativeType": "date",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.daily_event_counts.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 100
+              },
+              "nativeType": "varchar(100)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.daily_event_counts.events",
+              "name": "events",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.daily_event_counts.unique_identities",
+              "name": "unique_identities",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.daily_event_counts",
+            "name": null,
+            "columns": [
+              "column:public.daily_event_counts.project_id",
+              "column:public.daily_event_counts.day",
+              "column:public.daily_event_counts.name"
+            ]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.daily_event_counts.daily_event_counts_project_id_fkey",
+              "name": "daily_event_counts_project_id_fkey",
+              "columns": ["column:public.daily_event_counts.project_id"],
+              "refTable": "table:public.projects",
+              "refColumns": ["column:public.projects.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        }
+      ],
+      "enums": [],
+      "version": 1
+    },
+    "layout": {
+      "nodes": {
+        "table:public.projects": {
+          "x": 16,
+          "y": 64,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.identities": {
+          "x": 384,
+          "y": 208,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.sessions": {
+          "x": 752,
+          "y": 304,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.event_definitions": {
+          "x": 384,
+          "y": 16,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.events": {
+          "x": 1120,
+          "y": 304,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.daily_event_counts": {
+          "x": 384,
+          "y": 464,
+          "collapsed": false,
+          "color": "default"
+        }
+      }
+    },
+    "baselines": []
+  }
+}

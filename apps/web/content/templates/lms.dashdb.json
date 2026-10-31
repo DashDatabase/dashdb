@@ -1,0 +1,1075 @@
+{
+  "format": "dashdb.project",
+  "version": 1,
+  "exportedAt": "2026-10-31T16:40:03.166Z",
+  "template": {
+    "title": "Learning platform (LMS)",
+    "description": "Courses split into sections and lessons, enrollments, per-lesson progress, quizzes with scored attempts, and verifiable certificates.",
+    "tags": ["education", "lms", "courses", "progress"],
+    "dialect": "postgres",
+    "tablesCount": 9,
+    "decisions": [
+      {
+        "title": "Order is a position column, unique per parent",
+        "body": "Sections and lessons carry an integer position, unique within their course or section. The database rejects two lessons in the same slot, and reordering is a handful of updates rather than a linked list to repair."
+      },
+      {
+        "title": "Progress hangs off the enrollment",
+        "body": "lesson_progress is keyed by (enrollment_id, lesson_id), not by user. If someone takes a course twice, or is refunded and re-enrolls, each run has its own progress, and deleting an enrollment cleans up after itself."
+      },
+      {
+        "title": "Every quiz attempt is kept",
+        "body": "Attempts are rows with their score and answers rather than a single best score on the enrollment. Instructors see how many tries a question takes, and the pass mark lives on the quiz so it can change for future attempts."
+      },
+      {
+        "title": "Certificates use random ids",
+        "body": "A certificate's id is a uuid, which is safe to print in a public verification link: it cannot be guessed by counting, unlike the sequential ids used elsewhere."
+      }
+    ]
+  },
+  "project": {
+    "name": "Learning platform (LMS)",
+    "schema": {
+      "id": "schema",
+      "dialect": "postgres",
+      "namespaces": [
+        {
+          "id": "namespace:public",
+          "name": "public"
+        }
+      ],
+      "tables": [
+        {
+          "id": "table:public.users",
+          "name": "users",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.users.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "users_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.users.email",
+              "name": "email",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 255
+              },
+              "nativeType": "varchar(255)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.users.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.users.is_instructor",
+              "name": "is_instructor",
+              "logicalType": {
+                "kind": "boolean"
+              },
+              "nativeType": "boolean",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": false
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.users",
+            "name": null,
+            "columns": ["column:public.users.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.users.users_email_key",
+              "name": "users_email_key",
+              "columns": ["column:public.users.email"]
+            }
+          ],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.courses",
+          "name": "courses",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.courses.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "courses_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.courses.instructor_id",
+              "name": "instructor_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.courses.slug",
+              "name": "slug",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 120
+              },
+              "nativeType": "varchar(120)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.courses.title",
+              "name": "title",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 200
+              },
+              "nativeType": "varchar(200)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.courses.summary",
+              "name": "summary",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.courses.price_cents",
+              "name": "price_cents",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": 0
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.courses.published_at",
+              "name": "published_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.courses",
+            "name": null,
+            "columns": ["column:public.courses.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.courses.courses_slug_key",
+              "name": "courses_slug_key",
+              "columns": ["column:public.courses.slug"]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "id": "fk:public.courses.courses_instructor_id_fkey",
+              "name": "courses_instructor_id_fkey",
+              "columns": ["column:public.courses.instructor_id"],
+              "refTable": "table:public.users",
+              "refColumns": ["column:public.users.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.sections",
+          "name": "sections",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.sections.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "sections_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.sections.course_id",
+              "name": "course_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.sections.title",
+              "name": "title",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 200
+              },
+              "nativeType": "varchar(200)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.sections.position",
+              "name": "position",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.sections",
+            "name": null,
+            "columns": ["column:public.sections.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.sections.sections_course_id_position_key",
+              "name": "sections_course_id_position_key",
+              "columns": ["column:public.sections.course_id", "column:public.sections.position"]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "id": "fk:public.sections.sections_course_id_fkey",
+              "name": "sections_course_id_fkey",
+              "columns": ["column:public.sections.course_id"],
+              "refTable": "table:public.courses",
+              "refColumns": ["column:public.courses.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.lessons",
+          "name": "lessons",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.lessons.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "lessons_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.lessons.section_id",
+              "name": "section_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.lessons.title",
+              "name": "title",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 200
+              },
+              "nativeType": "varchar(200)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.lessons.video_url",
+              "name": "video_url",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.lessons.duration_seconds",
+              "name": "duration_seconds",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.lessons.position",
+              "name": "position",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.lessons.is_preview",
+              "name": "is_preview",
+              "logicalType": {
+                "kind": "boolean"
+              },
+              "nativeType": "boolean",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": false
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.lessons",
+            "name": null,
+            "columns": ["column:public.lessons.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.lessons.lessons_section_id_position_key",
+              "name": "lessons_section_id_position_key",
+              "columns": ["column:public.lessons.section_id", "column:public.lessons.position"]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "id": "fk:public.lessons.lessons_section_id_fkey",
+              "name": "lessons_section_id_fkey",
+              "columns": ["column:public.lessons.section_id"],
+              "refTable": "table:public.sections",
+              "refColumns": ["column:public.sections.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.enrollments",
+          "name": "enrollments",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.enrollments.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "enrollments_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.enrollments.user_id",
+              "name": "user_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.enrollments.course_id",
+              "name": "course_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.enrollments.status",
+              "name": "status",
+              "logicalType": {
+                "kind": "enum",
+                "enumId": "enum:public.enrollment_status"
+              },
+              "nativeType": "enrollment_status",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": "active"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.enrollments.enrolled_at",
+              "name": "enrolled_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.enrollments.completed_at",
+              "name": "completed_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.enrollments",
+            "name": null,
+            "columns": ["column:public.enrollments.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.enrollments.enrollments_user_id_course_id_key",
+              "name": "enrollments_user_id_course_id_key",
+              "columns": [
+                "column:public.enrollments.user_id",
+                "column:public.enrollments.course_id"
+              ]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "id": "fk:public.enrollments.enrollments_user_id_fkey",
+              "name": "enrollments_user_id_fkey",
+              "columns": ["column:public.enrollments.user_id"],
+              "refTable": "table:public.users",
+              "refColumns": ["column:public.users.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.enrollments.enrollments_course_id_fkey",
+              "name": "enrollments_course_id_fkey",
+              "columns": ["column:public.enrollments.course_id"],
+              "refTable": "table:public.courses",
+              "refColumns": ["column:public.courses.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.lesson_progress",
+          "name": "lesson_progress",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.lesson_progress.enrollment_id",
+              "name": "enrollment_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.lesson_progress.lesson_id",
+              "name": "lesson_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.lesson_progress.watched_seconds",
+              "name": "watched_seconds",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": 0
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.lesson_progress.completed_at",
+              "name": "completed_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.lesson_progress",
+            "name": null,
+            "columns": [
+              "column:public.lesson_progress.enrollment_id",
+              "column:public.lesson_progress.lesson_id"
+            ]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.lesson_progress.lesson_progress_enrollment_id_fkey",
+              "name": "lesson_progress_enrollment_id_fkey",
+              "columns": ["column:public.lesson_progress.enrollment_id"],
+              "refTable": "table:public.enrollments",
+              "refColumns": ["column:public.enrollments.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.lesson_progress.lesson_progress_lesson_id_fkey",
+              "name": "lesson_progress_lesson_id_fkey",
+              "columns": ["column:public.lesson_progress.lesson_id"],
+              "refTable": "table:public.lessons",
+              "refColumns": ["column:public.lessons.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.quizzes",
+          "name": "quizzes",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.quizzes.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "quizzes_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.quizzes.lesson_id",
+              "name": "lesson_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.quizzes.pass_score",
+              "name": "pass_score",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": 70
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.quizzes.questions",
+              "name": "questions",
+              "logicalType": {
+                "kind": "json"
+              },
+              "nativeType": "jsonb",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.quizzes",
+            "name": null,
+            "columns": ["column:public.quizzes.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.quizzes.quizzes_lesson_id_key",
+              "name": "quizzes_lesson_id_key",
+              "columns": ["column:public.quizzes.lesson_id"]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "id": "fk:public.quizzes.quizzes_lesson_id_fkey",
+              "name": "quizzes_lesson_id_fkey",
+              "columns": ["column:public.quizzes.lesson_id"],
+              "refTable": "table:public.lessons",
+              "refColumns": ["column:public.lessons.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.quiz_attempts",
+          "name": "quiz_attempts",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.quiz_attempts.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "quiz_attempts_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.quiz_attempts.quiz_id",
+              "name": "quiz_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.quiz_attempts.enrollment_id",
+              "name": "enrollment_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.quiz_attempts.score",
+              "name": "score",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.quiz_attempts.answers",
+              "name": "answers",
+              "logicalType": {
+                "kind": "json"
+              },
+              "nativeType": "jsonb",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.quiz_attempts.submitted_at",
+              "name": "submitted_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.quiz_attempts",
+            "name": null,
+            "columns": ["column:public.quiz_attempts.id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.quiz_attempts.quiz_attempts_quiz_id_fkey",
+              "name": "quiz_attempts_quiz_id_fkey",
+              "columns": ["column:public.quiz_attempts.quiz_id"],
+              "refTable": "table:public.quizzes",
+              "refColumns": ["column:public.quizzes.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.quiz_attempts.quiz_attempts_enrollment_id_fkey",
+              "name": "quiz_attempts_enrollment_id_fkey",
+              "columns": ["column:public.quiz_attempts.enrollment_id"],
+              "refTable": "table:public.enrollments",
+              "refColumns": ["column:public.enrollments.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.certificates",
+          "name": "certificates",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.certificates.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "uuid"
+              },
+              "nativeType": "uuid",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.certificates.enrollment_id",
+              "name": "enrollment_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.certificates.issued_at",
+              "name": "issued_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.certificates",
+            "name": null,
+            "columns": ["column:public.certificates.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.certificates.certificates_enrollment_id_key",
+              "name": "certificates_enrollment_id_key",
+              "columns": ["column:public.certificates.enrollment_id"]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "id": "fk:public.certificates.certificates_enrollment_id_fkey",
+              "name": "certificates_enrollment_id_fkey",
+              "columns": ["column:public.certificates.enrollment_id"],
+              "refTable": "table:public.enrollments",
+              "refColumns": ["column:public.enrollments.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        }
+      ],
+      "enums": [
+        {
+          "id": "enum:public.enrollment_status",
+          "name": "enrollment_status",
+          "namespace": "namespace:public",
+          "values": ["active", "completed", "refunded"]
+        }
+      ],
+      "version": 1
+    },
+    "layout": {
+      "nodes": {
+        "table:public.users": {
+          "x": 16,
+          "y": 224,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.courses": {
+          "x": 384,
+          "y": 208,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.sections": {
+          "x": 752,
+          "y": 304,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.lessons": {
+          "x": 1120,
+          "y": 256,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.enrollments": {
+          "x": 752,
+          "y": 32,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.lesson_progress": {
+          "x": 1488,
+          "y": 128,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.quizzes": {
+          "x": 1488,
+          "y": 336,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.quiz_attempts": {
+          "x": 1856,
+          "y": 272,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.certificates": {
+          "x": 1120,
+          "y": 32,
+          "collapsed": false,
+          "color": "default"
+        }
+      }
+    },
+    "baselines": []
+  }
+}

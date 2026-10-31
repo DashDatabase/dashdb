@@ -1,6 +1,7 @@
 // Full-project export/import as `.dashdb.json`: a versioned, zod-validated envelope.
 import { schemaSchema } from '@dashdb/core/lite';
 import { z } from 'zod';
+import { templateMetaSchema } from '@/templates/meta';
 import { buildProject, insertProjectWithBaselines, MAX_BASELINES } from './projects';
 import { layoutSchema } from './record-schemas';
 import type { Baseline, Project } from './store/types';
@@ -15,6 +16,8 @@ const projectFileSchema = z.strictObject({
   format: z.literal(PROJECT_FILE_FORMAT),
   version: z.literal(PROJECT_FILE_VERSION),
   exportedAt: z.iso.datetime(),
+  // Gallery templates (content/templates) describe themselves here; imports ignore it.
+  template: templateMetaSchema.optional(),
   project: z.strictObject({
     name: z.string().max(200),
     schema: schemaSchema,

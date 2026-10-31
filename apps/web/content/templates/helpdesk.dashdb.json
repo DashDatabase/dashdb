@@ -1,0 +1,1043 @@
+{
+  "format": "dashdb.project",
+  "version": 1,
+  "exportedAt": "2026-10-31T16:40:37.897Z",
+  "template": {
+    "title": "Helpdesk",
+    "description": "Support tickets with statuses, priorities and SLA targets, team queues, public replies and internal notes, tags and satisfaction ratings.",
+    "tags": ["support", "helpdesk", "tickets", "sla"],
+    "dialect": "postgres",
+    "tablesCount": 10,
+    "decisions": [
+      {
+        "title": "Replies and internal notes share one table",
+        "body": "Both are ticket_messages; is_internal marks the notes agents leave for each other. The conversation stays in one ordered stream for agents, while the customer view and email notifications filter internal notes out."
+      },
+      {
+        "title": "SLA targets are keyed by priority",
+        "body": "sla_policies has one row per priority, and tickets.priority references it. Response targets are data an admin can change, and every ticket is guaranteed to have one."
+      },
+      {
+        "title": "Timestamps measure the SLA",
+        "body": "first_responded_at and solved_at are set once, when they happen. Response and resolution times are then simple subtractions against the policy, with no event log to replay."
+      },
+      {
+        "title": "One index serves every queue",
+        "body": "Agents work queues like \"urgent open tickets for the billing team\". The composite index on (team_id, status, priority) answers all of them, in the order the filters are usually applied."
+      }
+    ]
+  },
+  "project": {
+    "name": "Helpdesk",
+    "schema": {
+      "id": "schema",
+      "dialect": "postgres",
+      "namespaces": [
+        {
+          "id": "namespace:public",
+          "name": "public"
+        }
+      ],
+      "tables": [
+        {
+          "id": "table:public.customers",
+          "name": "customers",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.customers.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "customers_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.customers.email",
+              "name": "email",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 255
+              },
+              "nativeType": "varchar(255)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.customers.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.customers.company",
+              "name": "company",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.customers",
+            "name": null,
+            "columns": ["column:public.customers.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.customers.customers_email_key",
+              "name": "customers_email_key",
+              "columns": ["column:public.customers.email"]
+            }
+          ],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.agents",
+          "name": "agents",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.agents.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "agents_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.agents.email",
+              "name": "email",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 255
+              },
+              "nativeType": "varchar(255)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.agents.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.agents.active",
+              "name": "active",
+              "logicalType": {
+                "kind": "boolean"
+              },
+              "nativeType": "boolean",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": true
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.agents",
+            "name": null,
+            "columns": ["column:public.agents.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.agents.agents_email_key",
+              "name": "agents_email_key",
+              "columns": ["column:public.agents.email"]
+            }
+          ],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.teams",
+          "name": "teams",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.teams.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "teams_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.teams.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 80
+              },
+              "nativeType": "varchar(80)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.teams",
+            "name": null,
+            "columns": ["column:public.teams.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.teams.teams_name_key",
+              "name": "teams_name_key",
+              "columns": ["column:public.teams.name"]
+            }
+          ],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.team_members",
+          "name": "team_members",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.team_members.team_id",
+              "name": "team_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.team_members.agent_id",
+              "name": "agent_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.team_members",
+            "name": null,
+            "columns": ["column:public.team_members.team_id", "column:public.team_members.agent_id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.team_members.team_members_team_id_fkey",
+              "name": "team_members_team_id_fkey",
+              "columns": ["column:public.team_members.team_id"],
+              "refTable": "table:public.teams",
+              "refColumns": ["column:public.teams.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.team_members.team_members_agent_id_fkey",
+              "name": "team_members_agent_id_fkey",
+              "columns": ["column:public.team_members.agent_id"],
+              "refTable": "table:public.agents",
+              "refColumns": ["column:public.agents.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.sla_policies",
+          "name": "sla_policies",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.sla_policies.priority",
+              "name": "priority",
+              "logicalType": {
+                "kind": "enum",
+                "enumId": "enum:public.ticket_priority"
+              },
+              "nativeType": "ticket_priority",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.sla_policies.first_response_minutes",
+              "name": "first_response_minutes",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.sla_policies.resolution_minutes",
+              "name": "resolution_minutes",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.sla_policies",
+            "name": null,
+            "columns": ["column:public.sla_policies.priority"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": "Response targets per ticket priority",
+          "metadata": {}
+        },
+        {
+          "id": "table:public.tickets",
+          "name": "tickets",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.tickets.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "tickets_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.tickets.customer_id",
+              "name": "customer_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.tickets.team_id",
+              "name": "team_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.tickets.assignee_id",
+              "name": "assignee_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.tickets.subject",
+              "name": "subject",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 200
+              },
+              "nativeType": "varchar(200)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.tickets.status",
+              "name": "status",
+              "logicalType": {
+                "kind": "enum",
+                "enumId": "enum:public.ticket_status"
+              },
+              "nativeType": "ticket_status",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": "new"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.tickets.priority",
+              "name": "priority",
+              "logicalType": {
+                "kind": "enum",
+                "enumId": "enum:public.ticket_priority"
+              },
+              "nativeType": "ticket_priority",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": "normal"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.tickets.created_at",
+              "name": "created_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.tickets.first_responded_at",
+              "name": "first_responded_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.tickets.solved_at",
+              "name": "solved_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.tickets",
+            "name": null,
+            "columns": ["column:public.tickets.id"]
+          },
+          "indexes": [
+            {
+              "id": "index:public.tickets.tickets_queue_idx",
+              "name": "tickets_queue_idx",
+              "columns": [
+                {
+                  "column": "column:public.tickets.team_id",
+                  "order": "asc",
+                  "nulls": null
+                },
+                {
+                  "column": "column:public.tickets.status",
+                  "order": "asc",
+                  "nulls": null
+                },
+                {
+                  "column": "column:public.tickets.priority",
+                  "order": "asc",
+                  "nulls": null
+                }
+              ],
+              "unique": false,
+              "method": null,
+              "where": null
+            }
+          ],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.tickets.tickets_customer_id_fkey",
+              "name": "tickets_customer_id_fkey",
+              "columns": ["column:public.tickets.customer_id"],
+              "refTable": "table:public.customers",
+              "refColumns": ["column:public.customers.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.tickets.tickets_team_id_fkey",
+              "name": "tickets_team_id_fkey",
+              "columns": ["column:public.tickets.team_id"],
+              "refTable": "table:public.teams",
+              "refColumns": ["column:public.teams.id"],
+              "onDelete": "set null",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.tickets.tickets_assignee_id_fkey",
+              "name": "tickets_assignee_id_fkey",
+              "columns": ["column:public.tickets.assignee_id"],
+              "refTable": "table:public.agents",
+              "refColumns": ["column:public.agents.id"],
+              "onDelete": "set null",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.tickets.tickets_priority_fkey",
+              "name": "tickets_priority_fkey",
+              "columns": ["column:public.tickets.priority"],
+              "refTable": "table:public.sla_policies",
+              "refColumns": ["column:public.sla_policies.priority"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.ticket_messages",
+          "name": "ticket_messages",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.ticket_messages.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "ticket_messages_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.ticket_messages.ticket_id",
+              "name": "ticket_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.ticket_messages.agent_id",
+              "name": "agent_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.ticket_messages.body",
+              "name": "body",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.ticket_messages.is_internal",
+              "name": "is_internal",
+              "logicalType": {
+                "kind": "boolean"
+              },
+              "nativeType": "boolean",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": false
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.ticket_messages.created_at",
+              "name": "created_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.ticket_messages",
+            "name": null,
+            "columns": ["column:public.ticket_messages.id"]
+          },
+          "indexes": [
+            {
+              "id": "index:public.ticket_messages.ticket_messages_ticket_idx",
+              "name": "ticket_messages_ticket_idx",
+              "columns": [
+                {
+                  "column": "column:public.ticket_messages.ticket_id",
+                  "order": "asc",
+                  "nulls": null
+                },
+                {
+                  "column": "column:public.ticket_messages.created_at",
+                  "order": "asc",
+                  "nulls": null
+                }
+              ],
+              "unique": false,
+              "method": null,
+              "where": null
+            }
+          ],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.ticket_messages.ticket_messages_ticket_id_fkey",
+              "name": "ticket_messages_ticket_id_fkey",
+              "columns": ["column:public.ticket_messages.ticket_id"],
+              "refTable": "table:public.tickets",
+              "refColumns": ["column:public.tickets.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.ticket_messages.ticket_messages_agent_id_fkey",
+              "name": "ticket_messages_agent_id_fkey",
+              "columns": ["column:public.ticket_messages.agent_id"],
+              "refTable": "table:public.agents",
+              "refColumns": ["column:public.agents.id"],
+              "onDelete": "set null",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.tags",
+          "name": "tags",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.tags.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "tags_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.tags.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 50
+              },
+              "nativeType": "varchar(50)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.tags",
+            "name": null,
+            "columns": ["column:public.tags.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.tags.tags_name_key",
+              "name": "tags_name_key",
+              "columns": ["column:public.tags.name"]
+            }
+          ],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.ticket_tags",
+          "name": "ticket_tags",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.ticket_tags.ticket_id",
+              "name": "ticket_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.ticket_tags.tag_id",
+              "name": "tag_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.ticket_tags",
+            "name": null,
+            "columns": ["column:public.ticket_tags.ticket_id", "column:public.ticket_tags.tag_id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.ticket_tags.ticket_tags_ticket_id_fkey",
+              "name": "ticket_tags_ticket_id_fkey",
+              "columns": ["column:public.ticket_tags.ticket_id"],
+              "refTable": "table:public.tickets",
+              "refColumns": ["column:public.tickets.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.ticket_tags.ticket_tags_tag_id_fkey",
+              "name": "ticket_tags_tag_id_fkey",
+              "columns": ["column:public.ticket_tags.tag_id"],
+              "refTable": "table:public.tags",
+              "refColumns": ["column:public.tags.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.satisfaction_ratings",
+          "name": "satisfaction_ratings",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.satisfaction_ratings.ticket_id",
+              "name": "ticket_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.satisfaction_ratings.score",
+              "name": "score",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "smallint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.satisfaction_ratings.comment",
+              "name": "comment",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.satisfaction_ratings.rated_at",
+              "name": "rated_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.satisfaction_ratings",
+            "name": null,
+            "columns": ["column:public.satisfaction_ratings.ticket_id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.satisfaction_ratings.satisfaction_ratings_ticket_id_fkey",
+              "name": "satisfaction_ratings_ticket_id_fkey",
+              "columns": ["column:public.satisfaction_ratings.ticket_id"],
+              "refTable": "table:public.tickets",
+              "refColumns": ["column:public.tickets.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [
+            {
+              "id": "check:public.satisfaction_ratings.satisfaction_ratings_score_check",
+              "name": "satisfaction_ratings_score_check",
+              "expression": "score BETWEEN 1 AND 5"
+            }
+          ],
+          "comment": null,
+          "metadata": {}
+        }
+      ],
+      "enums": [
+        {
+          "id": "enum:public.ticket_status",
+          "name": "ticket_status",
+          "namespace": "namespace:public",
+          "values": ["new", "open", "pending", "solved", "closed"]
+        },
+        {
+          "id": "enum:public.ticket_priority",
+          "name": "ticket_priority",
+          "namespace": "namespace:public",
+          "values": ["low", "normal", "high", "urgent"]
+        }
+      ],
+      "version": 1
+    },
+    "layout": {
+      "nodes": {
+        "table:public.customers": {
+          "x": 16,
+          "y": 640,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.agents": {
+          "x": 16,
+          "y": 64,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.teams": {
+          "x": 16,
+          "y": 320,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.team_members": {
+          "x": 384,
+          "y": 112,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.sla_policies": {
+          "x": 16,
+          "y": 464,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.tickets": {
+          "x": 384,
+          "y": 256,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.ticket_messages": {
+          "x": 752,
+          "y": 16,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.tags": {
+          "x": 384,
+          "y": 624,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.ticket_tags": {
+          "x": 752,
+          "y": 608,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.satisfaction_ratings": {
+          "x": 752,
+          "y": 336,
+          "collapsed": false,
+          "color": "default"
+        }
+      }
+    },
+    "baselines": []
+  }
+}

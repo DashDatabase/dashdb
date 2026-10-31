@@ -1,0 +1,999 @@
+{
+  "format": "dashdb.project",
+  "version": 1,
+  "exportedAt": "2026-10-31T16:40:14.568Z",
+  "template": {
+    "title": "Booking system",
+    "description": "Appointments for salons, clinics or studios: staff, services, weekly availability, time off and bookings across locations, in MySQL.",
+    "tags": ["booking", "scheduling", "appointments", "services"],
+    "dialect": "mysql",
+    "tablesCount": 8,
+    "decisions": [
+      {
+        "title": "Availability is rules, not pre-made slots",
+        "body": "Staff hours are stored as weekly rules (weekday, start and end time, optional date range) plus time-off periods. Free slots are computed on request, so changing a service's length or someone's hours never requires regenerating thousands of slot rows."
+      },
+      {
+        "title": "Bookings copy the price",
+        "body": "A booking stores the price it was made at, which may come from the service or a staff member's custom price. Later price changes leave existing appointments alone."
+      },
+      {
+        "title": "Double booking is blocked at the start time",
+        "body": "A unique key on (staff_id, starts_at) stops two bookings starting together. MySQL has no exclusion constraints, so fully overlapping ranges must be checked in the same transaction that inserts the booking, with SELECT … FOR UPDATE on the staff member's bookings for that day."
+      },
+      {
+        "title": "Each location has its own time zone",
+        "body": "Times are stored as local datetimes with the location's IANA time zone beside them. Opening hours stay correct across daylight-saving changes, which a fixed UTC offset would get wrong twice a year."
+      }
+    ]
+  },
+  "project": {
+    "name": "Booking system",
+    "schema": {
+      "id": "schema",
+      "dialect": "mysql",
+      "namespaces": [
+        {
+          "id": "namespace:default",
+          "name": "default"
+        }
+      ],
+      "tables": [
+        {
+          "id": "table:default.locations",
+          "name": "locations",
+          "namespace": "namespace:default",
+          "columns": [
+            {
+              "id": "column:default.locations.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "int unsigned",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.locations.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 120
+              },
+              "nativeType": "varchar(120)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.locations.timezone",
+              "name": "timezone",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 64
+              },
+              "nativeType": "varchar(64)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.locations.address",
+              "name": "address",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 255
+              },
+              "nativeType": "varchar(255)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:default.locations",
+            "name": null,
+            "columns": ["column:default.locations.id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {
+            "engine": "innodb",
+            "charset": "utf8mb4"
+          }
+        },
+        {
+          "id": "table:default.staff",
+          "name": "staff",
+          "namespace": "namespace:default",
+          "columns": [
+            {
+              "id": "column:default.staff.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "int unsigned",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.staff.location_id",
+              "name": "location_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "int unsigned",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.staff.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 120
+              },
+              "nativeType": "varchar(120)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.staff.email",
+              "name": "email",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 191
+              },
+              "nativeType": "varchar(191)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.staff.active",
+              "name": "active",
+              "logicalType": {
+                "kind": "boolean"
+              },
+              "nativeType": "tinyint(1)",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": 1
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:default.staff",
+            "name": null,
+            "columns": ["column:default.staff.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:default.staff.staff_email_unique",
+              "name": "staff_email_unique",
+              "columns": ["column:default.staff.email"]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "id": "fk:default.staff.staff_location_fk",
+              "name": "staff_location_fk",
+              "columns": ["column:default.staff.location_id"],
+              "refTable": "table:default.locations",
+              "refColumns": ["column:default.locations.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {
+            "engine": "innodb",
+            "charset": "utf8mb4"
+          }
+        },
+        {
+          "id": "table:default.services",
+          "name": "services",
+          "namespace": "namespace:default",
+          "columns": [
+            {
+              "id": "column:default.services.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "int unsigned",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.services.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 120
+              },
+              "nativeType": "varchar(120)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.services.duration_minutes",
+              "name": "duration_minutes",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "smallint unsigned",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.services.price",
+              "name": "price",
+              "logicalType": {
+                "kind": "decimal",
+                "precision": 8,
+                "scale": 2
+              },
+              "nativeType": "decimal(8,2)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:default.services",
+            "name": null,
+            "columns": ["column:default.services.id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {
+            "engine": "innodb",
+            "charset": "utf8mb4"
+          }
+        },
+        {
+          "id": "table:default.staff_services",
+          "name": "staff_services",
+          "namespace": "namespace:default",
+          "columns": [
+            {
+              "id": "column:default.staff_services.staff_id",
+              "name": "staff_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "int unsigned",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.staff_services.service_id",
+              "name": "service_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "int unsigned",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.staff_services.custom_price",
+              "name": "custom_price",
+              "logicalType": {
+                "kind": "decimal",
+                "precision": 8,
+                "scale": 2
+              },
+              "nativeType": "decimal(8,2)",
+              "nullable": true,
+              "default": {
+                "kind": "literal",
+                "value": null
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:default.staff_services",
+            "name": null,
+            "columns": [
+              "column:default.staff_services.staff_id",
+              "column:default.staff_services.service_id"
+            ]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:default.staff_services.staff_services_staff_fk",
+              "name": "staff_services_staff_fk",
+              "columns": ["column:default.staff_services.staff_id"],
+              "refTable": "table:default.staff",
+              "refColumns": ["column:default.staff.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:default.staff_services.staff_services_service_fk",
+              "name": "staff_services_service_fk",
+              "columns": ["column:default.staff_services.service_id"],
+              "refTable": "table:default.services",
+              "refColumns": ["column:default.services.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {
+            "engine": "innodb",
+            "charset": "utf8mb4"
+          }
+        },
+        {
+          "id": "table:default.availability_rules",
+          "name": "availability_rules",
+          "namespace": "namespace:default",
+          "columns": [
+            {
+              "id": "column:default.availability_rules.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "int unsigned",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.availability_rules.staff_id",
+              "name": "staff_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "int unsigned",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.availability_rules.weekday",
+              "name": "weekday",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "tinyint unsigned",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.availability_rules.starts_at",
+              "name": "starts_at",
+              "logicalType": {
+                "kind": "unknown"
+              },
+              "nativeType": "time",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.availability_rules.ends_at",
+              "name": "ends_at",
+              "logicalType": {
+                "kind": "unknown"
+              },
+              "nativeType": "time",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.availability_rules.valid_from",
+              "name": "valid_from",
+              "logicalType": {
+                "kind": "date"
+              },
+              "nativeType": "date",
+              "nullable": true,
+              "default": {
+                "kind": "literal",
+                "value": null
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.availability_rules.valid_until",
+              "name": "valid_until",
+              "logicalType": {
+                "kind": "date"
+              },
+              "nativeType": "date",
+              "nullable": true,
+              "default": {
+                "kind": "literal",
+                "value": null
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:default.availability_rules",
+            "name": null,
+            "columns": ["column:default.availability_rules.id"]
+          },
+          "indexes": [
+            {
+              "id": "index:default.availability_rules.availability_rules_staff_idx",
+              "name": "availability_rules_staff_idx",
+              "columns": [
+                {
+                  "column": "column:default.availability_rules.staff_id",
+                  "order": "asc",
+                  "nulls": null
+                },
+                {
+                  "column": "column:default.availability_rules.weekday",
+                  "order": "asc",
+                  "nulls": null
+                }
+              ],
+              "unique": false,
+              "method": null,
+              "where": null
+            }
+          ],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:default.availability_rules.availability_rules_staff_fk",
+              "name": "availability_rules_staff_fk",
+              "columns": ["column:default.availability_rules.staff_id"],
+              "refTable": "table:default.staff",
+              "refColumns": ["column:default.staff.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [
+            {
+              "id": "check:default.availability_rules.availability_rules_weekday_chk",
+              "name": "availability_rules_weekday_chk",
+              "expression": "`weekday` BETWEEN 0 AND 6"
+            }
+          ],
+          "comment": null,
+          "metadata": {
+            "engine": "innodb",
+            "charset": "utf8mb4"
+          }
+        },
+        {
+          "id": "table:default.time_off",
+          "name": "time_off",
+          "namespace": "namespace:default",
+          "columns": [
+            {
+              "id": "column:default.time_off.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "int unsigned",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.time_off.staff_id",
+              "name": "staff_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "int unsigned",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.time_off.starts_at",
+              "name": "starts_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": false
+              },
+              "nativeType": "datetime",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.time_off.ends_at",
+              "name": "ends_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": false
+              },
+              "nativeType": "datetime",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.time_off.reason",
+              "name": "reason",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 200
+              },
+              "nativeType": "varchar(200)",
+              "nullable": true,
+              "default": {
+                "kind": "literal",
+                "value": null
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:default.time_off",
+            "name": null,
+            "columns": ["column:default.time_off.id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:default.time_off.time_off_staff_fk",
+              "name": "time_off_staff_fk",
+              "columns": ["column:default.time_off.staff_id"],
+              "refTable": "table:default.staff",
+              "refColumns": ["column:default.staff.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {
+            "engine": "innodb",
+            "charset": "utf8mb4"
+          }
+        },
+        {
+          "id": "table:default.customers",
+          "name": "customers",
+          "namespace": "namespace:default",
+          "columns": [
+            {
+              "id": "column:default.customers.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "decimal",
+                "precision": 20,
+                "scale": 0
+              },
+              "nativeType": "bigint unsigned",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.customers.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 120
+              },
+              "nativeType": "varchar(120)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.customers.email",
+              "name": "email",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 191
+              },
+              "nativeType": "varchar(191)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.customers.phone",
+              "name": "phone",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 40
+              },
+              "nativeType": "varchar(40)",
+              "nullable": true,
+              "default": {
+                "kind": "literal",
+                "value": null
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:default.customers",
+            "name": null,
+            "columns": ["column:default.customers.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:default.customers.customers_email_unique",
+              "name": "customers_email_unique",
+              "columns": ["column:default.customers.email"]
+            }
+          ],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {
+            "engine": "innodb",
+            "charset": "utf8mb4"
+          }
+        },
+        {
+          "id": "table:default.bookings",
+          "name": "bookings",
+          "namespace": "namespace:default",
+          "columns": [
+            {
+              "id": "column:default.bookings.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "decimal",
+                "precision": 20,
+                "scale": 0
+              },
+              "nativeType": "bigint unsigned",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.bookings.customer_id",
+              "name": "customer_id",
+              "logicalType": {
+                "kind": "decimal",
+                "precision": 20,
+                "scale": 0
+              },
+              "nativeType": "bigint unsigned",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.bookings.staff_id",
+              "name": "staff_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "int unsigned",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.bookings.service_id",
+              "name": "service_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "int unsigned",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.bookings.starts_at",
+              "name": "starts_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": false
+              },
+              "nativeType": "datetime",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.bookings.ends_at",
+              "name": "ends_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": false
+              },
+              "nativeType": "datetime",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.bookings.status",
+              "name": "status",
+              "logicalType": {
+                "kind": "enum",
+                "enumId": "enum:default.bookings_status"
+              },
+              "nativeType": "enum('pending','confirmed','cancelled','no_show','completed')",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": "pending"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.bookings.price",
+              "name": "price",
+              "logicalType": {
+                "kind": "decimal",
+                "precision": 8,
+                "scale": 2
+              },
+              "nativeType": "decimal(8,2)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:default.bookings.created_at",
+              "name": "created_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": false
+              },
+              "nativeType": "datetime",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "CURRENT_TIMESTAMP"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:default.bookings",
+            "name": null,
+            "columns": ["column:default.bookings.id"]
+          },
+          "indexes": [
+            {
+              "id": "index:default.bookings.bookings_customer_idx",
+              "name": "bookings_customer_idx",
+              "columns": [
+                {
+                  "column": "column:default.bookings.customer_id",
+                  "order": "asc",
+                  "nulls": null
+                }
+              ],
+              "unique": false,
+              "method": null,
+              "where": null
+            }
+          ],
+          "uniques": [
+            {
+              "id": "unique:default.bookings.bookings_staff_start_unique",
+              "name": "bookings_staff_start_unique",
+              "columns": ["column:default.bookings.staff_id", "column:default.bookings.starts_at"]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "id": "fk:default.bookings.bookings_customer_fk",
+              "name": "bookings_customer_fk",
+              "columns": ["column:default.bookings.customer_id"],
+              "refTable": "table:default.customers",
+              "refColumns": ["column:default.customers.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:default.bookings.bookings_staff_fk",
+              "name": "bookings_staff_fk",
+              "columns": ["column:default.bookings.staff_id"],
+              "refTable": "table:default.staff",
+              "refColumns": ["column:default.staff.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:default.bookings.bookings_service_fk",
+              "name": "bookings_service_fk",
+              "columns": ["column:default.bookings.service_id"],
+              "refTable": "table:default.services",
+              "refColumns": ["column:default.services.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {
+            "engine": "innodb",
+            "charset": "utf8mb4"
+          }
+        }
+      ],
+      "enums": [
+        {
+          "id": "enum:default.bookings_status",
+          "name": "bookings_status",
+          "namespace": "namespace:default",
+          "values": ["pending", "confirmed", "cancelled", "no_show", "completed"]
+        }
+      ],
+      "version": 1
+    },
+    "layout": {
+      "nodes": {
+        "table:default.locations": {
+          "x": 16,
+          "y": 112,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:default.staff": {
+          "x": 384,
+          "y": 96,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:default.services": {
+          "x": 384,
+          "y": 560,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:default.staff_services": {
+          "x": 752,
+          "y": 528,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:default.availability_rules": {
+          "x": 752,
+          "y": 16,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:default.time_off": {
+          "x": 752,
+          "y": 304,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:default.customers": {
+          "x": 384,
+          "y": 752,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:default.bookings": {
+          "x": 752,
+          "y": 704,
+          "collapsed": false,
+          "color": "default"
+        }
+      }
+    },
+    "baselines": []
+  }
+}

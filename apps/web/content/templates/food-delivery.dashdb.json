@@ -1,0 +1,1088 @@
+{
+  "format": "dashdb.project",
+  "version": 1,
+  "exportedAt": "2026-10-31T16:40:25.729Z",
+  "template": {
+    "title": "Food delivery",
+    "description": "Restaurants with menus, customer orders with line items, couriers and deliveries tracked through their own status, for a delivery app.",
+    "tags": ["delivery", "marketplace", "orders", "logistics"],
+    "dialect": "postgres",
+    "tablesCount": 8,
+    "decisions": [
+      {
+        "title": "The order and the delivery have separate statuses",
+        "body": "The kitchen moves an order from placed to ready; the courier moves the delivery from searching to delivered. Keeping them in two tables with two enums lets a courier be reassigned, or a delivery fail and be retried, without rewriting the order's history."
+      },
+      {
+        "title": "Order lines keep the dish name and price",
+        "body": "order_items copy the name and unit price when the order is placed, and only loosely reference the menu item (SET NULL on delete). Restaurants can edit or remove dishes without changing past receipts."
+      },
+      {
+        "title": "Fees and tips are separate columns",
+        "body": "Subtotal, delivery fee and tip are stored apart rather than as one total. Restaurants, couriers and the platform are each paid from different parts, and the receipt needs every line."
+      },
+      {
+        "title": "Coordinates as plain numbers",
+        "body": "Restaurants store latitude and longitude as numeric(9,6), enough for about 10 cm precision with no extension required. For radius searches at scale, switch the pair to a PostGIS geography column with a GiST index."
+      }
+    ]
+  },
+  "project": {
+    "name": "Food delivery",
+    "schema": {
+      "id": "schema",
+      "dialect": "postgres",
+      "namespaces": [
+        {
+          "id": "namespace:public",
+          "name": "public"
+        }
+      ],
+      "tables": [
+        {
+          "id": "table:public.customers",
+          "name": "customers",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.customers.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "customers_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.customers.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.customers.phone",
+              "name": "phone",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 40
+              },
+              "nativeType": "varchar(40)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.customers.email",
+              "name": "email",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 255
+              },
+              "nativeType": "varchar(255)",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.customers",
+            "name": null,
+            "columns": ["column:public.customers.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.customers.customers_phone_key",
+              "name": "customers_phone_key",
+              "columns": ["column:public.customers.phone"]
+            }
+          ],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.restaurants",
+          "name": "restaurants",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.restaurants.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "restaurants_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.restaurants.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.restaurants.address",
+              "name": "address",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.restaurants.latitude",
+              "name": "latitude",
+              "logicalType": {
+                "kind": "decimal",
+                "precision": 9,
+                "scale": 6
+              },
+              "nativeType": "numeric(9,6)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.restaurants.longitude",
+              "name": "longitude",
+              "logicalType": {
+                "kind": "decimal",
+                "precision": 9,
+                "scale": 6
+              },
+              "nativeType": "numeric(9,6)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.restaurants.is_open",
+              "name": "is_open",
+              "logicalType": {
+                "kind": "boolean"
+              },
+              "nativeType": "boolean",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": false
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.restaurants.prep_minutes",
+              "name": "prep_minutes",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "smallint",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": 20
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.restaurants",
+            "name": null,
+            "columns": ["column:public.restaurants.id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.menu_categories",
+          "name": "menu_categories",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.menu_categories.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "menu_categories_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.menu_categories.restaurant_id",
+              "name": "restaurant_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.menu_categories.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 80
+              },
+              "nativeType": "varchar(80)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.menu_categories.position",
+              "name": "position",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.menu_categories",
+            "name": null,
+            "columns": ["column:public.menu_categories.id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.menu_categories.menu_categories_restaurant_id_fkey",
+              "name": "menu_categories_restaurant_id_fkey",
+              "columns": ["column:public.menu_categories.restaurant_id"],
+              "refTable": "table:public.restaurants",
+              "refColumns": ["column:public.restaurants.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.menu_items",
+          "name": "menu_items",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.menu_items.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "menu_items_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.menu_items.category_id",
+              "name": "category_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.menu_items.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 120
+              },
+              "nativeType": "varchar(120)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.menu_items.description",
+              "name": "description",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.menu_items.price_cents",
+              "name": "price_cents",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.menu_items.available",
+              "name": "available",
+              "logicalType": {
+                "kind": "boolean"
+              },
+              "nativeType": "boolean",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": true
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.menu_items",
+            "name": null,
+            "columns": ["column:public.menu_items.id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.menu_items.menu_items_category_id_fkey",
+              "name": "menu_items_category_id_fkey",
+              "columns": ["column:public.menu_items.category_id"],
+              "refTable": "table:public.menu_categories",
+              "refColumns": ["column:public.menu_categories.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [
+            {
+              "id": "check:public.menu_items.menu_items_price_cents_check",
+              "name": "menu_items_price_cents_check",
+              "expression": "price_cents >= 0"
+            }
+          ],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.couriers",
+          "name": "couriers",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.couriers.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "couriers_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.couriers.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.couriers.phone",
+              "name": "phone",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 40
+              },
+              "nativeType": "varchar(40)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.couriers.vehicle",
+              "name": "vehicle",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 20
+              },
+              "nativeType": "varchar(20)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.couriers.on_shift",
+              "name": "on_shift",
+              "logicalType": {
+                "kind": "boolean"
+              },
+              "nativeType": "boolean",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": false
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.couriers",
+            "name": null,
+            "columns": ["column:public.couriers.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.couriers.couriers_phone_key",
+              "name": "couriers_phone_key",
+              "columns": ["column:public.couriers.phone"]
+            }
+          ],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.orders",
+          "name": "orders",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.orders.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "orders_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.orders.customer_id",
+              "name": "customer_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.orders.restaurant_id",
+              "name": "restaurant_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.orders.status",
+              "name": "status",
+              "logicalType": {
+                "kind": "enum",
+                "enumId": "enum:public.order_status"
+              },
+              "nativeType": "order_status",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": "placed"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.orders.delivery_address",
+              "name": "delivery_address",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.orders.subtotal_cents",
+              "name": "subtotal_cents",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.orders.delivery_fee_cents",
+              "name": "delivery_fee_cents",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.orders.tip_cents",
+              "name": "tip_cents",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": 0
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.orders.placed_at",
+              "name": "placed_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.orders",
+            "name": null,
+            "columns": ["column:public.orders.id"]
+          },
+          "indexes": [
+            {
+              "id": "index:public.orders.orders_restaurant_status_idx",
+              "name": "orders_restaurant_status_idx",
+              "columns": [
+                {
+                  "column": "column:public.orders.restaurant_id",
+                  "order": "asc",
+                  "nulls": null
+                },
+                {
+                  "column": "column:public.orders.status",
+                  "order": "asc",
+                  "nulls": null
+                }
+              ],
+              "unique": false,
+              "method": null,
+              "where": null
+            }
+          ],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.orders.orders_customer_id_fkey",
+              "name": "orders_customer_id_fkey",
+              "columns": ["column:public.orders.customer_id"],
+              "refTable": "table:public.customers",
+              "refColumns": ["column:public.customers.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.orders.orders_restaurant_id_fkey",
+              "name": "orders_restaurant_id_fkey",
+              "columns": ["column:public.orders.restaurant_id"],
+              "refTable": "table:public.restaurants",
+              "refColumns": ["column:public.restaurants.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.order_items",
+          "name": "order_items",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.order_items.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "order_items_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.order_items.order_id",
+              "name": "order_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.order_items.menu_item_id",
+              "name": "menu_item_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.order_items.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 120
+              },
+              "nativeType": "varchar(120)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.order_items.unit_price_cents",
+              "name": "unit_price_cents",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.order_items.quantity",
+              "name": "quantity",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "smallint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.order_items.notes",
+              "name": "notes",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.order_items",
+            "name": null,
+            "columns": ["column:public.order_items.id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.order_items.order_items_order_id_fkey",
+              "name": "order_items_order_id_fkey",
+              "columns": ["column:public.order_items.order_id"],
+              "refTable": "table:public.orders",
+              "refColumns": ["column:public.orders.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.order_items.order_items_menu_item_id_fkey",
+              "name": "order_items_menu_item_id_fkey",
+              "columns": ["column:public.order_items.menu_item_id"],
+              "refTable": "table:public.menu_items",
+              "refColumns": ["column:public.menu_items.id"],
+              "onDelete": "set null",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.deliveries",
+          "name": "deliveries",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.deliveries.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "deliveries_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.deliveries.order_id",
+              "name": "order_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.deliveries.courier_id",
+              "name": "courier_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.deliveries.status",
+              "name": "status",
+              "logicalType": {
+                "kind": "enum",
+                "enumId": "enum:public.delivery_status"
+              },
+              "nativeType": "delivery_status",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": "searching"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.deliveries.assigned_at",
+              "name": "assigned_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.deliveries.picked_up_at",
+              "name": "picked_up_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.deliveries.delivered_at",
+              "name": "delivered_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.deliveries",
+            "name": null,
+            "columns": ["column:public.deliveries.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.deliveries.deliveries_order_id_key",
+              "name": "deliveries_order_id_key",
+              "columns": ["column:public.deliveries.order_id"]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "id": "fk:public.deliveries.deliveries_order_id_fkey",
+              "name": "deliveries_order_id_fkey",
+              "columns": ["column:public.deliveries.order_id"],
+              "refTable": "table:public.orders",
+              "refColumns": ["column:public.orders.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.deliveries.deliveries_courier_id_fkey",
+              "name": "deliveries_courier_id_fkey",
+              "columns": ["column:public.deliveries.courier_id"],
+              "refTable": "table:public.couriers",
+              "refColumns": ["column:public.couriers.id"],
+              "onDelete": "set null",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        }
+      ],
+      "enums": [
+        {
+          "id": "enum:public.order_status",
+          "name": "order_status",
+          "namespace": "namespace:public",
+          "values": [
+            "placed",
+            "accepted",
+            "preparing",
+            "ready",
+            "picked_up",
+            "delivered",
+            "cancelled"
+          ]
+        },
+        {
+          "id": "enum:public.delivery_status",
+          "name": "delivery_status",
+          "namespace": "namespace:public",
+          "values": ["searching", "assigned", "at_restaurant", "en_route", "delivered", "failed"]
+        }
+      ],
+      "version": 1
+    },
+    "layout": {
+      "nodes": {
+        "table:public.customers": {
+          "x": 16,
+          "y": 256,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.restaurants": {
+          "x": 16,
+          "y": 496,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.menu_categories": {
+          "x": 384,
+          "y": 576,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.menu_items": {
+          "x": 752,
+          "y": 560,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.couriers": {
+          "x": 384,
+          "y": 16,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.orders": {
+          "x": 384,
+          "y": 240,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.order_items": {
+          "x": 1120,
+          "y": 352,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.deliveries": {
+          "x": 752,
+          "y": 16,
+          "collapsed": false,
+          "color": "default"
+        }
+      }
+    },
+    "baselines": []
+  }
+}

@@ -1,0 +1,1010 @@
+{
+  "format": "dashdb.project",
+  "version": 1,
+  "exportedAt": "2026-10-31T16:40:09.062Z",
+  "template": {
+    "title": "CRM",
+    "description": "Companies, contacts, deals moving through configurable pipelines, and calls, emails and meetings logged against them.",
+    "tags": ["crm", "sales", "pipeline", "b2b"],
+    "dialect": "postgres",
+    "tablesCount": 7,
+    "decisions": [
+      {
+        "title": "Pipeline stages are rows, not an enum",
+        "body": "Every sales team names its stages differently and reorders them. Stages live in pipeline_stages with a position and a win probability, so teams edit them in the app and the forecast uses each stage's probability without a schema change."
+      },
+      {
+        "title": "Deleting a person does not delete history",
+        "body": "Owners and contacts are referenced with ON DELETE SET NULL wherever a record should outlive them: a departed sales rep's deals stay, unassigned, and so do companies. Only a contact's own activity log is removed with the contact."
+      },
+      {
+        "title": "Amounts keep their currency",
+        "body": "Deals store amount as numeric(14,2) together with a three-letter currency code. Summing pipelines across currencies is then a deliberate conversion step instead of a silent mistake."
+      },
+      {
+        "title": "Activities point at the contact, the deal is optional",
+        "body": "A call happens with a person; it may or may not be about a deal. Requiring contact_id and allowing deal_id avoids a polymorphic \"subject\" column, which would lose foreign keys."
+      }
+    ]
+  },
+  "project": {
+    "name": "CRM",
+    "schema": {
+      "id": "schema",
+      "dialect": "postgres",
+      "namespaces": [
+        {
+          "id": "namespace:public",
+          "name": "public"
+        }
+      ],
+      "tables": [
+        {
+          "id": "table:public.users",
+          "name": "users",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.users.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "users_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.users.email",
+              "name": "email",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 255
+              },
+              "nativeType": "varchar(255)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.users.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.users",
+            "name": null,
+            "columns": ["column:public.users.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.users.users_email_key",
+              "name": "users_email_key",
+              "columns": ["column:public.users.email"]
+            }
+          ],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": "Sales team members who own records",
+          "metadata": {}
+        },
+        {
+          "id": "table:public.companies",
+          "name": "companies",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.companies.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "companies_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.companies.owner_id",
+              "name": "owner_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.companies.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.companies.domain",
+              "name": "domain",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 255
+              },
+              "nativeType": "varchar(255)",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.companies.industry",
+              "name": "industry",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 80
+              },
+              "nativeType": "varchar(80)",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.companies.created_at",
+              "name": "created_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.companies",
+            "name": null,
+            "columns": ["column:public.companies.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.companies.companies_domain_key",
+              "name": "companies_domain_key",
+              "columns": ["column:public.companies.domain"]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "id": "fk:public.companies.companies_owner_id_fkey",
+              "name": "companies_owner_id_fkey",
+              "columns": ["column:public.companies.owner_id"],
+              "refTable": "table:public.users",
+              "refColumns": ["column:public.users.id"],
+              "onDelete": "set null",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.contacts",
+          "name": "contacts",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.contacts.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "contacts_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.contacts.company_id",
+              "name": "company_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.contacts.owner_id",
+              "name": "owner_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.contacts.first_name",
+              "name": "first_name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 80
+              },
+              "nativeType": "varchar(80)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.contacts.last_name",
+              "name": "last_name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 80
+              },
+              "nativeType": "varchar(80)",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.contacts.email",
+              "name": "email",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 255
+              },
+              "nativeType": "varchar(255)",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.contacts.phone",
+              "name": "phone",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 40
+              },
+              "nativeType": "varchar(40)",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.contacts.created_at",
+              "name": "created_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.contacts",
+            "name": null,
+            "columns": ["column:public.contacts.id"]
+          },
+          "indexes": [
+            {
+              "id": "index:public.contacts.contacts_email_idx",
+              "name": "contacts_email_idx",
+              "columns": [
+                {
+                  "column": "column:public.contacts.email",
+                  "order": "asc",
+                  "nulls": null
+                }
+              ],
+              "unique": false,
+              "method": null,
+              "where": null
+            }
+          ],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.contacts.contacts_company_id_fkey",
+              "name": "contacts_company_id_fkey",
+              "columns": ["column:public.contacts.company_id"],
+              "refTable": "table:public.companies",
+              "refColumns": ["column:public.companies.id"],
+              "onDelete": "set null",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.contacts.contacts_owner_id_fkey",
+              "name": "contacts_owner_id_fkey",
+              "columns": ["column:public.contacts.owner_id"],
+              "refTable": "table:public.users",
+              "refColumns": ["column:public.users.id"],
+              "onDelete": "set null",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.pipelines",
+          "name": "pipelines",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.pipelines.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "pipelines_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.pipelines.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 80
+              },
+              "nativeType": "varchar(80)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.pipelines",
+            "name": null,
+            "columns": ["column:public.pipelines.id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.pipeline_stages",
+          "name": "pipeline_stages",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.pipeline_stages.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "pipeline_stages_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.pipeline_stages.pipeline_id",
+              "name": "pipeline_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.pipeline_stages.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 80
+              },
+              "nativeType": "varchar(80)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.pipeline_stages.position",
+              "name": "position",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.pipeline_stages.win_probability",
+              "name": "win_probability",
+              "logicalType": {
+                "kind": "decimal",
+                "precision": 3,
+                "scale": 2
+              },
+              "nativeType": "numeric(3,2)",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": 0
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.pipeline_stages",
+            "name": null,
+            "columns": ["column:public.pipeline_stages.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.pipeline_stages.pipeline_stages_pipeline_id_position_key",
+              "name": "pipeline_stages_pipeline_id_position_key",
+              "columns": [
+                "column:public.pipeline_stages.pipeline_id",
+                "column:public.pipeline_stages.position"
+              ]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "id": "fk:public.pipeline_stages.pipeline_stages_pipeline_id_fkey",
+              "name": "pipeline_stages_pipeline_id_fkey",
+              "columns": ["column:public.pipeline_stages.pipeline_id"],
+              "refTable": "table:public.pipelines",
+              "refColumns": ["column:public.pipelines.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.deals",
+          "name": "deals",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.deals.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "deals_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.deals.company_id",
+              "name": "company_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.deals.primary_contact_id",
+              "name": "primary_contact_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.deals.stage_id",
+              "name": "stage_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.deals.owner_id",
+              "name": "owner_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.deals.title",
+              "name": "title",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 200
+              },
+              "nativeType": "varchar(200)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.deals.amount",
+              "name": "amount",
+              "logicalType": {
+                "kind": "decimal",
+                "precision": 14,
+                "scale": 2
+              },
+              "nativeType": "numeric(14,2)",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.deals.currency",
+              "name": "currency",
+              "logicalType": {
+                "kind": "unknown"
+              },
+              "nativeType": "char(3)",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": "USD"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.deals.expected_close",
+              "name": "expected_close",
+              "logicalType": {
+                "kind": "date"
+              },
+              "nativeType": "date",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.deals.closed_at",
+              "name": "closed_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.deals",
+            "name": null,
+            "columns": ["column:public.deals.id"]
+          },
+          "indexes": [
+            {
+              "id": "index:public.deals.deals_stage_idx",
+              "name": "deals_stage_idx",
+              "columns": [
+                {
+                  "column": "column:public.deals.stage_id",
+                  "order": "asc",
+                  "nulls": null
+                }
+              ],
+              "unique": false,
+              "method": null,
+              "where": null
+            }
+          ],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.deals.deals_company_id_fkey",
+              "name": "deals_company_id_fkey",
+              "columns": ["column:public.deals.company_id"],
+              "refTable": "table:public.companies",
+              "refColumns": ["column:public.companies.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.deals.deals_primary_contact_id_fkey",
+              "name": "deals_primary_contact_id_fkey",
+              "columns": ["column:public.deals.primary_contact_id"],
+              "refTable": "table:public.contacts",
+              "refColumns": ["column:public.contacts.id"],
+              "onDelete": "set null",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.deals.deals_stage_id_fkey",
+              "name": "deals_stage_id_fkey",
+              "columns": ["column:public.deals.stage_id"],
+              "refTable": "table:public.pipeline_stages",
+              "refColumns": ["column:public.pipeline_stages.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.deals.deals_owner_id_fkey",
+              "name": "deals_owner_id_fkey",
+              "columns": ["column:public.deals.owner_id"],
+              "refTable": "table:public.users",
+              "refColumns": ["column:public.users.id"],
+              "onDelete": "set null",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.activities",
+          "name": "activities",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.activities.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "activities_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.activities.contact_id",
+              "name": "contact_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.activities.deal_id",
+              "name": "deal_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.activities.user_id",
+              "name": "user_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.activities.kind",
+              "name": "kind",
+              "logicalType": {
+                "kind": "enum",
+                "enumId": "enum:public.activity_kind"
+              },
+              "nativeType": "activity_kind",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.activities.subject",
+              "name": "subject",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 200
+              },
+              "nativeType": "varchar(200)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.activities.notes",
+              "name": "notes",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.activities.due_at",
+              "name": "due_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.activities.done_at",
+              "name": "done_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.activities",
+            "name": null,
+            "columns": ["column:public.activities.id"]
+          },
+          "indexes": [
+            {
+              "id": "index:public.activities.activities_contact_idx",
+              "name": "activities_contact_idx",
+              "columns": [
+                {
+                  "column": "column:public.activities.contact_id",
+                  "order": "asc",
+                  "nulls": null
+                }
+              ],
+              "unique": false,
+              "method": null,
+              "where": null
+            }
+          ],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.activities.activities_contact_id_fkey",
+              "name": "activities_contact_id_fkey",
+              "columns": ["column:public.activities.contact_id"],
+              "refTable": "table:public.contacts",
+              "refColumns": ["column:public.contacts.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.activities.activities_deal_id_fkey",
+              "name": "activities_deal_id_fkey",
+              "columns": ["column:public.activities.deal_id"],
+              "refTable": "table:public.deals",
+              "refColumns": ["column:public.deals.id"],
+              "onDelete": "set null",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.activities.activities_user_id_fkey",
+              "name": "activities_user_id_fkey",
+              "columns": ["column:public.activities.user_id"],
+              "refTable": "table:public.users",
+              "refColumns": ["column:public.users.id"],
+              "onDelete": "set null",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        }
+      ],
+      "enums": [
+        {
+          "id": "enum:public.activity_kind",
+          "name": "activity_kind",
+          "namespace": "namespace:public",
+          "values": ["call", "email", "meeting", "task"]
+        }
+      ],
+      "version": 1
+    },
+    "layout": {
+      "nodes": {
+        "table:public.users": {
+          "x": 16,
+          "y": 400,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.companies": {
+          "x": 384,
+          "y": 240,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.contacts": {
+          "x": 752,
+          "y": 336,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.pipelines": {
+          "x": 384,
+          "y": 96,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.pipeline_stages": {
+          "x": 752,
+          "y": 48,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.deals": {
+          "x": 1120,
+          "y": 112,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.activities": {
+          "x": 1488,
+          "y": 128,
+          "collapsed": false,
+          "color": "default"
+        }
+      }
+    },
+    "baselines": []
+  }
+}

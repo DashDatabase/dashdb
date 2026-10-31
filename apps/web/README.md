@@ -10,6 +10,9 @@ Next.js (App Router, `src/` dir) with Tailwind CSS v4. It runs on **:3000**.
   OG images (`app/og/[slug]`), breadcrumbs and the footer. Add a page there first.
 - `src/lib/waitlist/`: the waitlist form's server action, validation, rate limits and stores.
 - `src/content/`: MDX content (the changelog).
+- `content/templates/`: the template gallery: one `.dashdb.json` per template (see its README
+  for the format and how to contribute). `src/templates/` loads and validates them.
+- `src/tools/registry.ts`: the converter tools at `/tools/<slug>`.
 - `e2e/`: Playwright specs.
 
 | Script                 | What it does                                                        |
@@ -23,6 +26,8 @@ Next.js (App Router, `src/` dir) with Tailwind CSS v4. It runs on **:3000**.
 | `bundle:marketing`     | Fails if editor code reaches a marketing page (after `build`)       |
 | `lighthouse`           | Editor accessibility, 95+ (after `build`)                           |
 | `lighthouse:marketing` | `/` and `/pricing` on mobile, 95+ in all four categories            |
+| `templates:check`      | Validates every gallery template (the CI gate for contributions)    |
+| `template:from-sql`    | Builds a template file from DDL and a metadata file                 |
 | `demo:record`          | Re-records `public/media/demo.webm` and its poster from the editor  |
 
 Env: copy `.env.example` to `.env.local`. All variables are optional.

@@ -1,0 +1,1206 @@
+{
+  "format": "dashdb.project",
+  "version": 1,
+  "exportedAt": "2026-10-31T16:36:58.610Z",
+  "template": {
+    "title": "SaaS multi-tenant",
+    "description": "Organizations, users with roles, invitations, plans, subscriptions, invoices, API keys and an audit log: the core of a B2B SaaS app.",
+    "tags": ["saas", "multi-tenant", "billing", "auth"],
+    "dialect": "postgres",
+    "tablesCount": 9,
+    "decisions": [
+      {
+        "title": "Memberships instead of users.organization_id",
+        "body": "People often belong to more than one workspace, so users and organizations meet in a memberships table with a composite primary key and a role. Removing someone from a team deletes a row; it never touches the user."
+      },
+      {
+        "title": "Every tenant-owned row carries organization_id",
+        "body": "Invitations, subscriptions, API keys and audit events all reference the organization directly, with an index starting on organization_id. Queries are scoped with one equality, and the schema is ready for PostgreSQL row-level security policies if you add them."
+      },
+      {
+        "title": "Secrets are stored as hashes",
+        "body": "API keys and invitation tokens keep only a hash (bytea) plus a short visible prefix for API keys. A database leak exposes nothing usable, and the prefix still lets people recognise their keys in the UI."
+      },
+      {
+        "title": "Billing history is kept, not overwritten",
+        "body": "A subscription row records the plan and period, and invoices hang off subscriptions. Changing plans adds history instead of editing the organization, which keeps invoices consistent with what was sold at the time."
+      }
+    ]
+  },
+  "project": {
+    "name": "SaaS multi-tenant",
+    "schema": {
+      "id": "schema",
+      "dialect": "postgres",
+      "namespaces": [
+        {
+          "id": "namespace:public",
+          "name": "public"
+        }
+      ],
+      "tables": [
+        {
+          "id": "table:public.organizations",
+          "name": "organizations",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.organizations.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "organizations_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.organizations.slug",
+              "name": "slug",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 64
+              },
+              "nativeType": "varchar(64)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.organizations.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.organizations.created_at",
+              "name": "created_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.organizations",
+            "name": null,
+            "columns": ["column:public.organizations.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.organizations.organizations_slug_key",
+              "name": "organizations_slug_key",
+              "columns": ["column:public.organizations.slug"]
+            }
+          ],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": "Tenants: every customer account",
+          "metadata": {}
+        },
+        {
+          "id": "table:public.users",
+          "name": "users",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.users.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "users_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.users.email",
+              "name": "email",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 255
+              },
+              "nativeType": "varchar(255)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.users.display_name",
+              "name": "display_name",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.users.created_at",
+              "name": "created_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.users",
+            "name": null,
+            "columns": ["column:public.users.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.users.users_email_key",
+              "name": "users_email_key",
+              "columns": ["column:public.users.email"]
+            }
+          ],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.memberships",
+          "name": "memberships",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.memberships.organization_id",
+              "name": "organization_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.memberships.user_id",
+              "name": "user_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.memberships.role",
+              "name": "role",
+              "logicalType": {
+                "kind": "enum",
+                "enumId": "enum:public.member_role"
+              },
+              "nativeType": "member_role",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": "member"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.memberships.joined_at",
+              "name": "joined_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.memberships",
+            "name": null,
+            "columns": [
+              "column:public.memberships.organization_id",
+              "column:public.memberships.user_id"
+            ]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.memberships.memberships_organization_id_fkey",
+              "name": "memberships_organization_id_fkey",
+              "columns": ["column:public.memberships.organization_id"],
+              "refTable": "table:public.organizations",
+              "refColumns": ["column:public.organizations.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.memberships.memberships_user_id_fkey",
+              "name": "memberships_user_id_fkey",
+              "columns": ["column:public.memberships.user_id"],
+              "refTable": "table:public.users",
+              "refColumns": ["column:public.users.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.invitations",
+          "name": "invitations",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.invitations.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "invitations_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.invitations.organization_id",
+              "name": "organization_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.invitations.email",
+              "name": "email",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 255
+              },
+              "nativeType": "varchar(255)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.invitations.role",
+              "name": "role",
+              "logicalType": {
+                "kind": "enum",
+                "enumId": "enum:public.member_role"
+              },
+              "nativeType": "member_role",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": "member"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.invitations.token_hash",
+              "name": "token_hash",
+              "logicalType": {
+                "kind": "bytes"
+              },
+              "nativeType": "bytea",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.invitations.invited_by",
+              "name": "invited_by",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.invitations.expires_at",
+              "name": "expires_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.invitations.accepted_at",
+              "name": "accepted_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.invitations",
+            "name": null,
+            "columns": ["column:public.invitations.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.invitations.invitations_token_hash_key",
+              "name": "invitations_token_hash_key",
+              "columns": ["column:public.invitations.token_hash"]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "id": "fk:public.invitations.invitations_organization_id_fkey",
+              "name": "invitations_organization_id_fkey",
+              "columns": ["column:public.invitations.organization_id"],
+              "refTable": "table:public.organizations",
+              "refColumns": ["column:public.organizations.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.invitations.invitations_invited_by_fkey",
+              "name": "invitations_invited_by_fkey",
+              "columns": ["column:public.invitations.invited_by"],
+              "refTable": "table:public.users",
+              "refColumns": ["column:public.users.id"],
+              "onDelete": "set null",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.plans",
+          "name": "plans",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.plans.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "plans_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.plans.code",
+              "name": "code",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 32
+              },
+              "nativeType": "varchar(32)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.plans.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.plans.monthly_price_cents",
+              "name": "monthly_price_cents",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.plans.seat_limit",
+              "name": "seat_limit",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.plans",
+            "name": null,
+            "columns": ["column:public.plans.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.plans.plans_code_key",
+              "name": "plans_code_key",
+              "columns": ["column:public.plans.code"]
+            }
+          ],
+          "foreignKeys": [],
+          "checks": [
+            {
+              "id": "check:public.plans.plans_monthly_price_cents_check",
+              "name": "plans_monthly_price_cents_check",
+              "expression": "monthly_price_cents >= 0"
+            }
+          ],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.subscriptions",
+          "name": "subscriptions",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.subscriptions.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "subscriptions_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.subscriptions.organization_id",
+              "name": "organization_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.subscriptions.plan_id",
+              "name": "plan_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.subscriptions.status",
+              "name": "status",
+              "logicalType": {
+                "kind": "enum",
+                "enumId": "enum:public.subscription_status"
+              },
+              "nativeType": "subscription_status",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": "trialing"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.subscriptions.current_period_end",
+              "name": "current_period_end",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.subscriptions.canceled_at",
+              "name": "canceled_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.subscriptions",
+            "name": null,
+            "columns": ["column:public.subscriptions.id"]
+          },
+          "indexes": [
+            {
+              "id": "index:public.subscriptions.subscriptions_organization_id_idx",
+              "name": "subscriptions_organization_id_idx",
+              "columns": [
+                {
+                  "column": "column:public.subscriptions.organization_id",
+                  "order": "asc",
+                  "nulls": null
+                }
+              ],
+              "unique": false,
+              "method": null,
+              "where": null
+            }
+          ],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.subscriptions.subscriptions_organization_id_fkey",
+              "name": "subscriptions_organization_id_fkey",
+              "columns": ["column:public.subscriptions.organization_id"],
+              "refTable": "table:public.organizations",
+              "refColumns": ["column:public.organizations.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.subscriptions.subscriptions_plan_id_fkey",
+              "name": "subscriptions_plan_id_fkey",
+              "columns": ["column:public.subscriptions.plan_id"],
+              "refTable": "table:public.plans",
+              "refColumns": ["column:public.plans.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.invoices",
+          "name": "invoices",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.invoices.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "invoices_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.invoices.subscription_id",
+              "name": "subscription_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.invoices.number",
+              "name": "number",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 32
+              },
+              "nativeType": "varchar(32)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.invoices.amount_cents",
+              "name": "amount_cents",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.invoices.currency",
+              "name": "currency",
+              "logicalType": {
+                "kind": "unknown"
+              },
+              "nativeType": "char(3)",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": "USD"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.invoices.issued_at",
+              "name": "issued_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.invoices.paid_at",
+              "name": "paid_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.invoices",
+            "name": null,
+            "columns": ["column:public.invoices.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.invoices.invoices_number_key",
+              "name": "invoices_number_key",
+              "columns": ["column:public.invoices.number"]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "id": "fk:public.invoices.invoices_subscription_id_fkey",
+              "name": "invoices_subscription_id_fkey",
+              "columns": ["column:public.invoices.subscription_id"],
+              "refTable": "table:public.subscriptions",
+              "refColumns": ["column:public.subscriptions.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.api_keys",
+          "name": "api_keys",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.api_keys.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "api_keys_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.api_keys.organization_id",
+              "name": "organization_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.api_keys.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 80
+              },
+              "nativeType": "varchar(80)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.api_keys.prefix",
+              "name": "prefix",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 12
+              },
+              "nativeType": "varchar(12)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.api_keys.secret_hash",
+              "name": "secret_hash",
+              "logicalType": {
+                "kind": "bytes"
+              },
+              "nativeType": "bytea",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.api_keys.last_used_at",
+              "name": "last_used_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.api_keys.revoked_at",
+              "name": "revoked_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.api_keys",
+            "name": null,
+            "columns": ["column:public.api_keys.id"]
+          },
+          "indexes": [
+            {
+              "id": "index:public.api_keys.api_keys_organization_id_idx",
+              "name": "api_keys_organization_id_idx",
+              "columns": [
+                {
+                  "column": "column:public.api_keys.organization_id",
+                  "order": "asc",
+                  "nulls": null
+                }
+              ],
+              "unique": false,
+              "method": null,
+              "where": null
+            }
+          ],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.api_keys.api_keys_organization_id_fkey",
+              "name": "api_keys_organization_id_fkey",
+              "columns": ["column:public.api_keys.organization_id"],
+              "refTable": "table:public.organizations",
+              "refColumns": ["column:public.organizations.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.audit_events",
+          "name": "audit_events",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.audit_events.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "audit_events_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.audit_events.organization_id",
+              "name": "organization_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.audit_events.actor_id",
+              "name": "actor_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.audit_events.action",
+              "name": "action",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 64
+              },
+              "nativeType": "varchar(64)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.audit_events.details",
+              "name": "details",
+              "logicalType": {
+                "kind": "json"
+              },
+              "nativeType": "jsonb",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": "{}"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.audit_events.occurred_at",
+              "name": "occurred_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.audit_events",
+            "name": null,
+            "columns": ["column:public.audit_events.id"]
+          },
+          "indexes": [
+            {
+              "id": "index:public.audit_events.audit_events_org_time_idx",
+              "name": "audit_events_org_time_idx",
+              "columns": [
+                {
+                  "column": "column:public.audit_events.organization_id",
+                  "order": "asc",
+                  "nulls": null
+                },
+                {
+                  "column": "column:public.audit_events.occurred_at",
+                  "order": "asc",
+                  "nulls": null
+                }
+              ],
+              "unique": false,
+              "method": null,
+              "where": null
+            }
+          ],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.audit_events.audit_events_organization_id_fkey",
+              "name": "audit_events_organization_id_fkey",
+              "columns": ["column:public.audit_events.organization_id"],
+              "refTable": "table:public.organizations",
+              "refColumns": ["column:public.organizations.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.audit_events.audit_events_actor_id_fkey",
+              "name": "audit_events_actor_id_fkey",
+              "columns": ["column:public.audit_events.actor_id"],
+              "refTable": "table:public.users",
+              "refColumns": ["column:public.users.id"],
+              "onDelete": "set null",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        }
+      ],
+      "enums": [
+        {
+          "id": "enum:public.member_role",
+          "name": "member_role",
+          "namespace": "namespace:public",
+          "values": ["owner", "admin", "member", "billing"]
+        },
+        {
+          "id": "enum:public.subscription_status",
+          "name": "subscription_status",
+          "namespace": "namespace:public",
+          "values": ["trialing", "active", "past_due", "canceled"]
+        }
+      ],
+      "version": 1
+    },
+    "layout": {
+      "nodes": {
+        "table:public.organizations": {
+          "x": 16,
+          "y": 384,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.users": {
+          "x": 16,
+          "y": 64,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.memberships": {
+          "x": 400,
+          "y": 320,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.invitations": {
+          "x": 400,
+          "y": 16,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.plans": {
+          "x": 16,
+          "y": 1120,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.subscriptions": {
+          "x": 400,
+          "y": 1072,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.invoices": {
+          "x": 768,
+          "y": 1056,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.api_keys": {
+          "x": 400,
+          "y": 784,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.audit_events": {
+          "x": 400,
+          "y": 528,
+          "collapsed": false,
+          "color": "default"
+        }
+      }
+    },
+    "baselines": []
+  }
+}

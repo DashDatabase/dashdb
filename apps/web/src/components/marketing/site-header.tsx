@@ -5,6 +5,7 @@ import { ButtonLink, Container } from './primitives';
 const NAV = [
   { href: '/features/diagram', label: 'Diagram' },
   { href: '/features/migrations', label: 'Migrations' },
+  { href: '/templates', label: 'Templates' },
   { href: '/tools', label: 'Tools' },
   { href: '/pricing', label: 'Pricing' },
   { href: '/changelog', label: 'Changelog' },

@@ -16,7 +16,9 @@
     "lighthouse": "node scripts/lighthouse.mjs",
     "demo:record": "node scripts/record-demo.mjs",
     "bundle:marketing": "node scripts/check-marketing-bundles.mjs",
-    "lighthouse:marketing": "node scripts/lighthouse.mjs --marketing"
+    "lighthouse:marketing": "node scripts/lighthouse.mjs --marketing",
+    "template:from-sql": "tsx scripts/template-from-sql.ts",
+    "templates:check": "vitest run src/templates"
   },
   "dependencies": {
     "@dashdb/api-client": "workspace:*",
@@ -55,6 +57,7 @@
     "lighthouse": "^13.6.0",
     "sharp": "^0.35.5",
     "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "vitest": "^5.0.5"
   }

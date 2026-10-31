@@ -21,6 +21,10 @@ const PAGES = [
   '/pricing',
   // The hub only; tool pages load Monaco and the converter by design.
   '/tools',
+  // Template pages load the editor only when 'Use this template' is clicked.
+  '/templates',
+  '/templates/crm',
+  '/templates/contribute',
   '/open-source',
   '/changelog',
   '/about',

@@ -1,6 +1,7 @@
 // The public site's pages: one registry feeds page metadata, the sitemap, OG images,
 // breadcrumbs and the footer, so a page added here shows up everywhere. The converter tools
 // (src/tools/registry.ts) join it through `toolPage`.
+import { getTemplates, type Template } from '@/templates/load';
 import { FORMATS, TOOLS, type ToolDefinition } from '@/tools/registry';
 
 export const SITE = {
@@ -71,6 +72,28 @@ export const PAGES = [
     group: 'Product',
     changeFrequency: 'monthly',
     priority: 0.8,
+  },
+  {
+    slug: 'templates',
+    path: '/templates',
+    title: 'Database schema templates',
+    label: 'Templates',
+    description:
+      'Twelve ready-made database schemas, from SaaS multi-tenancy to e-commerce and analytics, with diagrams, design notes and SQL or Prisma downloads.',
+    group: 'Product',
+    changeFrequency: 'weekly',
+    priority: 0.8,
+  },
+  {
+    slug: 'contribute-template',
+    path: '/templates/contribute',
+    title: 'Contribute a template',
+    label: 'Contribute',
+    description:
+      'How to submit a schema template to the DashDB gallery: design it in the editor, export it, describe your design decisions and open a pull request.',
+    parent: '/templates',
+    changeFrequency: 'yearly',
+    priority: 0.4,
   },
   {
     slug: 'tools',
@@ -171,10 +194,24 @@ export function toolPage(tool: ToolDefinition): SitePage {
   };
 }
 
-/** Every public page: the registry above plus one per converter tool. */
+/** A gallery template as a site page: `/templates/<slug>`, under the Templates hub. */
+export function templatePage(template: Template): SitePage {
+  return {
+    slug: `template-${template.slug}`,
+    path: `/templates/${template.slug}`,
+    title: `${template.meta.title} database schema`,
+    label: template.meta.title,
+    description: template.meta.description,
+    parent: '/templates',
+    changeFrequency: 'monthly',
+    priority: 0.7,
+  };
+}
+
+/** Every public page: the registry above plus one per converter tool and per template. */
 export function allPages(): SitePage[] {
   const tools: readonly ToolDefinition[] = TOOLS;
-  return [...PAGES, ...tools.map(toolPage)];
+  return [...PAGES, ...tools.map(toolPage), ...getTemplates().map(templatePage)];
 }
 
 export function findPage(slug: string): SitePage | undefined {

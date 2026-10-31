@@ -1,0 +1,999 @@
+{
+  "format": "dashdb.project",
+  "version": 1,
+  "exportedAt": "2026-10-31T16:39:57.007Z",
+  "template": {
+    "title": "Blog and CMS",
+    "description": "Posts with publishing states and revision history, categories, tags, threaded comments with moderation, and a media library.",
+    "tags": ["blog", "cms", "content", "publishing"],
+    "dialect": "postgres",
+    "tablesCount": 9,
+    "decisions": [
+      {
+        "title": "The body lives in revisions",
+        "body": "posts hold what changes rarely (slug, title, status); every saved body is a new post_revisions row. The latest revision is the current text, and editors can compare or restore any earlier version without an extra history system."
+      },
+      {
+        "title": "A partial index for the public site",
+        "body": "Readers only ever see published posts, ordered by date. The index on published_at includes only rows WHERE status = 'published', so it stays small and fast even when drafts and archives outnumber live posts."
+      },
+      {
+        "title": "Threaded comments with one parent column",
+        "body": "comments.parent_id points at another comment, so replies nest to any depth, and deleting a comment removes its replies with it. New comments start unapproved, keeping moderation in the database rather than only in the UI."
+      },
+      {
+        "title": "Categories and tags are both join tables",
+        "body": "A post can sit in several categories and carry many tags. Two small join tables with composite primary keys prevent duplicates and make both filters a single join."
+      }
+    ]
+  },
+  "project": {
+    "name": "Blog and CMS",
+    "schema": {
+      "id": "schema",
+      "dialect": "postgres",
+      "namespaces": [
+        {
+          "id": "namespace:public",
+          "name": "public"
+        }
+      ],
+      "tables": [
+        {
+          "id": "table:public.authors",
+          "name": "authors",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.authors.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "authors_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.authors.email",
+              "name": "email",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 255
+              },
+              "nativeType": "varchar(255)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.authors.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.authors.bio",
+              "name": "bio",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.authors",
+            "name": null,
+            "columns": ["column:public.authors.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.authors.authors_email_key",
+              "name": "authors_email_key",
+              "columns": ["column:public.authors.email"]
+            }
+          ],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.posts",
+          "name": "posts",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.posts.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "posts_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.posts.author_id",
+              "name": "author_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.posts.slug",
+              "name": "slug",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 160
+              },
+              "nativeType": "varchar(160)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.posts.title",
+              "name": "title",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 200
+              },
+              "nativeType": "varchar(200)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.posts.excerpt",
+              "name": "excerpt",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.posts.status",
+              "name": "status",
+              "logicalType": {
+                "kind": "enum",
+                "enumId": "enum:public.post_status"
+              },
+              "nativeType": "post_status",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": "draft"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.posts.published_at",
+              "name": "published_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.posts.updated_at",
+              "name": "updated_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.posts",
+            "name": null,
+            "columns": ["column:public.posts.id"]
+          },
+          "indexes": [
+            {
+              "id": "index:public.posts.posts_published_idx",
+              "name": "posts_published_idx",
+              "columns": [
+                {
+                  "column": "column:public.posts.published_at",
+                  "order": "asc",
+                  "nulls": null
+                }
+              ],
+              "unique": false,
+              "method": null,
+              "where": "status = 'published'"
+            }
+          ],
+          "uniques": [
+            {
+              "id": "unique:public.posts.posts_slug_key",
+              "name": "posts_slug_key",
+              "columns": ["column:public.posts.slug"]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "id": "fk:public.posts.posts_author_id_fkey",
+              "name": "posts_author_id_fkey",
+              "columns": ["column:public.posts.author_id"],
+              "refTable": "table:public.authors",
+              "refColumns": ["column:public.authors.id"],
+              "onDelete": "no action",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.post_revisions",
+          "name": "post_revisions",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.post_revisions.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "post_revisions_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.post_revisions.post_id",
+              "name": "post_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.post_revisions.editor_id",
+              "name": "editor_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.post_revisions.body",
+              "name": "body",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.post_revisions.created_at",
+              "name": "created_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.post_revisions",
+            "name": null,
+            "columns": ["column:public.post_revisions.id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.post_revisions.post_revisions_post_id_fkey",
+              "name": "post_revisions_post_id_fkey",
+              "columns": ["column:public.post_revisions.post_id"],
+              "refTable": "table:public.posts",
+              "refColumns": ["column:public.posts.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.post_revisions.post_revisions_editor_id_fkey",
+              "name": "post_revisions_editor_id_fkey",
+              "columns": ["column:public.post_revisions.editor_id"],
+              "refTable": "table:public.authors",
+              "refColumns": ["column:public.authors.id"],
+              "onDelete": "set null",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": "Every saved version of a post body",
+          "metadata": {}
+        },
+        {
+          "id": "table:public.categories",
+          "name": "categories",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.categories.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "categories_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.categories.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 80
+              },
+              "nativeType": "varchar(80)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.categories.slug",
+              "name": "slug",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 100
+              },
+              "nativeType": "varchar(100)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.categories",
+            "name": null,
+            "columns": ["column:public.categories.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.categories.categories_slug_key",
+              "name": "categories_slug_key",
+              "columns": ["column:public.categories.slug"]
+            }
+          ],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.post_categories",
+          "name": "post_categories",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.post_categories.post_id",
+              "name": "post_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.post_categories.category_id",
+              "name": "category_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.post_categories",
+            "name": null,
+            "columns": [
+              "column:public.post_categories.post_id",
+              "column:public.post_categories.category_id"
+            ]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.post_categories.post_categories_post_id_fkey",
+              "name": "post_categories_post_id_fkey",
+              "columns": ["column:public.post_categories.post_id"],
+              "refTable": "table:public.posts",
+              "refColumns": ["column:public.posts.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.post_categories.post_categories_category_id_fkey",
+              "name": "post_categories_category_id_fkey",
+              "columns": ["column:public.post_categories.category_id"],
+              "refTable": "table:public.categories",
+              "refColumns": ["column:public.categories.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.tags",
+          "name": "tags",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.tags.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "tags_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.tags.name",
+              "name": "name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 50
+              },
+              "nativeType": "varchar(50)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.tags",
+            "name": null,
+            "columns": ["column:public.tags.id"]
+          },
+          "indexes": [],
+          "uniques": [
+            {
+              "id": "unique:public.tags.tags_name_key",
+              "name": "tags_name_key",
+              "columns": ["column:public.tags.name"]
+            }
+          ],
+          "foreignKeys": [],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.post_tags",
+          "name": "post_tags",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.post_tags.post_id",
+              "name": "post_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.post_tags.tag_id",
+              "name": "tag_id",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.post_tags",
+            "name": null,
+            "columns": ["column:public.post_tags.post_id", "column:public.post_tags.tag_id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.post_tags.post_tags_post_id_fkey",
+              "name": "post_tags_post_id_fkey",
+              "columns": ["column:public.post_tags.post_id"],
+              "refTable": "table:public.posts",
+              "refColumns": ["column:public.posts.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.post_tags.post_tags_tag_id_fkey",
+              "name": "post_tags_tag_id_fkey",
+              "columns": ["column:public.post_tags.tag_id"],
+              "refTable": "table:public.tags",
+              "refColumns": ["column:public.tags.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.comments",
+          "name": "comments",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.comments.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "comments_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.comments.post_id",
+              "name": "post_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.comments.parent_id",
+              "name": "parent_id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.comments.author_name",
+              "name": "author_name",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 80
+              },
+              "nativeType": "varchar(80)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.comments.author_email",
+              "name": "author_email",
+              "logicalType": {
+                "kind": "varchar",
+                "length": 255
+              },
+              "nativeType": "varchar(255)",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.comments.body",
+              "name": "body",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.comments.approved",
+              "name": "approved",
+              "logicalType": {
+                "kind": "boolean"
+              },
+              "nativeType": "boolean",
+              "nullable": false,
+              "default": {
+                "kind": "literal",
+                "value": false
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.comments.created_at",
+              "name": "created_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.comments",
+            "name": null,
+            "columns": ["column:public.comments.id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.comments.comments_post_id_fkey",
+              "name": "comments_post_id_fkey",
+              "columns": ["column:public.comments.post_id"],
+              "refTable": "table:public.posts",
+              "refColumns": ["column:public.posts.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            },
+            {
+              "id": "fk:public.comments.comments_parent_id_fkey",
+              "name": "comments_parent_id_fkey",
+              "columns": ["column:public.comments.parent_id"],
+              "refTable": "table:public.comments",
+              "refColumns": ["column:public.comments.id"],
+              "onDelete": "cascade",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        },
+        {
+          "id": "table:public.media",
+          "name": "media",
+          "namespace": "namespace:public",
+          "columns": [
+            {
+              "id": "column:public.media.id",
+              "name": "id",
+              "logicalType": {
+                "kind": "bigint"
+              },
+              "nativeType": "bigint",
+              "nullable": false,
+              "default": {
+                "kind": "sequence",
+                "name": "media_id_seq"
+              },
+              "autoIncrement": true,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.media.uploaded_by",
+              "name": "uploaded_by",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.media.url",
+              "name": "url",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": false,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.media.alt_text",
+              "name": "alt_text",
+              "logicalType": {
+                "kind": "text"
+              },
+              "nativeType": "text",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.media.width",
+              "name": "width",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.media.height",
+              "name": "height",
+              "logicalType": {
+                "kind": "int"
+              },
+              "nativeType": "integer",
+              "nullable": true,
+              "default": null,
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            },
+            {
+              "id": "column:public.media.created_at",
+              "name": "created_at",
+              "logicalType": {
+                "kind": "timestamp",
+                "withTimeZone": true
+              },
+              "nativeType": "timestamptz",
+              "nullable": false,
+              "default": {
+                "kind": "expression",
+                "sql": "now()"
+              },
+              "autoIncrement": false,
+              "comment": null,
+              "metadata": {}
+            }
+          ],
+          "primaryKey": {
+            "id": "pk:public.media",
+            "name": null,
+            "columns": ["column:public.media.id"]
+          },
+          "indexes": [],
+          "uniques": [],
+          "foreignKeys": [
+            {
+              "id": "fk:public.media.media_uploaded_by_fkey",
+              "name": "media_uploaded_by_fkey",
+              "columns": ["column:public.media.uploaded_by"],
+              "refTable": "table:public.authors",
+              "refColumns": ["column:public.authors.id"],
+              "onDelete": "set null",
+              "onUpdate": "no action"
+            }
+          ],
+          "checks": [],
+          "comment": null,
+          "metadata": {}
+        }
+      ],
+      "enums": [
+        {
+          "id": "enum:public.post_status",
+          "name": "post_status",
+          "namespace": "namespace:public",
+          "values": ["draft", "scheduled", "published", "archived"]
+        }
+      ],
+      "version": 1
+    },
+    "layout": {
+      "nodes": {
+        "table:public.authors": {
+          "x": 16,
+          "y": 336,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.posts": {
+          "x": 384,
+          "y": 560,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.post_revisions": {
+          "x": 752,
+          "y": 352,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.categories": {
+          "x": 384,
+          "y": 896,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.post_categories": {
+          "x": 752,
+          "y": 896,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.tags": {
+          "x": 384,
+          "y": 16,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.post_tags": {
+          "x": 752,
+          "y": 32,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.comments": {
+          "x": 752,
+          "y": 592,
+          "collapsed": false,
+          "color": "default"
+        },
+        "table:public.media": {
+          "x": 384,
+          "y": 160,
+          "collapsed": false,
+          "color": "default"
+        }
+      }
+    },
+    "baselines": []
+  }
+}
