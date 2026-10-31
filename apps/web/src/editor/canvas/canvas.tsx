@@ -1,6 +1,6 @@
 'use client';
 
-import type { Id } from '@dashdb/core';
+import type { Id } from '@dashdb/core/lite';
 import { Button, toast, useTheme } from '@dashdb/ui';
 import {
   applyNodeChanges,
@@ -21,18 +21,18 @@ import {
   type OnNodeDrag,
   type Viewport,
 } from '@xyflow/react';
+import dynamic from 'next/dynamic';
 import { LayoutGridIcon, Loader2Icon, MaximizeIcon, PlusIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { getAction } from '../actions';
-import { ShortcutKeys } from '../components/action-button';
+import { ActionButton, ShortcutKeys } from '../components/action-button';
 import { useRunAction } from '../hooks';
-import { isEditableTarget } from '../shortcuts';
+import { ariaShortcut, isEditableTarget, isMacPlatform } from '../shortcuts';
 import { editorStore, useEditor, type CanvasCommand } from '../store';
 import { takeArrangeIntent } from './arrange-intent';
 import { useCanvasUi } from './canvas-ui';
 import { ConnectPopover } from './connect-popover';
 import { DeleteTablesDialog } from './delete-dialog';
-import { FpsMeter } from './fps-meter';
 import { MigrationGhosts } from './migration-ghosts';
 import { animatePositions, ARRANGE_DURATION_MS, layoutInWorker } from './layout/auto-layout';
 import { RelationshipMarkers } from './markers';
@@ -58,6 +58,9 @@ const nodeTypes = { table: TableNode };
 const edgeTypes = { relationship: RelationshipEdge };
 const SNAP_GRID: [number, number] = [GRID_SIZE, GRID_SIZE];
 const FIT_OPTIONS = { padding: 0.15, maxZoom: 1 };
+/** Loaded only when shown: it carries the stress-test schemas. */
+const FpsMeter = dynamic(() => import('./fps-meter').then((m) => m.FpsMeter), { ssr: false });
+
 /** The FPS panel is for development, or production builds made for profiling. */
 const SHOW_FPS =
   process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_CANVAS_PERF === '1';
@@ -427,6 +430,8 @@ function CanvasFlow({ projectId }: { projectId: string }) {
               variant="outline"
               size="sm"
               className="bg-surface-raised"
+              title="Arrange tables automatically"
+              aria-keyshortcuts={ariaShortcut(getAction('view.arrange').shortcut, isMacPlatform())}
               disabled={arranging}
               onClick={() => {
                 void arrange();
@@ -439,17 +444,14 @@ function CanvasFlow({ projectId }: { projectId: string }) {
               )}
               Arrange
             </Button>
-            <Button
+            <ActionButton
+              action="view.fitView"
               variant="outline"
               size="icon-sm"
               className="bg-surface-raised"
-              aria-label="Fit view"
-              onClick={() => {
-                editorStore.getState().runCanvasCommand('fitView');
-              }}
             >
               <MaximizeIcon aria-hidden />
-            </Button>
+            </ActionButton>
           </Panel>
         )}
         {SHOW_FPS && (

@@ -14,6 +14,21 @@ export default defineConfig({
   use: {
     baseURL,
     trace: 'on-first-retry',
+    // Specs start as returning users; onboarding.spec.ts opts back into the first run.
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: new URL(baseURL).origin,
+          localStorage: [
+            {
+              name: 'dashdb-onboarding',
+              value: JSON.stringify({ status: 'dismissed', step: 0, projectId: null }),
+            },
+          ],
+        },
+      ],
+    },
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {

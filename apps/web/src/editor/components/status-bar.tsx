@@ -1,6 +1,6 @@
 'use client';
 
-import type { SchemaProblem } from '@dashdb/core';
+import type { SchemaProblem } from '@dashdb/core/lite';
 import {
   Button,
   Dialog,

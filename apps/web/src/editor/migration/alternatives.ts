@@ -2,7 +2,7 @@
 // statement in the up migration. Advice is either SQL or numbered steps mixing prose and SQL;
 // only the steps that belong in this migration stay executable, and everything that has to wait
 // for an application deploy (backfills, the contract phase of expand/contract) is commented out.
-import type { Finding, Statement } from '@dashdb/core';
+import type { Finding, Statement } from '@dashdb/core/lite';
 import type { MigrationTarget } from './compute';
 
 const SQL_START =

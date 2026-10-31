@@ -17,7 +17,7 @@ const columnRow = (page: Page, table: string, column: string) =>
 
 /** Adds a table from the canvas and renames it inline. */
 async function addTable(page: Page, name: string) {
-  await page.keyboard.press('n');
+  await page.keyboard.press('t');
   const created = tableNode(page, 'new_table');
   await expect(created).toBeVisible();
   await created.getByRole('heading', { name: 'new_table' }).dblclick();

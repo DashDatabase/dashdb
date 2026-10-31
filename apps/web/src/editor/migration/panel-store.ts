@@ -1,6 +1,6 @@
 // Migration panel state, kept outside the component so a generated migration survives switching
 // right-panel tabs. Reset whenever another project is opened.
-import type { Schema } from '@dashdb/core';
+import type { Schema } from '@dashdb/core/lite';
 import { create } from 'zustand';
 import type { MigrationOutput, MigrationTarget } from './compute';
 

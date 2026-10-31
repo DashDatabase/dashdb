@@ -11,7 +11,7 @@ import {
   type LogicalType,
   type Schema,
   type Table,
-} from '@dashdb/core';
+} from '@dashdb/core/lite';
 import { Badge, Button, Separator, Switch, toast } from '@dashdb/ui';
 import {
   ChevronLeftIcon,
@@ -92,6 +92,8 @@ function TableForm({ table }: { table: Table }) {
         <Button
           variant="ghost"
           size="xs"
+          data-tour="add-column"
+          aria-keyshortcuts="C"
           onClick={() => {
             run(getAction('schema.addColumn'));
           }}

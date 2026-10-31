@@ -1,5 +1,5 @@
 // Code → canvas: turning a parse into a schema change (or a list of problems), as pure functions.
-import { mergeSchema, type Diagnostic, type ParseResult, type Schema } from '@dashdb/core';
+import { mergeSchema, type Diagnostic, type ParseResult, type Schema } from '@dashdb/core/lite';
 import type { ParseOutcome } from './parse-client';
 import { PARSE_TIMEOUT_MS } from './parse-client';
 

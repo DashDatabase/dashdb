@@ -1,5 +1,5 @@
 // Shared builders for unit tests.
-import { createSchema, type Schema } from '@dashdb/core';
+import { createSchema, type Schema } from '@dashdb/core/lite';
 import { layoutFor } from './store/layout';
 import { DEFAULT_VIEW, type Project } from './store/types';
 

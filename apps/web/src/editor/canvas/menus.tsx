@@ -1,6 +1,6 @@
 'use client';
 
-import { removeForeignKey, type Id } from '@dashdb/core';
+import { removeForeignKey, type Id } from '@dashdb/core/lite';
 import {
   DropdownMenu,
   DropdownMenuContent,

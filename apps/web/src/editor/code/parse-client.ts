@@ -1,5 +1,5 @@
 // Main-thread side of Code panel parsing: one request at a time, each with a hard timeout.
-import type { ParseResult, Schema } from '@dashdb/core';
+import type { ParseResult, Schema } from '@dashdb/core/lite';
 import type { ImportFormat } from '../formats';
 
 export const PARSE_TIMEOUT_MS = 2000;

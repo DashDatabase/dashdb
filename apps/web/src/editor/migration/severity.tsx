@@ -1,6 +1,6 @@
 'use client';
 
-import type { RiskLevel, Severity } from '@dashdb/core';
+import type { RiskLevel, Severity } from '@dashdb/core/lite';
 import { Badge, cn } from '@dashdb/ui';
 import { CircleCheckIcon, InfoIcon, OctagonAlertIcon, TriangleAlertIcon } from 'lucide-react';
 

@@ -14,7 +14,7 @@ import {
   type LogicalType,
   type Schema,
   type Table,
-} from '@dashdb/core';
+} from '@dashdb/core/lite';
 import { uniqueName, type Layout } from '../store';
 
 export const PASTE_OFFSET = 48;

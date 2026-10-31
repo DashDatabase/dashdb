@@ -52,7 +52,7 @@ test.describe('code panel', () => {
     page,
   }) => {
     await createProject(page, 'Code sync');
-    await page.keyboard.press('n');
+    await page.keyboard.press('t');
     const node = tableNode(page, 'new_table');
     await expect(node).toBeVisible();
 
@@ -82,7 +82,7 @@ test.describe('code panel', () => {
 
   test('invalid code shows markers and never touches the canvas', async ({ page }) => {
     await createProject(page, 'Code errors');
-    await page.keyboard.press('n');
+    await page.keyboard.press('t');
     await expect(tableNode(page, 'new_table')).toBeVisible();
 
     await openCode(page, 'DBML');
@@ -104,7 +104,7 @@ test.describe('code panel', () => {
     await openCode(page, 'SQL (PostgreSQL)');
     await page.keyboard.press('Escape');
     await canvas(page).click({ position: { x: 5, y: 5 } });
-    await page.keyboard.press('n');
+    await page.keyboard.press('t');
     await expect(editor(page)).toContainText('CREATE TABLE');
 
     await openCode(page, 'Drizzle');

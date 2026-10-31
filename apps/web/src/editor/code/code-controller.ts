@@ -1,6 +1,6 @@
 // Two-way sync between one Monaco editor and the schema. Kept outside React: the editor's
 // callbacks need the latest state, and none of it affects rendering except `onStatus`.
-import type { Schema } from '@dashdb/core';
+import type { Schema } from '@dashdb/core/lite';
 import type * as Monaco from 'monaco-editor/editor/editor.api';
 import { exportSchema } from '../formats';
 import { resolveCodeFormat, type CodeFormat, type ResolvedCodeFormat } from './code-formats';

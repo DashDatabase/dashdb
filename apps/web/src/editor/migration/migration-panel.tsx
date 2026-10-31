@@ -1,6 +1,6 @@
 'use client';
 
-import { createSchema, type Schema } from '@dashdb/core';
+import { createSchema, type Schema } from '@dashdb/core/lite';
 import {
   Badge,
   Button,
@@ -38,7 +38,7 @@ import { relativeTime } from '../schema-text';
 import { editorStore, useEditor } from '../store';
 import { findingKey, sortFindings, statementViews, summarize } from './annotate';
 import { applyAlternatives, statementReplacements } from './alternatives';
-import { isMigrationDialect, isMigrationTarget, type MigrationTarget } from './compute';
+import { isMigrationDialect, isMigrationTarget, type MigrationTarget } from './targets';
 import { FindingsList } from './findings-list';
 import { MAX_MIGRATION_NAME, migrationSlug, singleFileName, zipFiles } from './files';
 import { createMigrationClient, type MigrationClient } from './migration-client';

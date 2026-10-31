@@ -1,11 +1,10 @@
 'use client';
 
 import { ScrollArea, Tabs, TabsContent, TabsList, TabsTrigger } from '@dashdb/ui';
-import { CodePanel } from '../code/code-panel';
-import { MigrationPanel } from '../migration/migration-panel';
 import { useEditor, type RightTab } from '../store';
 import { BaselinesPanel } from './baselines-panel';
 import { Inspector } from './inspector';
+import { CodePanel, MigrationPanel } from './lazy';
 
 function isRightTab(value: string): value is RightTab {
   return value === 'inspector' || value === 'code' || value === 'migration';

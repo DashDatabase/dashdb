@@ -1,5 +1,5 @@
 // How to run the introspection query in common SQL clients and copy its single result cell.
-import type { IntrospectionDialect } from '@dashdb/core';
+import type { IntrospectionDialect } from '@dashdb/core/lite';
 
 export interface ClientGuide {
   readonly id: string;

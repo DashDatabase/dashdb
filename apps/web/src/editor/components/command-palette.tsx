@@ -9,15 +9,14 @@ import {
   CommandList,
   CommandShortcut,
 } from '@dashdb/ui';
-import type { Table } from '@dashdb/core';
+import type { Table } from '@dashdb/core/lite';
 import { TableIcon } from 'lucide-react';
-import { ACTIONS, isActionEnabled, type ActionGroup, type EditorAction } from '../actions';
+import { ACTIONS, GROUP_ORDER, isActionEnabled, type EditorAction } from '../actions';
 import { useRunAction } from '../hooks';
 import { useEditor } from '../store';
 import { ShortcutKeys } from './action-button';
 
 const NO_TABLES: readonly Table[] = [];
-const GROUP_ORDER: readonly ActionGroup[] = ['File', 'Edit', 'Schema', 'View', 'Navigate'];
 
 /** Cmd/Ctrl+K: every registry action plus "jump to table". */
 export function CommandPalette() {

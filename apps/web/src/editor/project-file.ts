@@ -1,5 +1,5 @@
 // Full-project export/import as `.dashdb.json`: a versioned, zod-validated envelope.
-import { schemaSchema } from '@dashdb/core';
+import { schemaSchema } from '@dashdb/core/lite';
 import { z } from 'zod';
 import { buildProject, insertProjectWithBaselines, MAX_BASELINES } from './projects';
 import { layoutSchema } from './record-schemas';

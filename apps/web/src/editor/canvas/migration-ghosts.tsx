@@ -1,6 +1,6 @@
 'use client';
 
-import type { Table } from '@dashdb/core';
+import type { Table } from '@dashdb/core/lite';
 import { ViewportPortal } from '@xyflow/react';
 import { useMemo } from 'react';
 import { cachedCompare } from '../migration/visual-diff';

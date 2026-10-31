@@ -1,5 +1,5 @@
 // Turning a column-to-column drag into a proposed foreign key.
-import type { Id, ReferentialAction, Schema } from '@dashdb/core';
+import type { Id, ReferentialAction, Schema } from '@dashdb/core/lite';
 import { uniqueName } from '../store';
 import { columnFlags } from './model';
 

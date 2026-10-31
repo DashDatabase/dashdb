@@ -1,4 +1,4 @@
-import type { Id, Schema } from '@dashdb/core';
+import type { Id, Schema } from '@dashdb/core/lite';
 import type { Draft } from 'immer';
 import type { Layout, NodeLayout } from './types';
 

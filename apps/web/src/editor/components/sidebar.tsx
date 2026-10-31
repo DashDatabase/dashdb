@@ -1,9 +1,9 @@
 'use client';
 
-import type { Schema, Table } from '@dashdb/core';
+import type { Schema, Table } from '@dashdb/core/lite';
 import { Button, Input, ScrollArea, Tooltip, TooltipContent, TooltipTrigger, cn } from '@dashdb/ui';
 import { ArrowRightIcon, ListIcon, PlusIcon, SearchIcon, TableIcon } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { getAction } from '../actions';
 import { useRunAction } from '../hooks';
 import { useEditor } from '../store';
@@ -59,6 +59,25 @@ function Section({
 
 const itemClass =
   'flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-sm outline-none hover:bg-highlight focus-visible:ring-[3px] focus-visible:ring-ring/50';
+
+/**
+ * Arrow keys, Home and End move focus between a list's items (Enter or Space then activates
+ * the focused one), so keyboard users can walk the schema without tabbing through it.
+ */
+export function moveFocusInList(event: KeyboardEvent<HTMLUListElement>): void {
+  const items = [...event.currentTarget.querySelectorAll<HTMLElement>(':scope > li > button')];
+  const index = items.indexOf(document.activeElement as HTMLElement);
+  if (index === -1) return;
+  const next = {
+    ArrowDown: Math.min(index + 1, items.length - 1),
+    ArrowUp: Math.max(index - 1, 0),
+    Home: 0,
+    End: items.length - 1,
+  }[event.key];
+  if (next === undefined) return;
+  event.preventDefault();
+  items[next]?.focus();
+}
 
 export function Sidebar() {
   const schema = useEditor((s) => s.doc?.schema);
@@ -146,7 +165,7 @@ export function Sidebar() {
                 {needle ? 'No matching tables.' : 'No tables yet.'}
               </p>
             ) : (
-              <ul>
+              <ul onKeyDown={moveFocusInList}>
                 {tables.map((table) => (
                   <li key={table.id}>
                     <button
@@ -176,7 +195,7 @@ export function Sidebar() {
             {enums.length === 0 ? (
               <p className="px-2 text-sm text-text-muted">No enums.</p>
             ) : (
-              <ul>
+              <ul onKeyDown={moveFocusInList}>
                 {enums.map((e) => (
                   <li key={e.id} className={cn(itemClass, 'hover:bg-transparent')}>
                     <ListIcon className="size-4 shrink-0 text-text-muted" aria-hidden />
@@ -194,7 +213,7 @@ export function Sidebar() {
             {relations.length === 0 ? (
               <p className="px-2 text-sm text-text-muted">No foreign keys.</p>
             ) : (
-              <ul>
+              <ul onKeyDown={moveFocusInList}>
                 {relations.map((r) => (
                   <li key={r.id}>
                     <button

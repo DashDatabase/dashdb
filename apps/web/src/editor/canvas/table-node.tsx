@@ -1,6 +1,6 @@
 'use client';
 
-import { renameColumn, renameTable, type Column, type Schema, type Table } from '@dashdb/core';
+import { renameColumn, renameTable, type Column, type Schema, type Table } from '@dashdb/core/lite';
 import {
   Button,
   DropdownMenu,

@@ -3,10 +3,23 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./lite": {
+      "types": "./dist/lite.d.ts",
+      "default": "./dist/lite.js"
+    },
+    "./parsers": {
+      "types": "./dist/parsers.d.ts",
+      "default": "./dist/parsers.js"
+    },
+    "./serializers": {
+      "types": "./dist/serializers.d.ts",
+      "default": "./dist/serializers.js"
     }
   },
   "scripts": {

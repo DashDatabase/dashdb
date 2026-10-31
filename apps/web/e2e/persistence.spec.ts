@@ -39,7 +39,7 @@ test('reload restores the schema, selection and panels exactly', async ({ page }
 test('undo groups edits by user action', async ({ page }) => {
   await openTemplate(page, /Blank/);
   await page.getByTestId('canvas').click();
-  await page.keyboard.press('n');
+  await page.keyboard.press('t');
   await page.keyboard.press('c');
   await expect(page.getByTestId('inspector').getByLabel('Column name')).toHaveValue('new_column');
 
@@ -139,14 +139,14 @@ test('warns when the same project is open in two tabs and stops the stale tab sa
 
   // Tab 1 saves; tab 2 now holds a stale copy and must not overwrite it.
   await page.getByTestId('canvas').click();
-  await page.keyboard.press('n');
+  await page.keyboard.press('t');
   await expect(saved(page)).toBeVisible();
   await expect(
     second.getByRole('alert').filter({ hasText: 'changed in another tab' }),
   ).toBeVisible();
 
   await second.getByTestId('canvas').click();
-  await second.keyboard.press('n');
+  await second.keyboard.press('t');
   await expect(second.getByRole('status').filter({ hasText: 'Not saving' })).toBeVisible();
 
   // Like a real tab close: run unload handlers (pagehide).

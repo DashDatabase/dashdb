@@ -1,5 +1,5 @@
 // Human-readable text for IR elements and timestamps, shared across the editor UI.
-import type { Column, Id, SchemaProblem } from '@dashdb/core';
+import type { Column, Id, SchemaProblem } from '@dashdb/core/lite';
 
 /** Column defaults as SQL text; literals are shown the way they would be written in DDL. */
 export function describeDefault(column: Column): string {

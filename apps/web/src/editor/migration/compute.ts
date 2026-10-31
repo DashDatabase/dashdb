@@ -6,7 +6,6 @@ import {
   generateFileBundle,
   generateSQL,
   type DiffWarning,
-  type MigrationDialect,
   type MigrationFile,
   type Operation,
   type RenameCandidate,
@@ -14,13 +13,14 @@ import {
   type Schema,
   type Statement,
 } from '@dashdb/core';
+import { isMigrationDialect, type MigrationTarget } from './targets';
 
-export const MIGRATION_TARGETS = ['sql', 'prisma', 'drizzle'] as const;
-export type MigrationTarget = (typeof MIGRATION_TARGETS)[number];
-
-export function isMigrationTarget(value: string): value is MigrationTarget {
-  return (MIGRATION_TARGETS as readonly string[]).includes(value);
-}
+export {
+  MIGRATION_TARGETS,
+  isMigrationDialect,
+  isMigrationTarget,
+  type MigrationTarget,
+} from './targets';
 
 export interface MigrationRequest {
   readonly before: Schema;
@@ -54,10 +54,6 @@ export interface MigrationOutput {
 export type MigrationResponse =
   | { readonly ok: true; readonly output: MigrationOutput }
   | { readonly ok: false; readonly message: string };
-
-export function isMigrationDialect(dialect: Schema['dialect']): dialect is MigrationDialect {
-  return dialect === 'postgres' || dialect === 'mysql';
-}
 
 /** The up and down files of a target's bundle. */
 export function migrationFilePaths(

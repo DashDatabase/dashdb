@@ -1,8 +1,14 @@
 // Web Worker that parses Code panel text off the main thread, so a pathological input can be
 // abandoned (the worker terminated) without freezing the editor.
-import type { ParseResult } from '@dashdb/core';
-import { importSchema, type ImportFormat } from '../formats';
+import type { ParseResult } from '@dashdb/core/lite';
+import * as parsers from '@dashdb/core/parsers';
+import { IMPORT_FORMATS, type ImportFormat } from '../formats';
 import type { ParseReply, ParseRequest } from './parse-client';
+
+// The worker is a chunk of its own, so it loads the parsers eagerly and parses synchronously.
+function importSchema(parser: ImportFormat, text: string): ParseResult {
+  return parsers[IMPORT_FORMATS[parser].parser](text);
+}
 
 /** The base text rarely changes between edits, so its parse is cached. */
 let cachedBase: { parser: ImportFormat; text: string; result: ParseResult } | null = null;

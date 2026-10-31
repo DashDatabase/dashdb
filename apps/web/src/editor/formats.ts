@@ -1,18 +1,9 @@
-// Import/export formats, mapped onto the @dashdb/core parsers and serializers.
-import {
-  parseDBML,
-  parseMySQLDDL,
-  parsePostgresDDL,
-  parsePrisma,
-  toDBML,
-  toDrizzle,
-  toMySQLDDL,
-  toPostgresDDL,
-  toPrisma,
-  type ParseResult,
-  type Schema,
-  type SerializeResult,
-} from '@dashdb/core';
+// Import/export formats, mapped onto the @dashdb/core parsers and serializers. Those carry
+// large dependencies (SQL grammars, DBML, Prettier), so they load on first use.
+import type { ParseResult, Schema, SerializeResult } from '@dashdb/core/lite';
+
+const loadParsers = () => import('@dashdb/core/parsers');
+const loadSerializers = () => import('@dashdb/core/serializers');
 
 /** Schema source files offered by import pickers. */
 export const IMPORT_ACCEPT = '.sql,.prisma,.dbml,.txt';
@@ -22,19 +13,19 @@ export const PROJECT_IMPORT_ACCEPT = `${IMPORT_ACCEPT},.json`;
 export const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
 
 export const IMPORT_FORMATS = {
-  postgres: { label: 'PostgreSQL DDL', parse: parsePostgresDDL },
-  mysql: { label: 'MySQL DDL', parse: parseMySQLDDL },
-  prisma: { label: 'Prisma schema', parse: parsePrisma },
-  dbml: { label: 'DBML', parse: parseDBML },
+  postgres: { label: 'PostgreSQL DDL', parser: 'parsePostgresDDL' },
+  mysql: { label: 'MySQL DDL', parser: 'parseMySQLDDL' },
+  prisma: { label: 'Prisma schema', parser: 'parsePrisma' },
+  dbml: { label: 'DBML', parser: 'parseDBML' },
 } as const;
 export type ImportFormat = keyof typeof IMPORT_FORMATS;
 
 export const EXPORT_FORMATS = {
-  postgres: { label: 'PostgreSQL DDL', extension: 'sql', serialize: toPostgresDDL },
-  mysql: { label: 'MySQL DDL', extension: 'sql', serialize: toMySQLDDL },
-  prisma: { label: 'Prisma schema', extension: 'prisma', serialize: toPrisma },
-  drizzle: { label: 'Drizzle (TypeScript)', extension: 'ts', serialize: toDrizzle },
-  dbml: { label: 'DBML', extension: 'dbml', serialize: toDBML },
+  postgres: { label: 'PostgreSQL DDL', extension: 'sql', serializer: 'toPostgresDDL' },
+  mysql: { label: 'MySQL DDL', extension: 'sql', serializer: 'toMySQLDDL' },
+  prisma: { label: 'Prisma schema', extension: 'prisma', serializer: 'toPrisma' },
+  drizzle: { label: 'Drizzle (TypeScript)', extension: 'ts', serializer: 'toDrizzle' },
+  dbml: { label: 'DBML', extension: 'dbml', serializer: 'toDBML' },
 } as const;
 export type ExportFormat = keyof typeof EXPORT_FORMATS;
 
@@ -104,12 +95,14 @@ export function detectImportFormat(fileName: string, text: string): ImportFormat
   return detectPastedFormat(text);
 }
 
-export function importSchema(format: ImportFormat, text: string): ParseResult {
-  return IMPORT_FORMATS[format].parse(text);
+export async function importSchema(format: ImportFormat, text: string): Promise<ParseResult> {
+  const parsers = await loadParsers();
+  return parsers[IMPORT_FORMATS[format].parser](text);
 }
 
 export async function exportSchema(format: ExportFormat, schema: Schema): Promise<SerializeResult> {
-  return EXPORT_FORMATS[format].serialize(schema);
+  const serializers = await loadSerializers();
+  return serializers[EXPORT_FORMATS[format].serializer](schema);
 }
 
 /** The export format matching the schema's own dialect. */

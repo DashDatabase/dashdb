@@ -1,5 +1,5 @@
 // Starter schemas for "New from template", written as Postgres DDL and parsed by @dashdb/core.
-import { createSchema, parsePostgresDDL, type Schema } from '@dashdb/core';
+import { createSchema, type Schema } from '@dashdb/core/lite';
 
 export interface Template {
   readonly id: string;
@@ -141,11 +141,12 @@ CREATE TABLE order_items (
   },
 ];
 
-/** Builds a fresh schema (new ids) from a template. */
-export function schemaFromTemplate(template: Template): Schema {
+/** Builds a fresh schema (new ids) from a template; the SQL parser loads on first use. */
+export async function schemaFromTemplate(template: Template): Promise<Schema> {
   if (!template.sql.trim()) {
     const schema = createSchema('postgres');
     return { ...schema, namespaces: [{ id: `${schema.id}_public`, name: 'public' }] };
   }
+  const { parsePostgresDDL } = await import('@dashdb/core/parsers');
   return parsePostgresDDL(template.sql).schema;
 }

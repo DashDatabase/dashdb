@@ -79,3 +79,23 @@ describe('isEditableTarget', () => {
     expect(isEditableTarget(null)).toBe(false);
   });
 });
+
+describe('the ? shortcut', () => {
+  it('matches Shift+/ by the physical key, whatever the layout reports', () => {
+    const question = { key: '?', code: 'Slash', shiftKey: true };
+    expect(matchesShortcut(key(question), 'shift+/', false)).toBe(true);
+    expect(matchesShortcut(key({ key: '/', code: 'Slash' }), 'shift+/', false)).toBe(false);
+    expect(matchesShortcut(key({ key: '/', code: 'Slash' }), '/', false)).toBe(true);
+  });
+
+  it('is shown and announced as ?', () => {
+    expect(formatShortcut('shift+/', true)).toEqual(['?']);
+    expect(formatShortcut('mod+shift+/', false)).toEqual(['Ctrl', 'Shift', '/']);
+    expect(ariaShortcut('shift+/', false)).toBe('Shift+?');
+  });
+
+  it('shows Delete and Backspace', () => {
+    expect(formatShortcut('delete', false)).toEqual(['Del']);
+    expect(matchesShortcut(key({ key: 'Delete' }), 'delete', false)).toBe(true);
+  });
+});

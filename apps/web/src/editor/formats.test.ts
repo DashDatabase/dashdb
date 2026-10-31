@@ -17,17 +17,17 @@ import { TEMPLATES, schemaFromTemplate } from './templates';
 describe('templates', () => {
   it.each(TEMPLATES.map((t) => [t.id, t] as const))(
     '%s parses to a valid schema',
-    (_, template) => {
-      const schema = schemaFromTemplate(template);
+    async (_, template) => {
+      const schema = await schemaFromTemplate(template);
       expect(validateSchema(schema)).toEqual([]);
       expect(schema.namespaces.length).toBeGreaterThan(0);
     },
   );
 
-  it('gives each instance fresh ids', () => {
+  it('gives each instance fresh ids', async () => {
     const blog = TEMPLATES.find((t) => t.id === 'blog');
     if (!blog) throw new Error('missing blog template');
-    expect(schemaFromTemplate(blog).id).not.toBe(schemaFromTemplate(blog).id);
+    expect((await schemaFromTemplate(blog)).id).not.toBe((await schemaFromTemplate(blog)).id);
   });
 });
 
@@ -72,7 +72,7 @@ describe('detectPastedFormat', () => {
 
 describe('import and export', () => {
   it('round-trips through every export format', async () => {
-    const { schema, diagnostics } = importSchema(
+    const { schema, diagnostics } = await importSchema(
       'postgres',
       'CREATE TABLE users (id int PRIMARY KEY);',
     );
@@ -91,13 +91,11 @@ describe('import and export', () => {
     expect(isExportFormat('yaml')).toBe(false);
   });
 
-  it('defaults export to the schema dialect', () => {
-    expect(defaultExportFormat(importSchema('mysql', 'CREATE TABLE a (id int);').schema)).toBe(
-      'mysql',
-    );
-    expect(defaultExportFormat(importSchema('postgres', 'CREATE TABLE a (id int);').schema)).toBe(
-      'postgres',
-    );
+  it('defaults export to the schema dialect', async () => {
+    const parsed = (format: 'mysql' | 'postgres') =>
+      importSchema(format, 'CREATE TABLE a (id int);').then((r) => r.schema);
+    expect(defaultExportFormat(await parsed('mysql'))).toBe('mysql');
+    expect(defaultExportFormat(await parsed('postgres'))).toBe('postgres');
   });
 
   it('builds safe file names', () => {

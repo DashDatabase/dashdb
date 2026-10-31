@@ -7,14 +7,21 @@ import { useEffect, useState } from 'react';
 import { useEditorShortcuts, useIsDesktop } from '../hooks';
 import { getProject, listBaselines, saveProject } from '../projects';
 import { editorStore, useEditor } from '../store';
+import { Announcer } from '../a11y/announcer';
 import { Canvas } from '../canvas/canvas';
+import { TourOverlay } from '../onboarding/tour-overlay';
 import { attachAutosave } from '../store/autosave';
 import { watchProjectTabs } from '../store/tab-sync';
-import { CommandPalette } from './command-palette';
-import { ExportDialog } from './export-dialog';
-import { ExportImageDialog } from './export-image-dialog';
-import { ImportDialog } from './import-dialog';
-import { ReadOnlyView } from './read-only-view';
+import {
+  CommandPalette,
+  ExportDialog,
+  ExportImageDialog,
+  ImportDialog,
+  MountOnce,
+  ReadOnlyView,
+  ShortcutsDialog,
+} from './lazy';
+import { DevCrashTrigger, EditorErrorBoundary } from './error-fallback';
 import { RightPanel } from './right-panel';
 import { Sidebar } from './sidebar';
 import { ProblemsDialog, StatusBar } from './status-bar';
@@ -110,6 +117,30 @@ function TabBanner() {
   return null;
 }
 
+function LazyDialogs() {
+  const dialog = useEditor((s) => s.dialog);
+  const paletteOpen = useEditor((s) => s.paletteOpen);
+  return (
+    <>
+      <MountOnce when={paletteOpen}>
+        <CommandPalette />
+      </MountOnce>
+      <MountOnce when={dialog === 'import'}>
+        <ImportDialog />
+      </MountOnce>
+      <MountOnce when={dialog === 'export'}>
+        <ExportDialog />
+      </MountOnce>
+      <MountOnce when={dialog === 'exportImage'}>
+        <ExportImageDialog />
+      </MountOnce>
+      <MountOnce when={dialog === 'shortcuts'}>
+        <ShortcutsDialog />
+      </MountOnce>
+    </>
+  );
+}
+
 function EditorLayout() {
   const leftOpen = useEditor((s) => s.leftOpen);
   const rightOpen = useEditor((s) => s.rightOpen);
@@ -141,11 +172,11 @@ function EditorLayout() {
         )}
       </ResizablePanelGroup>
       <StatusBar />
-      <CommandPalette />
-      <ImportDialog />
-      <ExportDialog />
-      <ExportImageDialog />
+      <LazyDialogs />
       <ProblemsDialog />
+      <TourOverlay />
+      <Announcer />
+      <DevCrashTrigger />
     </div>
   );
 }
@@ -209,5 +240,9 @@ export function EditorShell({ projectId }: { projectId: string }) {
       </div>
     );
   }
-  return isDesktop ? <EditorLayout /> : <ReadOnlyView project={doc} />;
+  return (
+    <EditorErrorBoundary projectId={projectId}>
+      {isDesktop ? <EditorLayout /> : <ReadOnlyView project={doc} />}
+    </EditorErrorBoundary>
+  );
 }

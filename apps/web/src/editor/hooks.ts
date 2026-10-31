@@ -3,13 +3,14 @@
 import { toast, useTheme } from '@dashdb/ui';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
-import { ACTIONS, runAction, type ActionContext, type EditorAction } from './actions';
+import { ACTIONS, runAction, shortcutsOf, type ActionContext, type EditorAction } from './actions';
 import { isEditableTarget, isMacPlatform, matchesShortcut } from './shortcuts';
 import { downloadText } from '@/lib/download';
 import { fileSlug } from './formats';
 import { PROJECT_FILE_EXTENSION, serializeProjectFile } from './project-file';
 import type { PasteOutcome } from './canvas/operations';
 import { toMermaid } from './export/mermaid';
+import { tourStore } from './onboarding/tour';
 import { saveBaseline } from './projects';
 import { editorStore } from './store';
 
@@ -67,6 +68,10 @@ export function useActionContext(): () => ActionContext {
       saveBaseline: saveCurrentBaseline,
       downloadProject: downloadCurrentProject,
       copyMermaid: copyCurrentMermaid,
+      restartTour: () => {
+        const { projectId } = editorStore.getState();
+        if (projectId) tourStore.getState().start(projectId);
+      },
       reportPaste,
     }),
     [router, resolvedTheme, setTheme],
@@ -92,7 +97,7 @@ export function useEditorShortcuts(): void {
       if (event.defaultPrevented || event.repeat) return;
       const editable = isEditableTarget(event.target);
       for (const action of ACTIONS as readonly EditorAction[]) {
-        if (!matchesShortcut(event, action.shortcut, isMac)) continue;
+        if (!shortcutsOf(action).some((s) => matchesShortcut(event, s, isMac))) continue;
         if (editable && !action.allowInInput) return;
         event.preventDefault();
         runAction(action, context());

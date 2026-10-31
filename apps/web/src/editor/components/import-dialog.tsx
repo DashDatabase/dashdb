@@ -1,6 +1,6 @@
 'use client';
 
-import type { IntrospectionDialect, ParseResult } from '@dashdb/core';
+import type { IntrospectionDialect, ParseResult } from '@dashdb/core/lite';
 import {
   Button,
   Dialog,
@@ -160,10 +160,10 @@ export function ImportDialog() {
     );
   };
 
-  const submit = () => {
+  const submit = async () => {
     setProblems([]);
     if (source === 'paste') {
-      applySchema(importSchema(pasteOverride ?? detectedPaste, pasted));
+      applySchema(await importSchema(pasteOverride ?? detectedPaste, pasted));
     } else if (source === 'database') {
       applySchema(
         importIntrospection(dialect, result),
@@ -172,7 +172,7 @@ export function ImportDialog() {
           : 'The result has no tables. Check that you ran the query against the right database.',
       );
     } else if (upload?.file.kind === 'schema') {
-      applySchema(importSchema(uploadOverride ?? upload.file.format, upload.file.text));
+      applySchema(await importSchema(uploadOverride ?? upload.file.format, upload.file.text));
     } else if (upload?.file.kind === 'project') {
       const { file } = upload.file;
       if (
@@ -344,7 +344,7 @@ export function ImportDialog() {
           <Button variant="outline" onClick={close}>
             Cancel
           </Button>
-          <Button disabled={!canSubmit} onClick={submit}>
+          <Button disabled={!canSubmit} onClick={() => void submit()}>
             Import
           </Button>
         </DialogFooter>

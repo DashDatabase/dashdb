@@ -11,7 +11,7 @@ import {
   type Id,
   type Schema,
   type SchemaProblem,
-} from '@dashdb/core';
+} from '@dashdb/core/lite';
 import { applyPatches, enablePatches, produceWithPatches, type Draft, type Patch } from 'immer';
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import { immer } from 'zustand/middleware/immer';
@@ -36,7 +36,7 @@ enablePatches();
 export const VALIDATION_DELAY_MS = 150;
 
 export type EditorDialog =
-  'import' | 'export' | 'exportImage' | 'problems' | 'rename' | 'deleteTables';
+  'import' | 'export' | 'exportImage' | 'problems' | 'rename' | 'deleteTables' | 'shortcuts';
 /** One-shot requests the canvas fulfils (it owns the viewport). */
 export type CanvasCommand = 'fitView' | 'zoomIn' | 'zoomOut' | 'arrange' | 'selectAll';
 export type SaveState = 'saved' | 'saving' | 'error' | 'conflict';

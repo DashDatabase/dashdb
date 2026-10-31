@@ -1,6 +1,6 @@
 'use client';
 
-import type { RenameCandidate } from '@dashdb/core';
+import type { RenameCandidate } from '@dashdb/core/lite';
 import {
   Button,
   Dialog,

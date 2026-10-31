@@ -1,6 +1,6 @@
 'use client';
 
-import type { SerializeResult } from '@dashdb/core';
+import type { SerializeResult } from '@dashdb/core/lite';
 import {
   Button,
   Dialog,

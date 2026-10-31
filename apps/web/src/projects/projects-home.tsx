@@ -1,6 +1,6 @@
 'use client';
 
-import type { IrDialect } from '@dashdb/core';
+import type { IrDialect } from '@dashdb/core/lite';
 import {
   Badge,
   Button,
@@ -63,6 +63,8 @@ import {
   isProjectFileName,
 } from '@/editor/project-file';
 import { markForArrange } from '@/editor/canvas/arrange-intent';
+import { createStarterProject } from '@/editor/onboarding/start';
+import { isFirstRun } from '@/editor/onboarding/tour';
 import { relativeTime } from '@/editor/schema-text';
 import { TEMPLATES, schemaFromTemplate, type Template } from '@/editor/templates';
 
@@ -371,9 +373,25 @@ export function ProjectsHome() {
     open(project);
   };
 
+  // First visit: open a sample project with the guided tour instead of an empty page.
+  const onboarding = useRef(false);
+  useEffect(() => {
+    if (projects?.length !== 0 || onboarding.current || !isFirstRun()) return;
+    onboarding.current = true;
+    createStarterProject().then(
+      (project) => {
+        markForArrange(project.id);
+        router.push(`/app/p/${project.id}`);
+      },
+      () => {
+        toast.error('Could not create the sample project.');
+      },
+    );
+  }, [projects, router]);
+
   const fromTemplate = async (template: Template) => {
     openArranged(
-      await createProject({ name: template.name, schema: schemaFromTemplate(template) }),
+      await createProject({ name: template.name, schema: await schemaFromTemplate(template) }),
     );
   };
 
@@ -394,7 +412,7 @@ export function ProjectsHome() {
       return;
     }
     const text = await file.text();
-    const { schema, diagnostics } = importSchema(detectImportFormat(file.name, text), text);
+    const { schema, diagnostics } = await importSchema(detectImportFormat(file.name, text), text);
     if (schema.tables.length === 0 && diagnostics.some((d) => d.severity === 'error')) {
       toast.error(`Could not import ${file.name}`, { description: diagnostics[0]?.message });
       return;

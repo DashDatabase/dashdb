@@ -1,6 +1,6 @@
 'use client';
 
-import type { DiffWarning, Finding, Operation } from '@dashdb/core';
+import type { DiffWarning, Finding, Operation } from '@dashdb/core/lite';
 import { Button, toast } from '@dashdb/ui';
 import { BookOpenIcon, ChevronDownIcon, CopyIcon, ShieldCheckIcon, Undo2Icon } from 'lucide-react';
 import { useState } from 'react';

@@ -39,6 +39,7 @@ export function ActionButton({ action: id, children, ...props }: ActionButtonPro
           // Labels collapse to icons on narrow screens, so the title is always the accessible name.
           aria-label={action.title}
           aria-keyshortcuts={ariaShortcut(action.shortcut, isMac)}
+          data-action={action.id}
           disabled={!enabled}
           onClick={() => {
             run(action);

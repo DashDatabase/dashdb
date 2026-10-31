@@ -41,6 +41,8 @@ function eventKey(event: ShortcutEvent): string {
   if (letter?.[1]) return letter[1].toLowerCase();
   const digit = /^Digit(\d)$/.exec(event.code);
   if (digit?.[1]) return digit[1];
+  // Shift+/ reports "?" as its key; the shortcut names the physical key.
+  if (event.code === 'Slash') return '/';
   return event.key.toLowerCase();
 }
 
@@ -70,6 +72,7 @@ const KEY_LABELS: Record<string, string> = {
 /** Display labels for each key in a shortcut, e.g. ["⌘", "⇧", "Z"] or ["Ctrl", "Shift", "Z"]. */
 export function formatShortcut(shortcut: string, isMac: boolean): string[] {
   const { mod, alt, shift, key } = parseShortcut(shortcut);
+  if (shift && key === '/' && !mod && !alt) return ['?'];
   const keys: string[] = [];
   if (mod) keys.push(isMac ? '⌘' : 'Ctrl');
   if (alt) keys.push(isMac ? '⌥' : 'Alt');
@@ -103,6 +106,7 @@ const ARIA_KEYS: Record<string, string> = {
 /** The `aria-keyshortcuts` form, e.g. "Meta+Shift+Z" on macOS, "Control+Shift+Z" elsewhere. */
 export function ariaShortcut(shortcut: string, isMac: boolean): string {
   const { mod, alt, shift, key } = parseShortcut(shortcut);
+  if (shift && key === '/' && !mod && !alt) return 'Shift+?';
   const keys: string[] = [];
   if (mod) keys.push(isMac ? 'Meta' : 'Control');
   if (alt) keys.push('Alt');

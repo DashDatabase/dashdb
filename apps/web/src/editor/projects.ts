@@ -1,5 +1,5 @@
 // Local project repository on top of Dexie. Every read is validated; every write is atomic.
-import { createId, createSchema, type IrDialect, type Schema } from '@dashdb/core';
+import { createId, createSchema, type IrDialect, type Schema } from '@dashdb/core/lite';
 import { db } from './db';
 import { normalizeProjectName } from './project-name';
 import { baselineSchema, projectSchema } from './record-schemas';

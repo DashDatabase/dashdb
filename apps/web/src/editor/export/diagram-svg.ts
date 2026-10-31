@@ -2,7 +2,7 @@
 // from the canvas DOM. Every piece of text is escaped and the markup holds only shapes and text
 // (no scripts, event handlers, foreignObject, links or external references), so the file is
 // safe to open or embed anywhere.
-import type { Id, Schema, Table } from '@dashdb/core';
+import type { Id, Schema, Table } from '@dashdb/core/lite';
 import { markGeometry } from '@dashdb/ui/server';
 import {
   HEADER_HEIGHT,

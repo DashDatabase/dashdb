@@ -1,6 +1,6 @@
 // Human-readable annotations for a generated migration: operation labels, summary counts and
 // the per-statement view model.
-import type { Finding, Operation, QName, RiskLevel, Statement } from '@dashdb/core';
+import type { Finding, Operation, QName, RiskLevel, Statement } from '@dashdb/core/lite';
 import type { MigrationOutput } from './compute';
 
 function q(name: QName): string {

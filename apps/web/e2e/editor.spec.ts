@@ -95,7 +95,7 @@ test.describe('editor', () => {
     await createProject(page, 'Shortcuts');
     await page.getByTestId('canvas').click();
 
-    await page.keyboard.press('n');
+    await page.keyboard.press('t');
     await expect(page.getByTestId('table-count')).toHaveText('1 table');
     await page.keyboard.press('ControlOrMeta+z');
     await expect(page.getByTestId('table-count')).toHaveText('0 tables');

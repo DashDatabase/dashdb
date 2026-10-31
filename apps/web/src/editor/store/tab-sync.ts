@@ -1,5 +1,5 @@
 // Multi-tab awareness over BroadcastChannel: who else has this project open, and did they save.
-import { createId } from '@dashdb/core';
+import { createId } from '@dashdb/core/lite';
 
 export const TAB_CHANNEL = 'dashdb:projects';
 

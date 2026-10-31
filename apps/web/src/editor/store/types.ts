@@ -1,4 +1,4 @@
-import type { Id, Schema } from '@dashdb/core';
+import type { Id, Schema } from '@dashdb/core/lite';
 
 /** Node tints map to color tokens, never to literal colors. */
 export const NODE_COLORS = [

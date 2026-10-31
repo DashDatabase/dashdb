@@ -1,5 +1,5 @@
 // Canvas commands that only need the editor store, shared by the action registry and menus.
-import type { Id } from '@dashdb/core';
+import type { Id } from '@dashdb/core/lite';
 import type { EditorActions, EditorState } from '../store';
 import {
   copyTables,

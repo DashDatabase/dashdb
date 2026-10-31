@@ -1,5 +1,5 @@
 // zod schemas for everything read back from storage or imported from a file.
-import { schemaSchema } from '@dashdb/core';
+import { schemaSchema } from '@dashdb/core/lite';
 import { z } from 'zod';
 import {
   NODE_COLORS,

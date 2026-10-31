@@ -1,5 +1,5 @@
 // "Copy as Mermaid ERD": the schema as a Mermaid `erDiagram`, for READMEs, issues and docs.
-import type { Schema, Table } from '@dashdb/core';
+import type { Schema, Table } from '@dashdb/core/lite';
 import { cardinality, columnFlags, type Cardinality } from '../canvas/model';
 
 /** Mermaid identifiers: letters, digits, `_` and `-`; anything else becomes `_`. */

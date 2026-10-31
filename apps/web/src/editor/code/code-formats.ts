@@ -1,5 +1,5 @@
 // Formats offered by the Code panel, resolved against the project's dialect.
-import type { IrDialect } from '@dashdb/core';
+import type { IrDialect } from '@dashdb/core/lite';
 import { EXPORT_FORMATS, type ExportFormat, type ImportFormat } from '../formats';
 
 export const CODE_FORMATS = ['sql', 'prisma', 'drizzle', 'dbml'] as const;

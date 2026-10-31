@@ -1,5 +1,5 @@
 // Transient canvas UI state that is never saved or undone (hover, open menus, inline rename).
-import type { Id } from '@dashdb/core';
+import type { Id } from '@dashdb/core/lite';
 import { create } from 'zustand';
 import type { RelationshipDraft } from './relationship';
 

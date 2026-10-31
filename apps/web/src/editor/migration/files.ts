@@ -1,5 +1,5 @@
 // Migration names and file packaging.
-import type { MigrationFile } from '@dashdb/core';
+import type { MigrationFile } from '@dashdb/core/lite';
 
 export const MAX_MIGRATION_NAME = 60;
 

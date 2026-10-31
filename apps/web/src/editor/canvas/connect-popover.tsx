@@ -1,6 +1,6 @@
 'use client';
 
-import { addForeignKey, REFERENTIAL_ACTIONS, type ReferentialAction } from '@dashdb/core';
+import { addForeignKey, REFERENTIAL_ACTIONS, type ReferentialAction } from '@dashdb/core/lite';
 import {
   Button,
   Input,

@@ -10,7 +10,17 @@ import {
 import { readClipboard } from './canvas/clipboard';
 import type { EditorActions, EditorState } from './store';
 
-export type ActionGroup = 'File' | 'Edit' | 'Schema' | 'View' | 'Navigate';
+export type ActionGroup = 'File' | 'Edit' | 'Schema' | 'View' | 'Navigate' | 'Help';
+
+/** Display order of groups in the palette and the shortcuts cheat sheet. */
+export const GROUP_ORDER: readonly ActionGroup[] = [
+  'File',
+  'Edit',
+  'Schema',
+  'View',
+  'Navigate',
+  'Help',
+];
 
 export interface ActionContext {
   readonly state: EditorState & EditorActions;
@@ -22,6 +32,8 @@ export interface ActionContext {
   readonly downloadProject: () => void;
   /** Copies the schema to the clipboard as a Mermaid ERD. */
   readonly copyMermaid: () => void;
+  /** Starts the guided tour from its first step. */
+  readonly restartTour: () => void;
   /** Shows a paste that could not happen (e.g. tables from another database type). */
   readonly reportPaste: (outcome: PasteOutcome) => void;
 }
@@ -30,13 +42,20 @@ export interface EditorAction {
   readonly id: string;
   readonly title: string;
   readonly group: ActionGroup;
-  /** e.g. `mod+shift+z`; see shortcuts.ts. Unique across the registry. */
+  /** e.g. `mod+shift+z`; see shortcuts.ts. Unique across the registry. Shown in the UI. */
   readonly shortcut: string;
+  /** Further keys that also run the action (e.g. Backspace where keyboards lack Delete). */
+  readonly altShortcuts?: readonly string[];
   readonly keywords?: readonly string[];
   /** Fire even while typing in a text field (only for chorded shortcuts). */
   readonly allowInInput?: boolean;
   readonly isEnabled?: (state: EditorState) => boolean;
   readonly run: (ctx: ActionContext) => void;
+}
+
+/** Every key combination that runs `action`, the displayed one first. */
+export function shortcutsOf(action: EditorAction): readonly string[] {
+  return [action.shortcut, ...(action.altShortcuts ?? [])];
 }
 
 const hasProject = (state: EditorState) => state.doc !== null;
@@ -189,7 +208,8 @@ export const ACTIONS = [
     id: 'migration.generate',
     title: 'Generate migration',
     group: 'Schema',
-    shortcut: 'mod+enter',
+    shortcut: 'mod+g',
+    altShortcuts: ['mod+enter'],
     keywords: ['diff', 'alter'],
     allowInInput: true,
     isEnabled: hasProject,
@@ -213,7 +233,7 @@ export const ACTIONS = [
     id: 'schema.addTable',
     title: 'Add table',
     group: 'Schema',
-    shortcut: 'n',
+    shortcut: 't',
     keywords: ['create', 'new'],
     isEnabled: hasProject,
     run: ({ state }) => {
@@ -246,7 +266,9 @@ export const ACTIONS = [
     id: 'schema.deleteTable',
     title: 'Delete selected tables…',
     group: 'Schema',
-    shortcut: 'mod+backspace',
+    shortcut: 'delete',
+    // Mac keyboards have no Delete key; Backspace is what "delete" means there.
+    altShortcuts: ['backspace', 'mod+backspace'],
     keywords: ['remove', 'drop'],
     isEnabled: hasSelectedTables,
     run: ({ state }) => {
@@ -377,6 +399,28 @@ export const ACTIONS = [
     allowInInput: true,
     run: ({ goToProjects }) => {
       goToProjects();
+    },
+  },
+  {
+    id: 'help.shortcuts',
+    title: 'Keyboard shortcuts',
+    group: 'Help',
+    shortcut: 'shift+/',
+    keywords: ['keys', 'cheat sheet', 'help', 'hotkeys'],
+    run: ({ state }) => {
+      state.openDialog('shortcuts');
+    },
+  },
+  {
+    id: 'help.tour',
+    title: 'Restart guided tour',
+    group: 'Help',
+    shortcut: 'mod+alt+o',
+    keywords: ['onboarding', 'tutorial', 'help', 'getting started'],
+    allowInInput: true,
+    isEnabled: hasProject,
+    run: ({ restartTour }) => {
+      restartTour();
     },
   },
 ] as const satisfies readonly EditorAction[];

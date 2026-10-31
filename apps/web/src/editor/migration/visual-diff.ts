@@ -1,7 +1,7 @@
 // What changed between a migration's "from" schema and the current one, per table and column,
 // for the canvas overlay. Elements are matched by id (baselines are copies of the same schema,
 // so ids are stable, and renames keep their ids).
-import type { Column, Id, Schema, Table } from '@dashdb/core';
+import type { Column, Id, Schema, Table } from '@dashdb/core/lite';
 
 export type ChangeKind = 'added' | 'changed';
 

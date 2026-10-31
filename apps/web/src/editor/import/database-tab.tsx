@@ -1,6 +1,6 @@
 'use client';
 
-import type { IntrospectionDialect } from '@dashdb/core';
+import type { IntrospectionDialect } from '@dashdb/core/lite';
 import { Button, Tabs, TabsContent, TabsList, TabsTrigger, Textarea, toast } from '@dashdb/ui';
 import { CopyIcon, DownloadIcon, FileUpIcon, ShieldCheckIcon } from 'lucide-react';
 import { useId, useRef } from 'react';

@@ -28,7 +28,7 @@ afterEach(async () => {
 async function blogProject() {
   const template = TEMPLATES.find((t) => t.id === 'blog');
   if (!template) throw new Error('missing template');
-  const project = await createProject({ name: 'Blog', schema: schemaFromTemplate(template) });
+  const project = await createProject({ name: 'Blog', schema: await schemaFromTemplate(template) });
   const baselines = await saveBaseline(project.id, project.schema, 'v1');
   return { project, baselines };
 }

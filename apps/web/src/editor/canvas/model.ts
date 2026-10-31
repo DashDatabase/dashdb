@@ -1,5 +1,5 @@
 // Pure mapping from the Schema IR and layout to React Flow nodes and edges.
-import type { Column, ForeignKey, Id, Schema, Table } from '@dashdb/core';
+import type { Column, ForeignKey, Id, Schema, Table } from '@dashdb/core/lite';
 import type { Edge, Node } from '@xyflow/react';
 import type { Layout, NodeLayout } from '../store';
 
