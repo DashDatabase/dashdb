@@ -178,6 +178,17 @@ test.describe('canvas', () => {
     await menu.getByRole('menuitem', { name: 'Show keys only' }).click();
     await expect(tableNode(page, 'posts')).toContainText('more columns');
 
+    // A relationship's menu (its selector once returned a fresh object each render, which React
+    // reports as an uncached getSnapshot and can loop on).
+    const errors: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error') errors.push(message.text());
+    });
+    await canvas(page).locator('.react-flow__edge').first().click({ button: 'right' });
+    await expect(menu.getByRole('menuitem', { name: 'Delete relationship' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    expect(errors).toEqual([]);
+
     await page.getByRole('button', { name: 'Arrange' }).click();
     await expect(page.getByRole('button', { name: 'Arrange' })).toBeEnabled();
     await expect(canvas(page).locator('.react-flow__minimap')).toBeVisible();

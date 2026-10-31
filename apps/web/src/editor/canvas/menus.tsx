@@ -192,7 +192,10 @@ function SelectionMenuItems() {
 }
 
 function EdgeMenuItems({ edgeId }: { edgeId: Id }) {
-  const found = useEditor((s) => (s.doc ? findForeignKey(s.doc.schema, edgeId) : null));
+  // Select the schema (a stable reference) and derive here: `findForeignKey` returns a new
+  // object on every call, which would make the store snapshot look changed on each render.
+  const schema = useEditor((s) => s.doc?.schema ?? null);
+  const found = schema ? findForeignKey(schema, edgeId) : null;
   if (!found) return null;
   const { table, fk } = found;
   return (
