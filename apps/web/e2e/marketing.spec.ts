@@ -38,9 +38,15 @@ test.describe('marketing site', () => {
         'summary_large_image',
       );
       const ogImage = await page.locator('meta[property="og:image"]').getAttribute('content');
-      const image = await request.get(new URL(ogImage ?? '').pathname);
-      expect(image.status()).toBe(200);
-      expect(image.headers()['content-type']).toBe('image/png');
+      // Poll: a cold dev server can answer 500 while parallel workers compile the route at once
+      // (production prerenders these images).
+      const ogPath = new URL(ogImage ?? '').pathname;
+      await expect
+        .poll(async () => {
+          const image = await request.get(ogPath);
+          return `${String(image.status())} ${image.headers()['content-type'] ?? ''}`;
+        })
+        .toBe('200 image/png');
       // Footer sitemap links are on every page.
       await expect(page.getByRole('navigation', { name: 'Legal' }).getByRole('link')).toHaveCount(
         2,
