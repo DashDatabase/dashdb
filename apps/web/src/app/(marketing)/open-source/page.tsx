@@ -50,10 +50,24 @@ export default function OpenSourcePage() {
 
           <h2>License</h2>
           <p>
-            DashDB is released under the <a href={`${repo}/blob/HEAD/LICENSE`}>MIT License</a>. You
-            can use, modify and self-host it, including commercially, as long as the license notice
-            stays with the code.
+            DashDB is fair source, under the{' '}
+            <a href={`${repo}/blob/HEAD/LICENSE.md`}>Functional Source License (FSL-1.1-MIT)</a>.
           </p>
+          <ul>
+            <li>
+              <strong>You can</strong> read the code, run and self-host it for your own or your
+              company&apos;s internal use, modify it, use it for education and research, and
+              contribute.
+            </li>
+            <li>
+              <strong>You can&apos;t</strong> use it to offer a competing commercial product or
+              service.
+            </li>
+            <li>
+              <strong>Every release becomes MIT</strong> two years after it is published, with no
+              restrictions at all.
+            </li>
+          </ul>
 
           <h2>Feedback and contributions</h2>
           <p>

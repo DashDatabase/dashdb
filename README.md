@@ -55,4 +55,4 @@ pnpm dev                   # web :3000, api :8787
 
 ## License
 
-[MIT](LICENSE)
+[Functional Source License 1.1, MIT future license](LICENSE.md) (FSL-1.1-MIT): free to read, use, modify and self-host for any purpose except a competing commercial product; each release becomes MIT two years after it ships.
