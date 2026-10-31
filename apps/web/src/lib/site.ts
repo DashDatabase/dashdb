@@ -154,11 +154,10 @@ export const PAGES = [
   {
     slug: 'open-source',
     path: '/open-source',
-    // "Source code", not "open source": the FSL is source-available (fair source), not OSI.
-    title: 'Source code',
-    label: 'Source code',
+    title: 'Open source',
+    label: 'Open source',
     description:
-      "DashDB's code is public on GitHub under the Functional Source License. Read it, run it, contribute; each release becomes MIT after two years.",
+      'DashDB is open source under the AGPL-3.0. Read the code on GitHub, self-host it, change it and contribute.',
     group: 'Project',
     changeFrequency: 'monthly',
     priority: 0.7,

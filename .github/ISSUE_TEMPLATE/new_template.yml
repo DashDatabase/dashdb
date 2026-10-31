@@ -1,0 +1,58 @@
+name: New schema template
+description: Propose a schema for the templates gallery (dashdb.dev/templates).
+title: 'template: '
+labels: [template, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Templates are real-world schemas with the reasoning behind them. See
+        [content/templates/README.md](https://github.com/DashDatabase/dashdb/blob/main/apps/web/content/templates/README.md)
+        for what makes a good one. You can propose one here, or open a pull request directly.
+  - type: input
+    id: title
+    attributes:
+      label: Template name
+      placeholder: Ride sharing
+    validations:
+      required: true
+  - type: textarea
+    id: use-case
+    attributes:
+      label: What is it for?
+      description: The product this schema would power, in one or two sentences.
+    validations:
+      required: true
+  - type: dropdown
+    id: dialect
+    attributes:
+      label: Dialect
+      options:
+        - PostgreSQL
+        - MySQL
+    validations:
+      required: true
+  - type: textarea
+    id: schema
+    attributes:
+      label: Schema
+      description: The DDL, or the contents of the `.dashdb.json` project file. Aim for 5 to 15 tables, with no real data or names.
+      render: sql
+    validations:
+      required: true
+  - type: textarea
+    id: decisions
+    attributes:
+      label: Design decisions
+      description: 3 to 6 choices you made and their trade-offs (for example, why orders copy the price).
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: The schema contains no real personal or company data.
+          required: true
+        - label: I agree that the template is distributed under the project's license (AGPL-3.0).
+          required: true

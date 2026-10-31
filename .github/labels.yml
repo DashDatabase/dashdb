@@ -1,0 +1,32 @@
+# Repository labels. GitHub does not read this file by itself: sync it with a label-sync
+# action, or by hand with `gh label create "<name>" --color <color> --description "<text>" --force`.
+- name: good first issue
+  color: '7057ff'
+  description: Small, well-scoped, and a good way to start contributing
+- name: help wanted
+  color: '008672'
+  description: Maintainers would welcome a pull request for this
+- name: parser
+  color: '1d76db'
+  description: Importing SQL, Prisma, DBML or introspection JSON
+- name: safety-rule
+  color: 'd93f0b'
+  description: Migration safety rules and their guides
+- name: ui
+  color: 'fbca04'
+  description: The editor, canvas and site interface
+- name: docs
+  color: '0075ca'
+  description: Documentation, guides and the README
+- name: bug
+  color: 'd73a4a'
+  description: Something is not working
+- name: enhancement
+  color: 'a2eeef'
+  description: A new feature or improvement
+- name: template
+  color: 'c5def5'
+  description: Schema templates gallery
+- name: triage
+  color: 'ededed'
+  description: Needs a maintainer to look at it

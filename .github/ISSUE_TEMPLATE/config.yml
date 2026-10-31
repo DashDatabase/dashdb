@@ -1,0 +1,12 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/DashDatabase/dashdb/security/policy
+    about: Please report security problems privately, as described in SECURITY.md. Do not open a public issue.
+  - name: Question or idea
+    url: https://github.com/DashDatabase/dashdb/discussions
+    about: Ask questions and discuss ideas in GitHub Discussions.
+  # TODO: replace with the real Discord invite
+  - name: Chat on Discord
+    url: https://discord.gg/TODO
+    about: Talk to the maintainers and other users.

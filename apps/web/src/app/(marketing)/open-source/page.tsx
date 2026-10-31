@@ -50,22 +50,27 @@ export default function OpenSourcePage() {
 
           <h2>License</h2>
           <p>
-            DashDB is fair source, under the{' '}
-            <a href={`${repo}/blob/HEAD/LICENSE.md`}>Functional Source License (FSL-1.1-MIT)</a>.
+            DashDB is open source under the{' '}
+            <a href={`${repo}/blob/HEAD/LICENSE`}>GNU Affero General Public License v3.0</a>{' '}
+            (AGPL-3.0).
           </p>
           <ul>
             <li>
-              <strong>You can</strong> read the code, run and self-host it for your own or your
-              company&apos;s internal use, modify it, use it for education and research, and
-              contribute.
+              <strong>You can</strong> use it for free for any purpose, including commercial work,
+              and read, modify, self-host and share it.
             </li>
             <li>
-              <strong>You can&apos;t</strong> use it to offer a competing commercial product or
-              service.
+              <strong>If you run a modified version as a service</strong> for other people, you must
+              offer them the source code of your changes, under the AGPL too.
             </li>
             <li>
-              <strong>Every release becomes MIT</strong> two years after it is published, with no
-              restrictions at all.
+              <strong>Your schemas and migrations are yours.</strong> The license covers
+              DashDB&apos;s code, not what you design with it.
+            </li>
+            <li>
+              <strong>Future paid features</strong> will live in the repository&apos;s{' '}
+              <code>/ee</code> directory under a separate commercial license. A commercial license
+              for the rest of DashDB is available if the AGPL doesn&apos;t suit your company.
             </li>
           </ul>
 

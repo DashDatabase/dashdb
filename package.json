@@ -1,7 +1,7 @@
 {
   "name": "dashdb",
   "private": true,
-  "license": "FSL-1.1-MIT",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "packageManager": "pnpm@9.15.3",
   "engines": {

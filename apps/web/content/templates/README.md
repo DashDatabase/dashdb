@@ -61,5 +61,5 @@ generated from these files at build time.
   rules, `NOT NULL` where a value is required, and indexes for the obvious queries.
 - **No real data or names** of people or companies.
 
-Templates are distributed under the project's license (FSL-1.1-MIT); by contributing one you agree
+Templates are distributed under the project's license (AGPL-3.0); by contributing one you agree
 to that.

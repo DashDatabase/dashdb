@@ -1,0 +1,36 @@
+name: DCO
+
+# Every commit in a pull request needs a `Signed-off-by:` trailer matching its author
+# (git commit -s). See CONTRIBUTING.md.
+# TODO(maintainer): keep this check, or replace it with CLA Assistant.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  sign-off:
+    name: DCO sign-off
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.actor != 'dependabot[bot]'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Check every commit is signed off by its author
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          missing=0
+          for sha in $(git rev-list --no-merges "$BASE_SHA..$HEAD_SHA"); do
+            author="$(git log -1 --format='%an <%ae>' "$sha")"
+            if ! git log -1 --format='%(trailers:key=Signed-off-by,valueonly)' "$sha" | grep -qxF "$author"; then
+              echo "::error::Commit $sha is missing 'Signed-off-by: $author'. Run: git rebase --signoff $BASE_SHA && git push --force-with-lease"
+              missing=1
+            fi
+          done
+          exit "$missing"

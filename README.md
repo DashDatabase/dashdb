@@ -1,58 +1,132 @@
-# DashDB
+<p align="center">
+  <a href="https://dashdb.dev">
+    <img src="docs/assets/logo.svg" alt="DashDB" width="72" height="72">
+  </a>
+</p>
 
-pnpm + Turborepo monorepo. Node 22 (`.nvmrc`), TypeScript strict everywhere.
+<h1 align="center">DashDB</h1>
 
-```
-apps/
-  web/            Next.js App Router + Tailwind v4 (src/). Runs on :3000. Playwright specs in e2e/
-  api/            Hono on Node: tsx watch for dev, tsup for build. Runs on :8787 (GET /health)
-packages/
-  config/         Shared tsconfig bases, ESLint flat configs, Tailwind preset (preset.css)
-  shared/         zod schemas + types used everywhere (no Node/React deps)
-  core/           Framework-agnostic domain logic (depends on shared only)
-  db/             Drizzle schema, client, and migrations for the Postgres metadata DB
-  api-client/     Typed Hono RPC client, with types inferred from apps/api's AppType
-  ui/             Shared React components (styled with the config preset)
-docker-compose.yml  Postgres 17, MySQL 8.4, Redis 7, Mailpit (local dev only)
-turbo.json          Task graph: packages build (tsup -> dist/) before anything that uses them
-```
+<p align="center">
+  <strong>Design your database visually. Ship the migration.</strong><br>
+  A local-first schema editor for Postgres and MySQL that writes safe, reviewable migrations for SQL, Prisma and Drizzle.
+</p>
 
-Dependency direction: `apps -> api-client/ui/db/core -> shared`, with `config` as a devDependency of everything.
-Each package has `package.json` `exports`, `src/index.ts`, `vitest.config.ts` and a `README.md`.
+<p align="center">
+  <a href="https://github.com/DashDatabase/dashdb/actions/workflows/ci.yml"><img src="https://github.com/DashDatabase/dashdb/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License: AGPL-3.0"></a>
+  <!-- TODO: replace with the real Discord invite and server id -->
+  <a href="https://discord.gg/TODO"><img src="https://img.shields.io/badge/chat-Discord-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
+  <a href="https://github.com/DashDatabase/dashdb/stargazers"><img src="https://img.shields.io/github/stars/DashDatabase/dashdb?style=flat" alt="GitHub stars"></a>
+</p>
+
+<p align="center">
+  <a href="https://dashdb.dev/app"><strong>Try it now →</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://dashdb.dev/docs">Docs</a>
+  &nbsp;·&nbsp;
+  <a href="docs/ROADMAP.md">Roadmap</a>
+  &nbsp;·&nbsp;
+  <a href="CONTRIBUTING.md">Contributing</a>
+</p>
+
+<p align="center">
+  <!-- TODO: record the demo GIF and save it at docs/assets/demo.gif -->
+  <img src="docs/assets/demo.gif" alt="Designing a schema on the DashDB canvas and generating its migration" width="800">
+</p>
+
+## Features
+
+- **Visual canvas**: tables, columns, keys and relations on a diagram, with a Code tab that stays in sync.
+- **Import what you already have**: Postgres or MySQL DDL (including `pg_dump` / `mysqldump` output), Prisma schemas, DBML, or a JSON snapshot introspected from a live database.
+- **Export anywhere**: Postgres DDL, MySQL DDL, Prisma, Drizzle, DBML and Mermaid ERDs.
+- **Migrations from a diff**: compare against a saved baseline and get up and down SQL, a Prisma migration folder or a Drizzle migration with its journal.
+- **Safety checks before you ship**: rules flag table rewrites, long locks, blocking index builds, data loss and renames that break running code, each with a safer step-by-step alternative.
+- **Local-first and private**: the editor runs entirely in your browser. No signup, and your schema never leaves your machine.
+- **Templates and converters**: a gallery of real-world schemas, plus browser-side tools such as SQL → Prisma and Postgres → MySQL.
 
 ## Quick start
 
+### Hosted
+
+Open **[dashdb.dev/app](https://dashdb.dev/app)**. Nothing to install, no account; projects are stored in your browser.
+
+### Docker
+
+<!-- TODO: publish an official image (tracked on the roadmap) and replace this section -->
+
+An official image is not published yet. Until it is, self-host from source as described in
+[Self-hosting](https://dashdb.dev/docs/self-hosting): it is a standard Next.js app with no
+database of its own.
+
 ```sh
-nvm use && pnpm install
-cp apps/api/.env.example apps/api/.env && cp apps/web/.env.example apps/web/.env.local
-docker compose up -d       # optional: only needed for db:* and test:db
-pnpm dev                   # web :3000, api :8787
+# Coming soon
+docker run -p 3000:3000 ghcr.io/dashdatabase/dashdb
 ```
 
-| Script                                  | Does                                                                               |
-| --------------------------------------- | ---------------------------------------------------------------------------------- |
-| `build` / `test` / `lint` / `typecheck` | Turbo across all workspaces                                                        |
-| `test:db`                               | DB integration tests (`*.db.test.ts`, needs compose)                               |
-| `e2e`                                   | Playwright (run `pnpm --filter @dashdb/web exec playwright install chromium` once) |
-| `db:generate` / `db:migrate`            | drizzle-kit in `packages/db`                                                       |
-| `format`                                | Prettier                                                                           |
+### Local development
 
-## Code quality & security
+You need Node.js 22, pnpm 9 and Git. Docker is only needed for the database integration tests.
 
-- **Lint**: shared ESLint flat configs in `packages/config/eslint` (typescript-eslint `strictTypeChecked`,
-  `eslint-plugin-security`, `import/no-cycle`, React + hooks rules for `ui` and `web`). Lint fails on warnings.
-- **Format**: Prettier with `prettier-plugin-tailwindcss` (`pnpm format`, `pnpm format:check`).
-- **Git hooks** (Husky, installed by `pnpm install`):
-  - `pre-commit`: [gitleaks](https://github.com/gitleaks/gitleaks) on staged changes, then lint-staged
-    (`eslint --fix` + `prettier --write` on staged files). **gitleaks must be on your PATH**:
-    `winget install --id Gitleaks.Gitleaks -e` / `brew install gitleaks`.
-  - `commit-msg`: commitlint with [Conventional Commits](https://www.conventionalcommits.org).
-- **CI** (`.github/workflows/ci.yml`): lint, typecheck, test, build, plus a `db-tests` job against Postgres.
-- **Security** (`.github/workflows/security.yml`, also weekly): CodeQL, gitleaks over full history,
-  `pnpm audit --audit-level=high`, and Semgrep (`p/owasp-top-ten`, `p/typescript`).
-- **Dependabot**: weekly, with minor and patch updates grouped into one PR per ecosystem.
-- Reporting vulnerabilities: see [SECURITY.md](SECURITY.md).
+```sh
+git clone https://github.com/DashDatabase/dashdb.git
+cd dashdb
+nvm use && pnpm install
+cp apps/api/.env.example apps/api/.env && cp apps/web/.env.example apps/web/.env.local
+pnpm dev                 # web on http://localhost:3000, api on :8787
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the repository layout, tests and conventions.
+
+## Supported databases and ORMs
+
+| Target                    | Import | Export | Migrations                              | Safety rules |
+| ------------------------- | :----: | :----: | --------------------------------------- | :----------: |
+| PostgreSQL                |   ✅   |   ✅   | ✅ up/down SQL, transactional           |      ✅      |
+| MySQL 8                   |   ✅   |   ✅   | ✅ up/down SQL                          |      ✅      |
+| Prisma                    |   ✅   |   ✅   | ✅ `prisma/migrations` folder           | via dialect  |
+| Drizzle                   |   —    |   ✅   | ✅ SQL files + `meta/_journal.json`     | via dialect  |
+| DBML                      |   ✅   |   ✅   | —                                       |      —       |
+| Mermaid ERD               |   —    |   ✅   | —                                       |      —       |
+| Live introspection (JSON) |   ✅   |   —    | —                                       |      —       |
+| SQLite                    |   —    |   —    | Not planned yet (limited `ALTER TABLE`) |      —       |
+
+## Roadmap
+
+What we are working on, and what comes next, is in [docs/ROADMAP.md](docs/ROADMAP.md), which
+mirrors the public [GitHub Project](https://github.com/orgs/DashDatabase/projects/1).
+
+## Contributing
+
+Bug reports with a schema sample, new safety rules, parser fixes and schema templates are all
+welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and look for
+[`good first issue`](https://github.com/DashDatabase/dashdb/labels/good%20first%20issue).
+Everyone taking part follows our [Code of Conduct](CODE_OF_CONDUCT.md). To report a security
+problem, follow [SECURITY.md](SECURITY.md) instead of opening an issue.
+
+## Star history
+
+<a href="https://star-history.com/#DashDatabase/dashdb&Date">
+  <img src="https://api.star-history.com/svg?repos=DashDatabase/dashdb&type=Date" alt="Star history chart" width="600">
+</a>
 
 ## License
 
-[Functional Source License 1.1, MIT future license](LICENSE.md) (FSL-1.1-MIT): free to read, use, modify and self-host for any purpose except a competing commercial product; each release becomes MIT two years after it ships.
+DashDB is open source under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0),
+with one exception: the `/ee` directory, reserved for future commercial features, is under the
+[DashDB Commercial License](ee/LICENSE).
+
+In plain language:
+
+- **You can** use DashDB for free, for anything, including at work and for commercial projects.
+  Read the code, change it, self-host it for your team, and share it.
+- **If you modify DashDB and let other people use it over a network** (for example, you run a
+  changed version as a hosted service), you must offer those users the source code of your
+  changed version, under the AGPL too.
+- **The schemas and migrations you create are yours.** The AGPL covers DashDB's code, not what
+  you design with it.
+- **Code in `/ee`** is source available: you can read it and try it, but running it in
+  production needs a commercial license. There is no code in `/ee` yet.
+- **Need different terms?** If the AGPL doesn't work for your company, a commercial license is
+  available. Contact licensing@dashdb.dev.
+
+This summary is not legal advice; the [LICENSE](LICENSE) file is what counts.

@@ -1,0 +1,80 @@
+name: Bug report
+description: Something in DashDB is wrong, such as a parse error, a wrong migration or a broken editor.
+title: 'bug: '
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! The single most useful thing is a **schema that reproduces the bug**.
+        Please remove anything private (real table names are fine; data and credentials are not).
+        Security problems go to SECURITY.md, not here.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Import / parser (SQL, Prisma, DBML, introspection)
+        - Export / serializer
+        - Migration (diff or generated SQL)
+        - Safety rule (missed or wrong warning)
+        - Editor / canvas
+        - Docs or website
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: dialect
+    attributes:
+      label: Database or format
+      multiple: true
+      options:
+        - PostgreSQL
+        - MySQL
+        - Prisma
+        - Drizzle
+        - DBML
+        - Not applicable
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead. Include error messages.
+    validations:
+      required: true
+  - type: textarea
+    id: schema
+    attributes:
+      label: Schema sample
+      description: |
+        The smallest schema that reproduces the bug (SQL, Prisma or DBML). For migration bugs, paste the
+        before and after schema. A `.dashdb.json` project file (Export → DashDB project) also works:
+        attach it under "Steps to reproduce".
+      render: sql
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Output you got
+      description: The generated SQL, migration or warning, if relevant.
+      render: sql
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Drag files such as a `.dashdb.json` project into this box to attach them.
+      placeholder: |
+        1. Import the schema above as PostgreSQL DDL
+        2. Rename users.email to users.email_address
+        3. Open the Migration panel
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Hosted (dashdb.dev) or self-hosted with the commit, plus browser and OS.
+      placeholder: dashdb.dev, Chrome 140, macOS 26
+    validations:
+      required: true
