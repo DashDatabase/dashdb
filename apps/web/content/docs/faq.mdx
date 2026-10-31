@@ -1,0 +1,64 @@
+---
+title: FAQ
+description: Answers to common questions about DashDB - pricing, privacy, supported databases, how migrations run, collaboration, licensing and self-hosting.
+---
+
+## Is DashDB free?
+
+Yes. The editor is free, with no signup and no limits on projects or tables. Cloud sync and
+team features are planned as paid plans; the local editor stays free. See [Pricing](/pricing).
+
+## Where are my schemas stored?
+
+In your browser, on your device (IndexedDB). DashDB has no server-side copy of your projects
+and never uploads them. Download a [project file](/docs/importing/project-files) to back one
+up or move it to another machine.
+
+## Does DashDB connect to my database?
+
+No. To import a live schema you run a read-only query in your own SQL client and paste the
+result ([how](/docs/importing/existing-database)). Migrations are files you run yourself.
+
+## Which databases are supported?
+
+PostgreSQL and MySQL 8, for design, import and migrations. Prisma schemas and DBML import into
+either, depending on their `provider` or `database_type`.
+
+## Does DashDB run migrations for me?
+
+No, by design. DashDB writes and reviews the migration; your existing tooling (Prisma Migrate,
+drizzle-kit, Flyway, `psql` and so on) runs it, in the same pipeline as the rest of your
+deploy. See [Using DashDB with your ORM](/docs/orms).
+
+## How reliable are the safety rules?
+
+They encode how PostgreSQL (11 and later) and MySQL 8 take locks and rewrite tables, and every
+rule is tested against generated SQL. They can't know your traffic or table sizes, so read
+each finding with your largest tables in mind. A clean review means DashDB found nothing
+risky, not that a migration needs no thought. See [Safety rules](/docs/safety-rules).
+
+## Can my team work on the same schema?
+
+Today, share a project file: commit the `.dashdb.json` next to your migrations, and anyone can
+import it. Real-time collaboration and cloud sync are planned.
+
+## Can I use DashDB on a phone or tablet?
+
+On screens narrower than 1024 pixels the editor shows a read-only outline of the schema. Use a
+laptop or desktop to edit.
+
+## Is DashDB open source?
+
+DashDB's code is public under the Functional Source License (FSL-1.1-MIT): you can read, run,
+modify and self-host it for anything except a competing commercial product, and each release
+becomes MIT-licensed two years after it ships. That makes it "fair source" rather than open
+source in the OSI sense. See [Source code](/open-source).
+
+## Can I run DashDB on my own server?
+
+Yes. It is a Node.js web app with no database of its own. See [Self-hosting](/docs/self-hosting).
+
+## I'm moving from dbdiagram.io. Can I bring my diagrams?
+
+Yes. Export them as DBML and [import](/docs/importing/dbml) them. You keep the structure and
+gain migrations and safety checks.

@@ -1,0 +1,50 @@
+---
+title: DashDB documentation
+description: Design Postgres and MySQL schemas on a visual canvas, then generate migrations for SQL, Prisma or Drizzle that are checked for risky operations.
+---
+
+DashDB is a visual database schema editor. You draw tables and relationships on a canvas (or
+edit the same schema as code), save a **baseline** of what is in production, and DashDB writes
+the migration from that baseline to your design. Before you ship it, every migration is checked
+against <RuleCount /> safety rules that know how Postgres and MySQL take locks.
+
+The editor runs entirely in your browser. There is no signup, and your schemas are saved on
+your device, never on a server.
+
+## Start here
+
+<Cards>
+  <Card title="Getting started" href="/docs/getting-started">
+    Create a project, draw a few tables and generate your first migration in five minutes.
+  </Card>
+  <Card title="Editor basics" href="/docs/editor-basics">
+    The canvas, the Code tab, the command palette and every keyboard shortcut.
+  </Card>
+  <Card title="Importing schemas" href="/docs/importing">
+    Bring in SQL, a Prisma schema, DBML, or a live Postgres or MySQL database.
+  </Card>
+  <Card title="Generating migrations" href="/docs/migrations">
+    Baselines, renames, up and down files, and Prisma or Drizzle output.
+  </Card>
+  <Card title="Safety rules" href="/docs/safety-rules">
+    What each rule catches, why it matters, and the safer way to make the change.
+  </Card>
+  <Card title="Self-hosting" href="/docs/self-hosting">
+    Run your own copy of DashDB on any Node.js host.
+  </Card>
+</Cards>
+
+## What DashDB is good at
+
+- **Designing a new schema** with primary keys, foreign keys, indexes, unique and check
+  constraints, enums and comments, then exporting it as SQL, Prisma, Drizzle or DBML.
+- **Changing an existing schema safely.** Import what you have, edit it, and get a migration
+  with its risks spelled out: table rewrites, long locks, and steps that lose data.
+- **Explaining a schema** to your team, with a diagram you can export as PNG or SVG, or paste
+  into a pull request as a Mermaid ER diagram.
+
+## Supported databases
+
+Projects target **PostgreSQL** or **MySQL 8**. You can import from either dialect's DDL, from
+Prisma and DBML files, or straight from a running database, and convert between them with the
+[free converter tools](/tools).

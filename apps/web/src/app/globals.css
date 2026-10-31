@@ -3,3 +3,11 @@
 
 /* Shared components ship as JS, so Tailwind has to scan their source for class names. */
 @source '../../../../packages/ui/src';
+
+/* Code highlighted at build time by Shiki (blog posts): its light and dark colors by theme. */
+.shiki span {
+  color: var(--shiki-light);
+}
+.dark .shiki span {
+  color: var(--shiki-dark);
+}

@@ -155,7 +155,7 @@ export function Sidebar() {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent className="flex items-center gap-2">
-                  Add table <ShortcutKeys shortcut="n" />
+                  Add table <ShortcutKeys shortcut={getAction('schema.addTable').shortcut} />
                 </TooltipContent>
               </Tooltip>
             }

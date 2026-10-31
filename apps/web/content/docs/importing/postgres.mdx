@@ -1,0 +1,54 @@
+---
+title: PostgreSQL DDL
+description: Import PostgreSQL CREATE TABLE scripts or pg_dump schema output into DashDB, with what is supported and what is skipped.
+---
+
+Paste or upload PostgreSQL DDL: hand-written migrations, a `schema.sql`, or the output of
+`pg_dump`. The fastest way to get a complete, accurate dump of a database's structure is:
+
+```bash
+pg_dump --schema-only --no-owner --no-privileges "postgres://user@host:5432/dbname" > schema.sql
+```
+
+Then choose **Upload file** in the import dialog and pick `schema.sql`. To import without
+running `pg_dump`, use the [introspection query](/docs/importing/existing-database) instead.
+
+## What is imported
+
+| Statement                                      | Imported as                                                                 |
+| ---------------------------------------------- | --------------------------------------------------------------------------- |
+| `CREATE TABLE`                                 | Tables, columns, types, defaults, `NOT NULL`, identity and `serial` columns |
+| `PRIMARY KEY`, `UNIQUE`, `CHECK`, `REFERENCES` | Constraints, inline or as table constraints                                 |
+| `ALTER TABLE … ADD CONSTRAINT / ADD COLUMN`    | The same, applied to the table (as `pg_dump` writes them)                   |
+| `CREATE INDEX`, `CREATE UNIQUE INDEX`          | Indexes, with sort order and partial `WHERE` clauses                        |
+| `CREATE TYPE … AS ENUM`                        | Enums                                                                       |
+| `CREATE SCHEMA` and schema-qualified names     | Schemas (namespaces)                                                        |
+| `COMMENT ON TABLE / COLUMN`                    | Comments                                                                    |
+
+## What is skipped
+
+Statements that don't describe table structure (`SET`, `GRANT`, `INSERT`, functions, triggers,
+views, sequences created separately) are skipped with a warning, so a full `pg_dump` imports
+cleanly. A few table features are also skipped, each with its own warning:
+
+- Indexes on expressions, such as `lower(email)`: DashDB indexes columns only.
+- `INHERITS` and `LIKE` in `CREATE TABLE`.
+
+```sql title="Example"
+CREATE TYPE plan AS ENUM ('free', 'pro', 'enterprise');
+
+CREATE TABLE organizations (
+  id         bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  name       text NOT NULL,
+  plan       plan NOT NULL DEFAULT 'free',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE members (
+  organization_id bigint NOT NULL REFERENCES organizations (id) ON DELETE CASCADE,
+  user_id         bigint NOT NULL,
+  PRIMARY KEY (organization_id, user_id)
+);
+
+COMMENT ON TABLE members IS 'Who belongs to which organization.';
+```

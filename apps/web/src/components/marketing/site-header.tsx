@@ -1,14 +1,15 @@
 import { Logo } from '@dashdb/ui/server';
 import Link from 'next/link';
-import { ButtonLink, Container } from './primitives';
+import { ButtonLink, Container, prefetchFor } from './primitives';
 
 const NAV = [
   { href: '/features/diagram', label: 'Diagram' },
   { href: '/features/migrations', label: 'Migrations' },
   { href: '/templates', label: 'Templates' },
   { href: '/tools', label: 'Tools' },
+  { href: '/docs', label: 'Docs' },
+  { href: '/blog', label: 'Blog' },
   { href: '/pricing', label: 'Pricing' },
-  { href: '/changelog', label: 'Changelog' },
 ] as const;
 
 export function SiteHeader() {
@@ -28,6 +29,7 @@ export function SiteHeader() {
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  prefetch={prefetchFor(item.href)}
                   className="rounded-md px-3 py-2 text-text-muted hover:bg-highlight hover:text-text focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
                   {item.label}

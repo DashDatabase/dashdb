@@ -1,6 +1,6 @@
 // schema.org structured data for the public pages, rendered by <JsonLd>.
 import { getGithubUrl, getSiteUrl } from './config';
-import { absoluteUrl } from './seo';
+import { absoluteUrl, ogImagePath } from './seo';
 import { breadcrumbTrail, SITE, type SitePage } from './site';
 
 export type JsonLdObject = {
@@ -127,5 +127,61 @@ export function creativeWorkLd(
     author: work.author
       ? { '@type': 'Person', name: work.author }
       : { '@type': 'Organization', name: SITE.name },
+  };
+}
+
+const PUBLISHER = (siteUrl: string) => ({
+  '@type': 'Organization',
+  name: SITE.name,
+  url: absoluteUrl('/', siteUrl),
+  logo: { '@type': 'ImageObject', url: absoluteUrl('/icon.svg', siteUrl) },
+});
+
+/** A reference page such as a migration safety guide or a docs page. */
+export function techArticleLd(
+  page: SitePage,
+  about: readonly string[],
+  siteUrl: string = getSiteUrl(),
+): JsonLdObject {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'TechArticle',
+    headline: page.title,
+    description: page.description,
+    url: absoluteUrl(page.path, siteUrl),
+    mainEntityOfPage: absoluteUrl(page.path, siteUrl),
+    image: absoluteUrl(ogImagePath(page), siteUrl),
+    about: about.map((name) => ({ '@type': 'Thing', name })),
+    inLanguage: 'en',
+    author: { '@type': 'Organization', name: SITE.name },
+    publisher: PUBLISHER(siteUrl),
+  };
+}
+
+export interface ArticleInput {
+  readonly page: SitePage;
+  /** ISO date, `YYYY-MM-DD`. */
+  readonly datePublished: string;
+  readonly author: { readonly name: string; readonly url: string };
+  readonly keywords: readonly string[];
+}
+
+/** A blog post (Google's Article rich result). */
+export function articleLd(article: ArticleInput, siteUrl: string = getSiteUrl()): JsonLdObject {
+  const { page } = article;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: page.title,
+    description: page.description,
+    url: absoluteUrl(page.path, siteUrl),
+    mainEntityOfPage: { '@type': 'WebPage', '@id': absoluteUrl(page.path, siteUrl) },
+    image: [absoluteUrl(ogImagePath(page), siteUrl)],
+    datePublished: article.datePublished,
+    dateModified: article.datePublished,
+    author: [{ '@type': 'Organization', name: article.author.name, url: article.author.url }],
+    publisher: PUBLISHER(siteUrl),
+    keywords: article.keywords.join(', '),
+    inLanguage: 'en',
   };
 }

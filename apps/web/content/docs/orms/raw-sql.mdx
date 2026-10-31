@@ -1,0 +1,34 @@
+---
+title: DashDB with raw SQL
+description: Use DashDB's plain up and down SQL migrations with any runner - Flyway, Liquibase, golang-migrate, dbmate, Rails, Laravel or psql.
+---
+
+Choose **SQL** as the migration format to get two files per migration:
+
+```text
+migrations/
+  20261101093000_add_user_email/
+    up.sql
+    down.sql
+```
+
+They are plain SQL, so any tool that runs SQL files can use them. Rename them to the
+convention your runner expects:
+
+| Runner         | File names                                                   |
+| -------------- | ------------------------------------------------------------ |
+| golang-migrate | `20261101093000_add_user_email.up.sql`, `….down.sql`         |
+| dbmate         | One file with `-- migrate:up` and `-- migrate:down` sections |
+| Flyway         | `V20261101093000__add_user_email.sql` (up only)              |
+| `psql`         | `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f up.sql`          |
+
+## Things to know
+
+- **Postgres files manage their own transaction.** `up.sql` wraps its statements in
+  `BEGIN … COMMIT`, with `CREATE INDEX CONCURRENTLY` after the commit. If your runner already
+  wraps each file in a transaction, turn that off for these files (or for Postgres, run them
+  with `psql`), or move the concurrent statements to their own migration.
+- **MySQL files have no transaction**, because MySQL commits each DDL statement on its own.
+  Take a backup first; if a statement fails, the earlier ones stay applied.
+- **Down files** undo the migration's structure, but can't bring back dropped data; those
+  statements are marked `IRREVERSIBLE`.

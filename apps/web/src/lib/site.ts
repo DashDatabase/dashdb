@@ -1,6 +1,9 @@
 // The public site's pages: one registry feeds page metadata, the sitemap, OG images,
 // breadcrumbs and the footer, so a page added here shows up everywhere. The converter tools
-// (src/tools/registry.ts) join it through `toolPage`.
+// (src/tools/registry.ts) join it through `toolPage`, the safety guides through `guidePage`;
+// the docs and blog, which come from MDX collections, are added in lib/content-pages.ts.
+import { rules } from '@dashdb/core';
+import { DIALECT_NAMES, RULE_GUIDES, type GuideDialect } from '@/guides/rule-guides';
 import { getTemplates, type Template } from '@/templates/load';
 import { FORMATS, TOOLS, type ToolDefinition } from '@/tools/registry';
 
@@ -10,6 +13,12 @@ export const SITE = {
   description:
     'Design Postgres and MySQL schemas on a visual canvas, then generate safe, reviewable migrations for SQL, Prisma and Drizzle. Free, local-first, no signup.',
 } as const;
+
+/** A breadcrumb: where it links and what it says. */
+export interface Crumb {
+  readonly path: string;
+  readonly label: string;
+}
 
 export interface SitePage {
   /** Stable id; also the OG image slug. */
@@ -21,9 +30,13 @@ export interface SitePage {
   /** Short name for navigation and breadcrumbs. */
   readonly label: string;
   /** Footer column; pages without one are left out of the footer. */
-  readonly group?: 'Product' | 'Project' | 'Legal';
+  readonly group?: 'Product' | 'Resources' | 'Project' | 'Legal';
   /** Path of the parent page, for breadcrumbs (e.g. features under the home page). */
   readonly parent?: string;
+  /** The full breadcrumb trail above the page, for pages whose parents are not in `PAGES`. */
+  readonly ancestors?: readonly Crumb[];
+  /** The line under the title on the OG image; the site headline by default. */
+  readonly ogSubtitle?: string;
   readonly changeFrequency: 'weekly' | 'monthly' | 'yearly';
   readonly priority: number;
 }
@@ -107,12 +120,34 @@ export const PAGES = [
     priority: 0.8,
   },
   {
+    slug: 'docs',
+    path: '/docs',
+    title: 'DashDB documentation',
+    label: 'Docs',
+    description:
+      'Learn DashDB: design schemas on the canvas, import from SQL, Prisma or a live database, generate safe migrations, and self-host the editor.',
+    group: 'Resources',
+    changeFrequency: 'weekly',
+    priority: 0.8,
+  },
+  {
+    slug: 'blog',
+    path: '/blog',
+    title: 'Blog',
+    label: 'Blog',
+    description:
+      'Articles on database schema design, zero-downtime migrations, Postgres and MySQL locking, and what is new in DashDB.',
+    group: 'Resources',
+    changeFrequency: 'weekly',
+    priority: 0.7,
+  },
+  {
     slug: 'changelog',
     path: '/changelog',
     title: 'Changelog',
     label: 'Changelog',
     description: 'What is new in DashDB: every notable feature and fix, newest first.',
-    group: 'Product',
+    group: 'Resources',
     changeFrequency: 'weekly',
     priority: 0.6,
   },
@@ -208,18 +243,48 @@ export function templatePage(template: Template): SitePage {
   };
 }
 
-/** Every public page: the registry above plus one per converter tool and per template. */
-export function allPages(): SitePage[] {
-  const tools: readonly ToolDefinition[] = TOOLS;
-  return [...PAGES, ...tools.map(toolPage), ...getTemplates().map(templatePage)];
+/** The docs page that lists every safety rule; the guides sit under it. */
+export const SAFETY_RULES_PATH = '/docs/safety-rules';
+
+const HOME_CRUMB: Crumb = { path: '/', label: 'Home' };
+const DOCS_CRUMB: Crumb = { path: '/docs', label: 'Docs' };
+
+/** A migration safety guide as a site page: `/guides/<dialect>/<rule-id>`. */
+export function guidePage(ruleId: string, dialect: GuideDialect): SitePage {
+  const guide = RULE_GUIDES[ruleId];
+  if (!guide) throw new Error(`No guide for rule "${ruleId}"`);
+  const name = DIALECT_NAMES[dialect];
+  return {
+    slug: `guide-${dialect}-${ruleId}`,
+    path: `/guides/${dialect}/${ruleId}`,
+    // The dialect is in the title for search, unless the title already names it.
+    title: guide.title.includes(name) ? guide.title : `${guide.title} in ${name}`,
+    label: guide.title,
+    description: `${guide.risk} Why it happens in ${name}, and the safer way.`,
+    ancestors: [HOME_CRUMB, DOCS_CRUMB, { path: SAFETY_RULES_PATH, label: 'Safety rules' }],
+    ogSubtitle: `Migration safety guide · ${name}`,
+    changeFrequency: 'monthly',
+    priority: 0.6,
+  };
 }
 
-export function findPage(slug: string): SitePage | undefined {
-  return allPages().find((p) => p.slug === slug);
+/** One guide per rule and dialect it applies to: exactly the safety findings' `docsUrl`s. */
+export function guidePages(): SitePage[] {
+  return rules.flatMap((rule) => rule.dialects.map((dialect) => guidePage(rule.id, dialect)));
+}
+
+/**
+ * Every public page built from code: the registry above, plus one per converter tool, template
+ * and safety guide. `everyPage()` in lib/content-pages.ts adds the docs and blog.
+ */
+export function allPages(): SitePage[] {
+  const tools: readonly ToolDefinition[] = TOOLS;
+  return [...PAGES, ...tools.map(toolPage), ...getTemplates().map(templatePage), ...guidePages()];
 }
 
 /** The trail from the home page to `page`, inclusive. */
-export function breadcrumbTrail(page: SitePage): SitePage[] {
+export function breadcrumbTrail(page: SitePage): Crumb[] {
+  if (page.ancestors) return [...page.ancestors, page];
   const trail: SitePage[] = [page];
   const seen = new Set([page.path]);
   let current: SitePage = page;

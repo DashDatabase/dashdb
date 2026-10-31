@@ -1,0 +1,46 @@
+---
+title: DBML
+description: Import DBML from dbdiagram.io or dbdocs into DashDB, with tables, references, enums, indexes and notes, then turn it into real migrations.
+---
+
+[DBML](https://dbml.dbdiagram.io) is the language behind dbdiagram.io. Export your diagram as
+DBML (or copy it from the editor there) and paste or upload it into DashDB. DashDB keeps the
+structure and lays the tables out on its own canvas.
+
+| DBML                                                            | Imported as                                      |
+| --------------------------------------------------------------- | ------------------------------------------------ |
+| `Project { database_type: 'PostgreSQL' }` or `'MySQL'`          | The project's dialect (PostgreSQL if absent)     |
+| `Table` with columns and types                                  | Tables and columns                               |
+| `[pk]`, `[not null]`, `[unique]`, `[default: …]`, `[increment]` | Keys, constraints and defaults                   |
+| `indexes { … }`                                                 | Indexes and composite primary keys               |
+| `Ref:` and inline `[ref: > …]`                                  | Foreign keys, with `delete` and `update` actions |
+| `Enum`                                                          | Enums                                            |
+| `Note` on tables and columns                                    | Comments                                         |
+| `schema.table` names                                            | Schemas (namespaces)                             |
+
+Table groups and sticky notes are presentation only and are skipped.
+
+```text title="Example"
+Project shop {
+  database_type: 'PostgreSQL'
+}
+
+Table customers {
+  id bigint [pk, increment]
+  email varchar(255) [not null, unique]
+  Note: 'People who have placed at least one order'
+}
+
+Table orders {
+  id bigint [pk, increment]
+  customer_id bigint [not null, ref: > customers.id]
+  placed_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    customer_id
+  }
+}
+```
+
+Moving off dbdiagram.io? Once the schema is in DashDB, [save a baseline](/docs/migrations) and
+every later change comes with a migration.

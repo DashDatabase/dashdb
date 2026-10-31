@@ -1,0 +1,4 @@
+{
+  "title": "Importing schemas",
+  "pages": ["index", "postgres", "mysql", "prisma", "dbml", "existing-database", "project-files"]
+}

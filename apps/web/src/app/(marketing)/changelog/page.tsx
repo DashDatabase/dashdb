@@ -1,5 +1,6 @@
 import { Breadcrumbs } from '@/components/marketing/breadcrumbs';
 import { Container, PageHeader } from '@/components/marketing/primitives';
+import { proseMdxComponents } from '@/components/marketing/prose-mdx';
 import Changelog from '@/content/changelog.mdx';
 import { pageMetadata } from '@/lib/seo';
 import { getPage } from '@/lib/site';
@@ -13,7 +14,7 @@ export default function ChangelogPage() {
       <Breadcrumbs page={page} />
       <PageHeader title="Changelog" intro="New features and fixes in DashDB, newest first." />
       <div className="mt-12 max-w-3xl border-l pl-6 sm:pl-8">
-        <Changelog />
+        <Changelog components={proseMdxComponents} />
       </div>
     </Container>
   );

@@ -1,0 +1,31 @@
+---
+title: Using DashDB with your ORM
+description: DashDB designs the schema and writes the migration in the format your project already uses - Prisma Migrate, Drizzle Kit, or plain SQL files.
+---
+
+DashDB doesn't replace your ORM or your migration runner. It sits before them: you design the
+change visually, review its safety, and take home files your existing tooling runs as usual.
+
+## Guides
+
+<Cards>
+  <Card title="Prisma" href="/docs/orms/prisma">
+    Import `schema.prisma`, get a Prisma Migrate folder and the updated schema back.
+  </Card>
+  <Card title="Drizzle" href="/docs/orms/drizzle">
+    Get a drizzle-kit migration with breakpoints, a journal entry and `schema.ts`.
+  </Card>
+  <Card title="Raw SQL" href="/docs/orms/raw-sql">
+    Up and down `.sql` files for any runner: Flyway, golang-migrate, dbmate, or `psql`.
+  </Card>
+</Cards>
+
+## The workflow is the same for all three
+
+1. **Import** what is in production: your ORM schema, a SQL dump, or the
+   [live database](/docs/importing/existing-database).
+2. **Save a baseline.**
+3. **Change the schema** on the canvas or in the Code tab.
+4. **Generate the migration** in your format, and read the safety review.
+5. **Download** the files into your repository and deploy them the way you always do.
+6. **Save a new baseline** once the migration has shipped.

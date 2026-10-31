@@ -1,5 +1,6 @@
 import { analyzeMigration, diffSchemas, generateSQL, parsePostgresDDL } from '@dashdb/core';
 import Link from 'next/link';
+import { CodeBlock } from './code-block';
 
 // Server-only: the diff, SQL and safety review below run at build time through @dashdb/core,
 // the same engine as the editor, and reach the browser as plain HTML.
@@ -38,28 +39,11 @@ export function buildShowcase() {
   return { up, report };
 }
 
-const SEVERITY_STYLE = {
+export const SEVERITY_STYLE = {
   dangerous: 'border-danger/40 bg-danger/10 text-danger-text',
   caution: 'border-warning/40 bg-warning/10 text-warning-text',
   info: 'border-border bg-surface text-text-muted',
 } as const;
-
-function CodeBlock({ title, code, label }: { title: string; code: string; label: string }) {
-  return (
-    <figure className="min-w-0 overflow-hidden rounded-lg border bg-surface">
-      <figcaption className="border-b px-4 py-2 text-xs font-medium text-text-muted">
-        {title}
-      </figcaption>
-      <pre
-        tabIndex={0}
-        aria-label={label}
-        className="overflow-x-auto p-4 font-mono text-[13px] leading-6 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      >
-        <code>{code}</code>
-      </pre>
-    </figure>
-  );
-}
 
 export function MigrationShowcase() {
   const { up, report } = buildShowcase();

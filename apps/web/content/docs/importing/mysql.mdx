@@ -1,0 +1,47 @@
+---
+title: MySQL DDL
+description: Import MySQL 8 CREATE TABLE scripts or mysqldump --no-data output into DashDB, including indexes, foreign keys, enums and comments.
+---
+
+Paste or upload MySQL DDL: a `schema.sql`, migrations, or the output of `mysqldump`. To dump a
+database's structure without its data:
+
+```bash
+mysqldump --no-data --skip-comments --skip-add-drop-table -h host -u user -p dbname > schema.sql
+```
+
+Upload `schema.sql` in the import dialog. Or skip `mysqldump` and use the
+[introspection query](/docs/importing/existing-database).
+
+## What is imported
+
+| MySQL                                        | Imported as                                                    |
+| -------------------------------------------- | -------------------------------------------------------------- |
+| `CREATE TABLE`                               | Tables, columns, types, defaults, `NOT NULL`, `AUTO_INCREMENT` |
+| `PRIMARY KEY`, `UNIQUE KEY`, `KEY` / `INDEX` | Primary keys, unique constraints and indexes                   |
+| `FULLTEXT KEY`                               | Full-text indexes                                              |
+| `FOREIGN KEY … REFERENCES`                   | Foreign keys, with `ON DELETE` and `ON UPDATE`                 |
+| `CHECK`                                      | Check constraints                                              |
+| `ENUM('a', 'b')` columns                     | Enums                                                          |
+| `COMMENT '…'` on tables and columns          | Comments                                                       |
+| `ALTER TABLE … ADD`                          | Applied to the table                                           |
+
+Table options such as `ENGINE`, `CHARSET` and `COLLATE` are accepted and don't need removing.
+
+## What is skipped
+
+Statements other than table structure (`INSERT`, `SET`, `LOCK TABLES`, views, triggers,
+procedures) are skipped with a warning, so `mysqldump` output imports as it is.
+
+```sql title="Example"
+CREATE TABLE products (
+  id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  sku         VARCHAR(64) NOT NULL,
+  name        VARCHAR(200) NOT NULL,
+  status      ENUM('draft', 'active', 'archived') NOT NULL DEFAULT 'draft',
+  price_cents INT NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY products_sku_key (sku),
+  CHECK (price_cents >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Everything we sell';
+```

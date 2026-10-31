@@ -10,6 +10,15 @@ Next.js (App Router, `src/` dir) with Tailwind CSS v4. It runs on **:3000**.
   OG images (`app/og/[slug]`), breadcrumbs and the footer. Add a page there first.
 - `src/lib/waitlist/`: the waitlist form's server action, validation, rate limits and stores.
 - `src/content/`: MDX content (the changelog).
+- `content/docs/` and `content/blog/`: the docs (`/docs`) and blog (`/blog`) as MDX, compiled at
+  build time by [Fumadocs](https://fumadocs.dev) (`source.config.ts`, loaded in
+  `src/lib/source.ts`; `.source/` is generated). Docs pages need a `description`; posts need
+  `author` (an id from `src/blog/authors.ts`), `date` and `tags`. The docs ship Fumadocs' UI and
+  styles (`src/app/docs/docs.css`) on `/docs` only; marketing links to `/docs` don't prefetch it.
+  Search is a static index (`/api/search`) queried in the browser.
+- `src/guides/`: the migration safety guides at `/guides/<dialect>/<rule-id>` (every finding's
+  `docsUrl`). Each rule needs a guide in `rule-guides.ts` and a worked example in `examples.ts`,
+  which runs through `@dashdb/core` at build time; tests fail until both exist.
 - `content/templates/`: the template gallery: one `.dashdb.json` per template (see its README
   for the format and how to contribute). `src/templates/` loads and validates them.
 - `src/tools/registry.ts`: the converter tools at `/tools/<slug>`.

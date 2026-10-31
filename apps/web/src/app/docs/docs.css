@@ -1,0 +1,39 @@
+/*
+ * Fumadocs UI for the /docs pages only, so the rest of the site doesn't download its styles.
+ * The site's own utilities and tokens come from globals.css; this adds the utilities Fumadocs'
+ * components use (listed by its preset, so no source scanning) and maps its colors onto ours.
+ */
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities) source(none);
+@import 'fumadocs-ui/css/preset.css';
+
+/* The `--color-fd-*` palette, following DashDB's light and dark tokens. */
+@theme inline {
+  --color-fd-background: var(--background);
+  --color-fd-foreground: var(--text);
+  --color-fd-muted: var(--surface);
+  --color-fd-muted-foreground: var(--text-muted);
+  --color-fd-popover: var(--surface-raised);
+  --color-fd-popover-foreground: var(--text);
+  --color-fd-card: var(--surface);
+  --color-fd-card-foreground: var(--text);
+  --color-fd-border: var(--border);
+  /* Text-safe indigo: links and the active sidebar item meet contrast in both themes. */
+  --color-fd-primary: var(--primary-text);
+  --color-fd-primary-foreground: var(--background);
+  --color-fd-secondary: var(--highlight);
+  --color-fd-secondary-foreground: var(--text);
+  --color-fd-accent: var(--highlight);
+  --color-fd-accent-foreground: var(--highlight-foreground);
+  --color-fd-ring: var(--ring);
+  --color-fd-overlay: var(--overlay);
+  --color-fd-error: var(--danger-text);
+  --color-fd-success: var(--success-text);
+  --color-fd-warning: var(--warning-text);
+  --color-fd-info: var(--primary-text);
+  --color-fd-idea: var(--accent-text);
+  --color-fd-diff-add: rgb(from var(--success) r g b / 0.15);
+  --color-fd-diff-remove: rgb(from var(--danger) r g b / 0.15);
+  --color-fd-diff-add-symbol: var(--success-text);
+  --color-fd-diff-remove-symbol: var(--danger-text);
+}

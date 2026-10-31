@@ -1,0 +1,85 @@
+---
+title: 'Prisma, Drizzle or raw SQL: one schema change, three migrations'
+description: The same schema change as a Prisma Migrate folder, a drizzle-kit migration and plain SQL files - what each format contains and what to watch out for.
+author: dashdb-team
+date: '2026-11-01'
+tags: [prisma, drizzle, migrations]
+---
+
+Teams pick their migration format for good reasons, then live with its quirks. DashDB writes
+all three common formats from the same design, which makes it easy to see how they differ.
+Here is one change, adding a `plan` column and an index to `users`, in each.
+
+## Plain SQL
+
+```text
+migrations/20261101093000_add_user_plan/
+  up.sql
+  down.sql
+```
+
+The most transparent option. For Postgres, `up.sql` manages its own transaction and builds
+the index concurrently after the commit, because `CREATE INDEX CONCURRENTLY` can't run inside
+one:
+
+```sql
+BEGIN;
+
+ALTER TABLE users ADD COLUMN plan text DEFAULT 'free' NOT NULL;
+
+COMMIT;
+
+-- Outside the transaction, after it:
+
+-- CREATE/DROP INDEX CONCURRENTLY cannot run inside a transaction block.
+CREATE INDEX CONCURRENTLY users_email_idx ON users (email);
+```
+
+**Watch out for:** runners that wrap every file in their own transaction. Turn that off for
+these files, or the concurrent build fails.
+
+## Prisma Migrate
+
+```text
+prisma/
+  schema.prisma
+  migrations/
+    migration_lock.toml
+    20261101093000_add_user_plan/
+      migration.sql
+      down.sql
+```
+
+You get the migration folder Prisma expects and the updated `schema.prisma`, generated from
+the same design so the two agree. `prisma migrate deploy` runs it like any other.
+
+**Watch out for:** Prisma runs each migration in a transaction, so the index can't be built
+concurrently in the same file. DashDB flags the index on an existing table and suggests putting
+the concurrent build in a migration of its own. Prisma also has no down migrations; `down.sql`
+is for running by hand.
+
+## Drizzle Kit
+
+```text
+drizzle/
+  schema.ts
+  0000_add_user_plan.sql
+  0000_add_user_plan.down.sql
+  meta/_journal.json
+```
+
+The SQL is split with drizzle-kit's `--> statement-breakpoint` markers, and the journal gets
+the new entry, alongside the regenerated `schema.ts`.
+
+**Watch out for:** the same transaction rule as Prisma, and numbering: DashDB doesn't see your
+existing `drizzle/` folder, so renumber the file and merge the journal entry into yours. The
+[Drizzle guide](/docs/orms/drizzle) walks through it.
+
+## The part that's the same
+
+Whatever the format, the hard questions don't change. Is this a rename or a drop? Will this
+statement lock a table that serves traffic? Can the down migration actually restore what the up
+migration removes? Those are the questions DashDB's safety review answers before you pick a
+format, and they're worth asking whichever one you use.
+
+Read more in [Using DashDB with your ORM](/docs/orms).

@@ -10,6 +10,8 @@ import tseslint from 'typescript-eslint';
 export const ignores = globalIgnores([
   '**/dist/**',
   '**/.next/**',
+  // fumadocs-mdx output
+  '**/.source/**',
   '**/.turbo/**',
   '**/coverage/**',
   '**/next-env.d.ts',

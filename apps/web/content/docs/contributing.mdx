@@ -1,0 +1,67 @@
+---
+title: Contributing
+description: How to contribute to DashDB - set up the monorepo, run the tests, follow the code conventions, and open a pull request. Templates and docs welcome.
+---
+
+Thanks for helping! DashDB is developed in the open on
+[GitHub](https://github.com/DashDatabase/dashdb). Bug reports, fixes, docs, safety rules and
+schema templates are all welcome.
+
+## Ways to help without code
+
+- **Report a bug** with the schema or SQL that triggers it. A `.dashdb.json` project file is
+  the most useful thing you can attach.
+- **Improve these docs**: every page is an MDX file in `apps/web/content/docs`.
+- **Share a template** for the [gallery](/templates/contribute).
+- **Report a security issue privately**, as described in `SECURITY.md`. Please don't open a
+  public issue.
+
+## Set up the repository
+
+You need Node.js 22, pnpm 9 and Git. Docker is optional (only for database tests).
+
+```bash
+git clone https://github.com/DashDatabase/dashdb.git
+cd dashdb
+nvm use && pnpm install
+cp apps/web/.env.example apps/web/.env.local
+pnpm dev            # the site and editor on http://localhost:3000
+```
+
+## How the code is organised
+
+| Path              | What lives there                                                                                                 |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `packages/core`   | The engine: schema model, parsers, serializers, diff, migration SQL and safety rules. Framework-free TypeScript. |
+| `apps/web`        | The Next.js app: the editor (`src/editor`), the site, these docs and the blog.                                   |
+| `packages/ui`     | Shared React components and the design tokens.                                                                   |
+| `packages/shared` | Types and zod schemas used everywhere.                                                                           |
+
+Most features start in `packages/core`, where every exported function is unit tested.
+
+## Before you open a pull request
+
+```bash
+pnpm lint && pnpm typecheck && pnpm test
+docker compose up -d && pnpm test:db   # if you touched SQL generation or parsers
+pnpm e2e                               # if you changed the editor or the site
+```
+
+- **Commits** follow [Conventional Commits](https://www.conventionalcommits.org)
+  (`feat(core): …`, `fix(web): …`); a Git hook checks the message.
+- **Tests**: new behaviour comes with tests. Changes to migration SQL should be checked against
+  a real Postgres or MySQL in the `*.db.test.ts` suites.
+- **Accessibility**: the editor and the site are tested with axe; keep them at zero violations.
+
+## Adding a safety rule
+
+Rules live in `packages/core/src/safety/rules`, one small module each, listed in `index.ts`.
+A new rule needs tests, a guide in `apps/web/src/guides/rule-guides.ts` and a worked example in
+`apps/web/src/guides/examples.ts`; the tests fail until all three exist. Its guide page at
+`/guides/<dialect>/<rule-id>` and its row in [Safety rules](/docs/safety-rules) appear
+automatically.
+
+## License
+
+DashDB is licensed under FSL-1.1-MIT. By contributing, you agree that your contribution is
+licensed under the same terms.

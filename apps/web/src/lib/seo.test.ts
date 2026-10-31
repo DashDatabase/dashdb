@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { absoluteUrl, pageMetadata } from './seo';
-import { breadcrumbTrail, getPage, PAGES } from './site';
+import { rules } from '@dashdb/core';
+import { allPages, breadcrumbTrail, getPage, guidePage, guidePages, PAGES } from './site';
 
 const SITE = 'https://example.test';
 
@@ -47,6 +48,45 @@ describe('site pages', () => {
       '/features/migrations',
     ]);
     expect(breadcrumbTrail(getPage('home')).map((p) => p.path)).toEqual(['/']);
+  });
+});
+
+describe('safety guide pages', () => {
+  it('exist for exactly the docsUrl of every rule and dialect', () => {
+    const expected = rules.flatMap((rule) =>
+      rule.dialects.map((dialect) => `/guides/${dialect}/${rule.id}`),
+    );
+    expect(
+      guidePages()
+        .map((p) => p.path)
+        .sort(),
+    ).toEqual(expected.sort());
+  });
+
+  it('have search-friendly titles and descriptions', () => {
+    for (const page of guidePages()) {
+      expect(page.description.length, page.slug).toBeGreaterThanOrEqual(50);
+      expect(page.description.length, page.slug).toBeLessThanOrEqual(170);
+      expect(page.title, page.slug).toMatch(/PostgreSQL|MySQL/);
+    }
+    expect(guidePage('alter-table-copy-algorithm', 'mysql').title).toBe(
+      'Changes MySQL makes with ALGORITHM=COPY',
+    );
+  });
+
+  it('sit under the docs in breadcrumbs', () => {
+    expect(breadcrumbTrail(guidePage('drop-column', 'mysql')).map((c) => c.path)).toEqual([
+      '/',
+      '/docs',
+      '/docs/safety-rules',
+      '/guides/mysql/drop-column',
+    ]);
+  });
+
+  it('keep slugs and paths unique across every generated page', () => {
+    const pages = allPages();
+    expect(new Set(pages.map((p) => p.slug)).size).toBe(pages.length);
+    expect(new Set(pages.map((p) => p.path)).size).toBe(pages.length);
   });
 });
 

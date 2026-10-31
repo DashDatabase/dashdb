@@ -1,21 +1,12 @@
-import { rules } from '@dashdb/core';
 import type { MetadataRoute } from 'next';
+import { everyPage } from '@/lib/content-pages';
 import { absoluteUrl } from '@/lib/seo';
-import { allPages } from '@/lib/site';
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const pages = allPages().map((page) => ({
+// Every public page: the registry, converter tools, templates, safety guides, docs and posts.
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  return (await everyPage()).map((page) => ({
     url: absoluteUrl(page.path),
     changeFrequency: page.changeFrequency,
     priority: page.priority,
   }));
-  // The migration safety guides are public, indexable reference pages.
-  const guides = rules.flatMap((rule) =>
-    rule.dialects.map((dialect) => ({
-      url: absoluteUrl(`/guides/${dialect}/${rule.id}`),
-      changeFrequency: 'yearly' as const,
-      priority: 0.4,
-    })),
-  );
-  return [...pages, ...guides];
 }

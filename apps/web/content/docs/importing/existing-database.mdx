@@ -1,0 +1,76 @@
+---
+title: Import from an existing database
+description: Import a live PostgreSQL or MySQL 8 schema into DashDB by running one read-only catalog query in your own SQL client. DashDB never connects.
+---
+
+DashDB doesn't ask for connection strings. Instead it gives you one **read-only query** that
+returns your whole schema as a single JSON value. You run it in the SQL client you already use,
+copy the result, and paste it back. Your credentials and your data never leave your machine.
+
+## How it works
+
+<Steps>
+<Step>
+
+### Copy the query
+
+Open the import dialog (<kbd>Ctrl</kbd> <kbd>O</kbd>) and choose **From existing database**.
+Pick **PostgreSQL** or **MySQL 8**, then copy the query or download it as a `.sql` file.
+
+</Step>
+<Step>
+
+### Run it
+
+Run the query against the database you want to import. It returns one row with one column,
+`result`. The dialog has step-by-step instructions for common clients:
+
+<Tabs items={['psql', 'mysql', 'GUI clients']}>
+<Tab value="psql">
+
+```bash
+psql "postgres://user@host:5432/dbname" -X -A -t -f dashdb-introspect-postgres.sql -o schema.json
+```
+
+</Tab>
+<Tab value="mysql">
+
+```bash
+mysql -h host -u user -p --raw --skip-column-names dbname < dashdb-introspect-mysql.sql > schema.json
+```
+
+</Tab>
+<Tab value="GUI clients">
+
+In TablePlus, DBeaver, pgAdmin or MySQL Workbench, open a query tab on the database, run the
+query, and copy the single `result` cell. If the value looks cut off, copy it from the client's
+value viewer instead of the grid.
+
+</Tab>
+</Tabs>
+
+</Step>
+<Step>
+
+### Paste the result
+
+Paste the JSON into the dialog, or load `schema.json`, and choose **Import**.
+
+</Step>
+</Steps>
+
+## What the query reads
+
+- **PostgreSQL**: the system catalogs (`pg_catalog`) for every user schema. System schemas and
+  objects that belong to extensions are left out.
+- **MySQL 8**: `information_schema` for the database you are connected to.
+
+It reads metadata only: table and column definitions, keys, indexes, constraints, enums and
+comments. It never reads a row of your data and changes nothing, so it is safe to run against
+production with a read-only user.
+
+## Why not connect directly?
+
+A browser can't open a database connection, so a direct connection would mean sending your
+credentials to a server. Running the query yourself keeps DashDB fully local, works with
+databases behind VPNs and bastion hosts, and lets you read exactly what runs.

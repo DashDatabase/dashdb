@@ -1,15 +1,16 @@
 import { renderMarkSvg } from '@dashdb/ui/server';
 import { ImageResponse } from 'next/og';
 import { BRAND } from '@/lib/brand-colors';
+import { everyPage, findPage } from '@/lib/content-pages';
 import { OG_SIZE } from '@/lib/seo';
-import { allPages, findPage, SITE } from '@/lib/site';
+import { SITE } from '@/lib/site';
 
 // One Open Graph image per public page, rendered at build time (see `ogImagePath` in lib/seo).
 
 export const dynamicParams = false;
 
-export function generateStaticParams(): { slug: string }[] {
-  return allPages().map((page) => ({ slug: page.slug }));
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
+  return (await everyPage()).map((page) => ({ slug: page.slug }));
 }
 
 // The app icon's palette.
@@ -27,9 +28,11 @@ const MARK = `data:image/svg+xml;base64,${Buffer.from(
 ).toString('base64')}`;
 
 export async function GET(_request: Request, { params }: { params: Promise<{ slug: string }> }) {
-  const page = findPage((await params).slug);
+  const page = await findPage((await params).slug);
   if (!page) return new Response('Not found', { status: 404 });
   const isHome = page.path === '/';
+  // Long titles (guides, posts) step down a size so they stay within three lines.
+  const titleSize = isHome ? 68 : page.title.length > 48 ? 60 : 76;
   return new ImageResponse(
     <div
       style={{
@@ -49,13 +52,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
         <div style={{ fontSize: 44, fontWeight: 700 }}>{SITE.name}</div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-        <div
-          style={{ fontSize: isHome ? 68 : 76, fontWeight: 700, lineHeight: 1.1, maxWidth: 1000 }}
-        >
+        <div style={{ fontSize: titleSize, fontWeight: 700, lineHeight: 1.1, maxWidth: 1000 }}>
           {page.title}
         </div>
         {!isHome && (
-          <div style={{ fontSize: 30, color: BRAND.muted, maxWidth: 1000 }}>{SITE.headline}</div>
+          <div style={{ fontSize: 30, color: BRAND.muted, maxWidth: 1000 }}>
+            {page.ogSubtitle ?? SITE.headline}
+          </div>
         )}
       </div>
       <div style={{ display: 'flex', fontSize: 26, color: BRAND.muted }}>dashdb.dev</div>

@@ -1,0 +1,42 @@
+---
+title: Project files
+description: Back up, move and share DashDB projects as .dashdb.json files that keep the schema, the diagram layout and the migration baselines.
+---
+
+A project file (`.dashdb.json`) is a complete DashDB project: the schema, the position, color
+and collapsed state of every table, and the project's baselines. It is the way to back up a
+project, move it to another browser, or hand it to a teammate.
+
+## Export
+
+Choose **Download project file** (<kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>S</kbd>). The file is
+plain JSON, so it diffs well in Git: many teams commit it next to their migrations.
+
+## Import
+
+- **On the Projects page**, **Import schema file** creates a new project from the file,
+  baselines included.
+- **Inside a project**, the import dialog replaces the open project's schema and layout with
+  the file's. The open project keeps its own baselines.
+
+Files up to 10 MB are accepted. They are validated before anything changes, so a damaged or
+hand-edited file is rejected with the reason rather than imported half-way.
+
+## Format
+
+```json title="Shape of a project file"
+{
+  "format": "dashdb.project",
+  "version": 1,
+  "exportedAt": "2026-11-01T09:30:00.000Z",
+  "project": {
+    "name": "Shop",
+    "schema": { "dialect": "postgres", "tables": [], "enums": [] },
+    "layout": { "nodes": {} },
+    "baselines": []
+  }
+}
+```
+
+The [templates gallery](/templates) is made of project files too: download any template as
+`.dashdb.json`, or [contribute your own](/templates/contribute).

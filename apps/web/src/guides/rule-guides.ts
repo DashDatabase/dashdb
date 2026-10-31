@@ -79,6 +79,10 @@ export const RULE_GUIDES: Readonly<Record<string, RuleGuide>> = {
       'Copy the values somewhere if they might be needed.',
       'Drop the column in a later migration.',
     ],
+    notes: {
+      mysql:
+        'MySQL 8.0.29 and later can drop a column with ALGORITHM=INSTANT, without copying the table. The data is still gone.',
+    },
   },
   'drop-table': {
     title: 'Dropping a table',
@@ -117,6 +121,10 @@ export const RULE_GUIDES: Readonly<Record<string, RuleGuide>> = {
       'Deploy code that writes both, and backfill.',
       'Move reads to the new name, then remove the old one in a later migration (contract).',
     ],
+    notes: {
+      mysql:
+        'MySQL 8 renames with RENAME COLUMN instantly; older versions needed CHANGE COLUMN with the full column definition.',
+    },
   },
   'set-not-null-scan': {
     title: 'SET NOT NULL on an existing column',

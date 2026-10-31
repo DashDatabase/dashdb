@@ -1,0 +1,89 @@
+---
+title: Generating migrations
+description: How DashDB turns schema changes into reviewed migrations - baselines, rename detection, up and down SQL, transactions, and Prisma or Drizzle output.
+---
+
+DashDB never asks you to write a migration by hand. You change the diagram; DashDB compares it
+with a **baseline** and writes the SQL that gets your database from one to the other, then
+checks it against the [safety rules](/docs/safety-rules).
+
+## Baselines
+
+A baseline is a saved snapshot of the schema: normally, what is deployed in production right
+now. Save one with **Save baseline** (<kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>S</kbd>) after you
+import a schema, and again after each migration ships.
+
+Each project keeps its three most recent baselines. The Migration panel's **From** menu picks
+which one to generate from, or **Empty database** to get the SQL that creates everything from
+scratch.
+
+## Generating
+
+Choose **Generate migration** (<kbd>Ctrl</kbd> <kbd>G</kbd>) or open the Migration tab
+(<kbd>Alt</kbd> <kbd>3</kbd>). Name the migration (for example "add user email"), pick the
+output format, and DashDB shows:
+
+- the **up** and **down** migrations, statement by statement;
+- the changes **on the canvas**: added, changed and removed tables and columns are highlighted;
+- the **safety review**, with a finding for every risky statement.
+
+The migration updates as you keep editing. **Copy** puts the up migration on the clipboard;
+**Download** saves every file as a zip.
+
+## Renames are confirmed, never guessed
+
+When a column or table disappears and a similar one appears, DashDB can't know whether you
+renamed it or replaced it, and the difference matters: a rename keeps the data, a drop and add
+loses it. DashDB proposes the likely renames and asks you to confirm each as **Renamed** or
+**Dropped and added**. Columns you rename on the canvas are always renames.
+
+## What the SQL looks like
+
+- **Ordering** respects dependencies: enum values and tables are created before the columns and
+  foreign keys that use them, and dropped in the reverse order.
+- **Postgres** migrations run in one transaction (`BEGIN … COMMIT`), so a failure changes
+  nothing. Statements that can't run in a transaction, such as
+  `CREATE INDEX CONCURRENTLY`, are placed after it with a comment explaining why. Non-unique
+  indexes on existing tables are always built concurrently in plain SQL output.
+- **MySQL** has no transactional DDL: each statement commits on its own. The file says so at
+  the top, so you take a backup first.
+- **Irreversible steps**, such as dropping a column, are marked `IRREVERSIBLE` in both files:
+  the down migration can recreate the column but not its data.
+
+```sql title="up.sql"
+-- Postgres runs DDL transactionally: everything between BEGIN and COMMIT applies atomically.
+
+BEGIN;
+
+ALTER TABLE users ADD COLUMN plan text DEFAULT 'free' NOT NULL;
+
+COMMIT;
+
+-- Outside the transaction, after it:
+
+-- CREATE/DROP INDEX CONCURRENTLY cannot run inside a transaction block.
+CREATE INDEX CONCURRENTLY users_email_idx ON users (email);
+```
+
+Each file also starts with a short header: when it was generated, and how many operations,
+warnings and irreversible steps it contains.
+
+## Output formats
+
+| Format         | Files                                                                                                                            |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Plain SQL      | `migrations/<timestamp>_<name>/up.sql` and `down.sql`                                                                            |
+| Prisma Migrate | `prisma/migrations/<timestamp>_<name>/migration.sql`, a `down.sql`, the updated `prisma/schema.prisma` and `migration_lock.toml` |
+| Drizzle Kit    | `drizzle/<NNNN>_<name>.sql` with statement breakpoints, a `.down.sql`, the updated `drizzle/schema.ts` and `meta/_journal.json`  |
+
+The ORM guides explain how each fits into your project: [Prisma](/docs/orms/prisma),
+[Drizzle](/docs/orms/drizzle) and [raw SQL](/docs/orms/raw-sql).
+
+## Using a safer alternative
+
+Every safety finding comes with a safer way to make the same change. Open the finding, choose
+**Show safer alternative**, then **Use in migration** to replace the risky statement in the up
+migration. Steps that have to wait for an application deploy (backfills, the contract half of
+expand and contract) are added as comments, so the file stays safe to run as it is.
+
+Migrations are generated for PostgreSQL and MySQL projects.

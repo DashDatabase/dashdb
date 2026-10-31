@@ -1,0 +1,86 @@
+---
+title: Renaming a column without downtime, with expand and contract
+description: A column rename is instant in Postgres and MySQL, yet it still breaks production. Why, and the expand-and-contract steps that make it safe.
+author: dashdb-team
+date: '2026-11-01'
+tags: [migrations, safety, postgres, mysql]
+---
+
+`ALTER TABLE users RENAME COLUMN name TO full_name` is about as cheap as DDL gets. Postgres
+and MySQL 8 both change only the table's metadata: no rows are touched, and the statement
+finishes in milliseconds. So why do renames have a reputation for causing outages?
+
+## The problem isn't the database
+
+It's the deploy. A real deploy isn't atomic: for a while, old and new versions of your
+application run side by side. Rolling deploys replace instances one at a time, background
+workers drain their queues on the old code, and a canary runs ahead of everything else.
+
+Run the rename before the deploy, and every old instance fails the moment it touches
+`users.name`. Run it after, and the new instances fail until the migration runs. There is no
+moment when every running process agrees on the column's name.
+
+## Expand, migrate, contract
+
+The fix is to never need that moment. Instead of one breaking change, make several compatible
+ones, each safe to deploy on its own:
+
+**1. Expand.** Add the new column next to the old one.
+
+```sql
+ALTER TABLE users ADD COLUMN full_name text;
+```
+
+**2. Migrate.** Deploy code that writes both columns on every insert and update. Then backfill
+existing rows in small batches, so no single statement holds locks for long:
+
+```sql
+-- Repeat until it updates 0 rows:
+WITH batch AS (
+  SELECT ctid FROM users
+  WHERE full_name IS NULL AND name IS NOT NULL
+  LIMIT 10000
+)
+UPDATE users SET full_name = name FROM batch WHERE users.ctid = batch.ctid;
+```
+
+If the old column was `NOT NULL`, restore that on the new one without a long table scan, by
+validating a `CHECK` constraint first:
+
+```sql
+ALTER TABLE users ADD CONSTRAINT full_name_not_null CHECK (full_name IS NOT NULL) NOT VALID;
+ALTER TABLE users VALIDATE CONSTRAINT full_name_not_null;
+ALTER TABLE users ALTER COLUMN full_name SET NOT NULL;
+ALTER TABLE users DROP CONSTRAINT full_name_not_null;
+```
+
+Then deploy code that reads `full_name`, and finally code that stops writing `name`.
+
+**3. Contract.** Once nothing references the old column, drop it in a later migration.
+
+```sql
+ALTER TABLE users DROP COLUMN name;
+```
+
+It's more steps, but each one is boring, and at every point both the old and the new code
+work. If something goes wrong halfway, you stop, and nothing is broken.
+
+## When the shortcut is fine
+
+Expand and contract is for columns that running code depends on. If the table is new, if the
+column isn't used yet, or if you can afford a maintenance window, a plain rename is the right
+call. That's a judgment about your deploys, not about SQL.
+
+## How DashDB helps
+
+DashDB never guesses that a column was renamed: when one disappears and a similar one appears,
+it asks whether it was renamed or dropped and re-added. Get that wrong and an innocent rename
+becomes a `DROP COLUMN`, and the data is gone.
+
+Once it's a rename, the [rename rule](/guides/postgres/rename-breaks-app) flags it and writes
+out every expand-and-contract step for your exact table and column, including the batched
+backfill and the `NOT NULL` dance above. Choose **Use in migration** and the steps that belong
+in this migration go in; the rest are added as comments, to run after the matching deploys.
+
+Changing a column's type works the same way, and the
+[type change guide](/guides/postgres/alter-type-rewrite) shows the steps.

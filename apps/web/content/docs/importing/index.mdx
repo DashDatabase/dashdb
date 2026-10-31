@@ -1,0 +1,38 @@
+---
+title: Importing schemas
+description: Bring an existing schema into DashDB from Postgres or MySQL DDL, a Prisma schema, DBML, a live database, or a DashDB project file.
+---
+
+Open the import dialog with **Import schema** (<kbd>Ctrl</kbd> <kbd>O</kbd>, or <kbd>⌘</kbd> <kbd>O</kbd> on a Mac). It has three tabs:
+
+- **Paste SQL**: paste DDL, a Prisma schema or DBML. DashDB detects the format, and you can
+  override its guess.
+- **Upload file**: choose a `.sql`, `.prisma`, `.dbml` or `.dashdb.json` file.
+- **From existing database**: run one read-only query against Postgres or MySQL and paste its
+  result. DashDB never connects to your database.
+
+Importing **replaces the open project's schema**, as one step you can undo. Baselines stay with
+the project, so the next migration is generated from your baseline to the imported schema. To
+import into a new project instead, use **Import schema file** on the Projects page.
+
+## Formats
+
+<FormatTable kind="import" />
+
+Files up to <MaxImportSize /> are accepted. Everything is parsed in your browser; nothing is
+uploaded.
+
+| Source                                                               | Guide                                                  |
+| -------------------------------------------------------------------- | ------------------------------------------------------ |
+| PostgreSQL `CREATE TABLE` scripts and `pg_dump --schema-only` output | [PostgreSQL DDL](/docs/importing/postgres)             |
+| MySQL `CREATE TABLE` scripts and `mysqldump --no-data` output        | [MySQL DDL](/docs/importing/mysql)                     |
+| `schema.prisma`                                                      | [Prisma schema](/docs/importing/prisma)                |
+| DBML from dbdiagram.io or dbdocs                                     | [DBML](/docs/importing/dbml)                           |
+| A running Postgres or MySQL database                                 | [Existing database](/docs/importing/existing-database) |
+| A project exported from DashDB                                       | [Project files](/docs/importing/project-files)         |
+
+## When something doesn't import
+
+DashDB imports what it understands and tells you about the rest: statements it skips (such as
+`INSERT` data, grants or functions) are listed as warnings, and errors point at the line that
+failed. Fix the source or remove the statement, and import again.

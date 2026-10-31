@@ -1,0 +1,46 @@
+---
+title: DashDB with Prisma
+description: Design Prisma schema changes visually in DashDB and download a ready-to-commit Prisma Migrate migration with the updated schema.prisma.
+---
+
+## Set up
+
+1. Import your `prisma/schema.prisma` ([details](/docs/importing/prisma)). The `provider` in
+   your datasource sets the project to PostgreSQL or MySQL.
+2. Make sure the database is up to date (`prisma migrate deploy`), then **save a baseline**:
+   it now matches production.
+
+## Make a change
+
+Edit the schema in DashDB, then generate the migration with **Prisma Migrate** as the format.
+The download contains:
+
+```text
+prisma/
+  schema.prisma                         ← the updated schema
+  migrations/
+    migration_lock.toml
+    20261101093000_add_user_email/
+      migration.sql                     ← what Prisma runs
+      down.sql                          ← for rolling back by hand
+```
+
+Copy the folder into your project, review `schema.prisma` in your diff, and commit. Then run
+migrations as usual:
+
+```bash
+npx prisma migrate deploy   # in CI and production
+npx prisma generate         # refresh the client types
+```
+
+The schema and the migration are generated together from the same design, so they describe
+the same database. If `prisma migrate dev` reports drift, compare its SQL with DashDB's before
+accepting either.
+
+## Things to know
+
+- **Prisma runs each migration in a transaction**, so `CREATE INDEX CONCURRENTLY` can't run
+  inside one. For Prisma output, DashDB flags every index built on an existing table; its safer
+  alternative tells you to put the concurrent build in a migration of its own.
+- **Prisma has no down migrations.** `down.sql` is there for emergencies: run it by hand.
+- **Client-generated defaults** (`@default(cuid())`, `@default(uuid())`) round-trip unchanged.

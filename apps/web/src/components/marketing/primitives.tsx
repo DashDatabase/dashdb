@@ -4,6 +4,15 @@ import type { ComponentProps, ReactNode } from 'react';
 // Server-rendered building blocks for the marketing pages. Deliberately not `@dashdb/ui`: that
 // package is one client bundle, and these pages should ship almost no JavaScript.
 
+/**
+ * Next.js prefetches links as they scroll into view. The editor (/app) and the docs (/docs, with
+ * Fumadocs' client components) are separate bundles that marketing pages shouldn't download
+ * until someone heads there, so links to them opt out.
+ */
+export function prefetchFor(href: string): false | null {
+  return /^\/(app|docs)(\/|$|#|\?)/.test(href) ? false : null;
+}
+
 const BUTTON_BASE =
   'inline-flex h-11 items-center justify-center gap-2 rounded-md px-5 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none';
 

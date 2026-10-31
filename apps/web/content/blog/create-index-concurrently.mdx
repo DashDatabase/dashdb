@@ -1,0 +1,80 @@
+---
+title: Why CREATE INDEX blocks your writes, and how CONCURRENTLY fixes it
+description: A plain CREATE INDEX holds a lock that stops every insert, update and delete until the build finishes. Here is what CONCURRENTLY changes, and its catches.
+author: dashdb-team
+date: '2026-11-01'
+tags: [postgres, migrations, safety]
+---
+
+You add an index to speed up a slow query. The migration is one line long. A few seconds after
+it starts, your error rate climbs: requests that write to the table are timing out. The index
+build finishes four minutes later and everything recovers. What happened?
+
+## The lock you didn't see
+
+A plain `CREATE INDEX` takes a `SHARE` lock on the table for the whole build. `SHARE` lets
+other sessions read the table, but it conflicts with the `ROW EXCLUSIVE` lock that every
+`INSERT`, `UPDATE` and `DELETE` needs. So writes queue up behind the index build, and an index
+on a table with tens of millions of rows can take minutes to build.
+
+It gets worse. Postgres grants locks in order, so once a write is waiting behind the index
+build, _new reads_ that would conflict with that waiting write queue up as well. A lock queue
+can stall traffic that has nothing to do with the index.
+
+## What CONCURRENTLY does
+
+```sql
+CREATE INDEX CONCURRENTLY orders_customer_id_idx ON orders (customer_id);
+```
+
+With `CONCURRENTLY`, Postgres builds the index without blocking writes. It takes a weaker
+`SHARE UPDATE EXCLUSIVE` lock and does the work in phases: it scans the table once to build
+the index, then scans again to catch rows written during the first pass, waiting between
+phases for transactions that might still see the old state.
+
+It does more total work and takes longer, but your application keeps writing the whole time.
+
+## The catches
+
+**It can't run inside a transaction block.** Postgres refuses with
+`CREATE INDEX CONCURRENTLY cannot run inside a transaction block`. That matters because most
+migration tools wrap each migration in a transaction, Prisma Migrate and drizzle-kit included.
+The usual fix is to give the concurrent build a migration of its own, and run it outside a
+transaction.
+
+**It can fail and leave an invalid index behind.** If the build is interrupted (a deadlock, a
+uniqueness violation, a cancelled statement), Postgres keeps the half-built index and marks it
+`INVALID`. It isn't used for queries but still slows down writes. Find and drop it before
+retrying:
+
+```sql
+SELECT indexrelid::regclass AS index
+FROM pg_index
+WHERE NOT indisvalid;
+
+DROP INDEX CONCURRENTLY orders_customer_id_idx;
+```
+
+**Unique indexes need clean data.** `CREATE UNIQUE INDEX CONCURRENTLY` fails (and leaves an
+invalid index) if duplicates exist or are inserted during the build. Check first.
+
+## How DashDB handles it
+
+When you add an index to an existing table, DashDB's plain SQL output builds it concurrently by
+default, placed after the migration's `COMMIT` with a comment explaining why:
+
+```sql
+COMMIT;
+
+-- Outside the transaction, after it:
+
+-- CREATE/DROP INDEX CONCURRENTLY cannot run inside a transaction block.
+CREATE INDEX CONCURRENTLY users_email_idx ON users (email);
+```
+
+Unique indexes and Prisma or Drizzle migrations, where that isn't possible, get a safety
+finding instead, with the concurrent statement ready to move into its own migration. The full
+details are in the [guide for this rule](/guides/postgres/create-index-blocking).
+
+Indexes on new tables need none of this: a table created in the same migration is empty, and
+nobody is writing to it yet.

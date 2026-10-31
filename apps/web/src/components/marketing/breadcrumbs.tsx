@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { breadcrumbListLd } from '@/lib/json-ld';
 import { breadcrumbTrail, type SitePage } from '@/lib/site';
 import { JsonLd } from './json-ld';
+import { prefetchFor } from './primitives';
 
 /** Visible breadcrumbs plus the matching BreadcrumbList structured data. */
 export function Breadcrumbs({ page }: { page: SitePage }) {
@@ -20,7 +21,11 @@ export function Breadcrumbs({ page }: { page: SitePage }) {
                   </span>
                 ) : (
                   <>
-                    <Link href={crumb.path} className="hover:text-text hover:underline">
+                    <Link
+                      href={crumb.path}
+                      prefetch={prefetchFor(crumb.path)}
+                      className="hover:text-text hover:underline"
+                    >
                       {crumb.label}
                     </Link>
                     <span aria-hidden="true">/</span>

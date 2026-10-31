@@ -1,0 +1,60 @@
+---
+title: Self-hosting
+description: Run your own copy of DashDB on any server with Node.js 22. The editor is fully client-side, so a self-hosted instance needs no database.
+---
+
+DashDB's editor runs entirely in the browser and stores projects in each user's browser. A
+self-hosted instance is therefore just the web app: there is no database to run and no data to
+back up on the server.
+
+<Callout title="License">
+  DashDB is source-available under the Functional Source License (FSL-1.1-MIT). You can run it for
+  yourself or your company, for any purpose except offering a competing commercial product. Each
+  release becomes MIT-licensed two years after it ships. See [Source code](/open-source).
+</Callout>
+
+## Requirements
+
+- Node.js 22 (the version in `.nvmrc`)
+- pnpm 9 (`corepack enable` installs the version the repository pins)
+- Enough memory for a Next.js build (2 GB is comfortable); running it needs far less
+
+## Build and run
+
+```bash
+git clone https://github.com/DashDatabase/dashdb.git
+cd dashdb
+corepack enable
+pnpm install --frozen-lockfile
+pnpm turbo run build --filter=@dashdb/web
+pnpm --filter @dashdb/web start
+```
+
+The app listens on port 3000. Put it behind your usual reverse proxy (nginx, Caddy, a load
+balancer) for TLS. Builds are self-contained: the editor, the docs and the search index are
+all generated at build time.
+
+## Configuration
+
+Every variable is optional. Set them in `apps/web/.env.local` or in the environment, **before
+the build**: values starting with `NEXT_PUBLIC_` are compiled into the pages.
+
+| Variable                               | Used for                                                                                       |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SITE_URL`                 | The public URL, for canonical links, the sitemap and social images. Set it to your own domain. |
+| `NEXT_PUBLIC_GITHUB_URL`               | The repository linked from the site, if you run a fork.                                        |
+| `GITHUB_TOKEN`                         | Raises GitHub's rate limit when the build reads the star count.                                |
+| `DATABASE_URL`                         | Postgres for waitlist signups (run `pnpm db:migrate` first). Not needed for the editor.        |
+| `RESEND_API_KEY`, `RESEND_AUDIENCE_ID` | Also add waitlist signups to a Resend audience.                                                |
+
+## Only the editor
+
+Most self-hosters want the editor for their team, not the marketing site. Point people at
+`/app`; the rest of the site is static and costs nothing to serve. To keep a private instance
+out of search engines, block it at your proxy or put it behind your single sign-on.
+
+## Updating
+
+Pull the new release, then run the install and build steps again and restart the server.
+Projects live in your users' browsers, so updates never touch them; their project files keep
+working across versions.

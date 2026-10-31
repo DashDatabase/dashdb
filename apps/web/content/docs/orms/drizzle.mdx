@@ -1,0 +1,46 @@
+---
+title: DashDB with Drizzle
+description: Generate drizzle-kit migrations from DashDB, with statement breakpoints, a journal entry, a down file and the matching Drizzle schema.ts.
+---
+
+## Set up
+
+DashDB writes Drizzle schemas but doesn't read them, so start from the database itself:
+import with the [introspection query](/docs/importing/existing-database), or from the SQL in
+your `drizzle/` folder. Then **save a baseline**.
+
+## Make a change
+
+Edit the schema and generate the migration with **Drizzle Kit** as the format. The download
+contains:
+
+```text
+drizzle/
+  schema.ts                ← the updated Drizzle schema
+  0000_add_user_email.sql  ← the migration, split at statement breakpoints
+  0000_add_user_email.down.sql
+  meta/_journal.json       ← the journal entry for the migration
+```
+
+## Add it to your project
+
+Downloads are numbered from `0000` and the journal lists only this migration, because DashDB
+doesn't see your existing `drizzle/` folder. If you already have migrations:
+
+1. Rename the `.sql` file to the next number, for example `0007_add_user_email.sql`.
+2. Copy its entry from the downloaded `_journal.json` into yours, with `idx` set to that number
+   and `tag` to the new file name.
+3. Replace your `schema.ts` with the downloaded one, or merge the changes into it.
+
+Then run it with your usual migrator, for example `npx drizzle-kit migrate`.
+
+## Things to know
+
+- **drizzle-kit runs every migration in one transaction**: no `CREATE INDEX CONCURRENTLY`. For
+  Drizzle output, DashDB flags every index built on an existing table; its safer alternative
+  tells you to put the concurrent build in a migration of its own.
+- **No snapshot is written** (`meta/<NNNN>_snapshot.json`). If you later run
+  `drizzle-kit generate` yourself, it compares against its last snapshot and may repeat the
+  change; generating from DashDB each time avoids that.
+- **drizzle-kit has no down migrations.** The `.down.sql` file is ignored by the migrator and
+  is there to run by hand.

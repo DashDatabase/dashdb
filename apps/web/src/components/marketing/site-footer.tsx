@@ -2,15 +2,15 @@ import { Logo } from '@dashdb/ui/server';
 import Link from 'next/link';
 import { getGithubUrl } from '@/lib/config';
 import { PAGES, SITE, type SitePage } from '@/lib/site';
-import { Container } from './primitives';
+import { Container, prefetchFor } from './primitives';
 
-const GROUPS = ['Product', 'Project', 'Legal'] as const;
+const GROUPS = ['Product', 'Resources', 'Project', 'Legal'] as const;
 
 export function SiteFooter() {
   const pages: readonly SitePage[] = PAGES;
   return (
     <footer className="border-t bg-surface">
-      <Container className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-5">
+      <Container className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-6">
         <div className="lg:col-span-2">
           <Logo className="h-7 w-auto" />
           <p className="mt-3 max-w-xs text-sm text-text-muted">{SITE.headline}</p>
@@ -23,7 +23,11 @@ export function SiteFooter() {
                 .filter((p) => p.group === group)
                 .map((p) => (
                   <li key={p.path}>
-                    <Link href={p.path} className="text-text-muted hover:text-text hover:underline">
+                    <Link
+                      href={p.path}
+                      prefetch={prefetchFor(p.path)}
+                      className="text-text-muted hover:text-text hover:underline"
+                    >
                       {p.label}
                     </Link>
                   </li>

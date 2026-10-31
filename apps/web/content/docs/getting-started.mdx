@@ -1,0 +1,88 @@
+---
+title: Getting started
+description: Create your first DashDB project, add tables and relationships on the canvas, save a baseline and generate a migration, all in about five minutes.
+---
+
+DashDB needs nothing but a modern browser. Open the [editor](/app); there is no account to
+create and nothing to install.
+
+## Your first migration
+
+<Steps>
+<Step>
+
+### Create a project
+
+On the **Projects** page, choose **New project**, give it a name and pick the database it
+targets: **PostgreSQL** or **MySQL 8**. The dialect decides which types, defaults and
+migration SQL you get.
+
+Prefer to start from something? **From template** offers a blog, a SaaS and an e-commerce
+starter, and the [templates gallery](/templates) has a dozen more with notes on their design.
+Already have a schema? [Import it](/docs/importing) instead.
+
+</Step>
+<Step>
+
+### Add tables and columns
+
+Press <kbd>T</kbd> to add a table, or use **Add table** in the sidebar. A new table starts with
+an `id` primary key. Select it and press <kbd>C</kbd> to add a column. The **Inspector** on the
+right edits the selection: names, types, nullability, defaults and comments.
+
+For composite keys, indexes, unique and check constraints, open the **Code** tab
+(<kbd>Alt</kbd> <kbd>2</kbd>) and write them in SQL, Prisma or DBML: the canvas updates as you
+type.
+
+</Step>
+<Step>
+
+### Connect them
+
+Drag from a column's handle to another table's column to create a foreign key. The dialog
+that opens sets its name and its `ON DELETE` and `ON UPDATE` actions, and the line shows its
+cardinality.
+
+</Step>
+<Step>
+
+### Save a baseline
+
+A **baseline** is a snapshot of the schema as it is in production. Choose **Save baseline**
+(<kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>S</kbd>, or <kbd>⌘</kbd> <kbd>⌥</kbd> <kbd>S</kbd> on a
+Mac). Migrations are always generated from a baseline to your current design.
+
+</Step>
+<Step>
+
+### Change something and generate the migration
+
+Rename a column, change a type, add an index. Then choose **Generate migration**
+(<kbd>Ctrl</kbd> <kbd>G</kbd>). The Migration panel shows the up and down SQL, highlights the
+changes on the canvas, and lists anything the [safety rules](/docs/safety-rules) found.
+
+</Step>
+</Steps>
+
+## Where your work is saved
+
+Projects are saved automatically in your browser's storage (IndexedDB) as you edit. Nothing is
+uploaded. To move a project to another browser or share it, download it as a
+[project file](/docs/importing/project-files) (<kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>S</kbd>)
+and import it there.
+
+<Callout title="Clearing site data deletes your projects">
+  Browsers can delete site storage when you clear browsing data, or in private windows when the
+  window closes. Download a project file for anything you want to keep.
+</Callout>
+
+## The guided tour
+
+The first time you open the editor, a four-step tour walks through exactly these steps on a
+ready-made SaaS project. Restart it any time from the command palette (<kbd>Ctrl</kbd> <kbd>K</kbd>, then "Restart guided tour").
+
+## Next steps
+
+- Learn the canvas and shortcuts in [Editor basics](/docs/editor-basics).
+- See what goes into a migration in [Generating migrations](/docs/migrations).
+- Using an ORM? Read the [Prisma](/docs/orms/prisma) or [Drizzle](/docs/orms/drizzle) guide.

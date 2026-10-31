@@ -1,0 +1,77 @@
+---
+title: Editor basics
+description: How the DashDB editor is laid out, editing on the canvas and in the Code tab, the command palette, exporting, and every keyboard shortcut.
+---
+
+The editor has three areas: the **sidebar** on the left lists tables and enums, the **canvas**
+in the middle shows the diagram, and the **right panel** has four tabs: Inspector, Code,
+Migration and Problems.
+
+## The canvas
+
+- **Add a table** with <kbd>T</kbd>, and a column to the selected table with <kbd>C</kbd>.
+- **Connect columns** by dragging from one column's handle to another's. A dialog asks for the
+  constraint name and the `ON DELETE` and `ON UPDATE` actions, and the line shows the
+  relationship's cardinality.
+- **Select several tables** by dragging a box with <kbd>Shift</kbd> held, or by
+  <kbd>Shift</kbd>- or <kbd>Ctrl</kbd>-clicking them, then copy, duplicate or delete them together.
+  Dragging the empty canvas pans it.
+- **Arrange** with <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>A</kbd>: DashDB lays the tables out
+  automatically, keeping related tables close. Use <kbd>Shift</kbd> <kbd>1</kbd> to fit
+  everything in view, and <kbd>F</kbd> to focus the selected table.
+- **Collapse or color** a table from its menu, to keep large schemas readable.
+
+On screens narrower than 1024 pixels the editor shows a read-only outline of the schema
+instead of the canvas.
+
+## The Code tab
+
+The Code tab shows the same schema as code, and it is editable in both directions: change the
+code and the canvas follows; change the canvas and the code is rewritten.
+
+| Format                      | Editable       |
+| --------------------------- | -------------- |
+| SQL (the project's dialect) | Yes            |
+| Prisma                      | Yes            |
+| DBML                        | Yes            |
+| Drizzle                     | Generated only |
+
+Code is the quickest way to write composite primary keys, indexes, and unique or check
+constraints. If what you type doesn't parse, the canvas keeps the last valid version and the errors are
+marked in the code until you fix them.
+
+## Undo, history and autosave
+
+Every change is saved to your browser as you make it. <kbd>Ctrl</kbd> <kbd>Z</kbd> and
+
+<kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Z</kbd> undo and redo, including changes made in the Code tab.
+Undo history lasts for the session; [baselines](/docs/migrations#baselines) are how you keep a
+schema's history across sessions.
+
+## The command palette
+
+<kbd>Ctrl</kbd> <kbd>K</kbd> (<kbd>⌘</kbd> <kbd>K</kbd> on a Mac) opens the command palette: every
+command in the editor, searchable by name, with its shortcut. Press <kbd>?</kbd> for the shortcut
+cheat sheet.
+
+## Exporting
+
+- **Export schema** (<kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>E</kbd>) writes the schema in any
+  of these formats:
+
+  <FormatTable kind="export" />
+
+- **Export diagram as image** (<kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>E</kbd>) saves PNG or SVG,
+  in the light or dark theme.
+- **Copy as Mermaid ERD** (<kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>M</kbd>) puts an `erDiagram` on
+  the clipboard, which GitHub and GitLab render in Markdown.
+- **Download project file** (<kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>S</kbd>) saves everything,
+  including the diagram layout and baselines, as a
+  [`.dashdb.json` file](/docs/importing/project-files).
+
+## Keyboard shortcuts
+
+Single-key shortcuts such as <kbd>T</kbd> and <kbd>C</kbd> are ignored while you type in a text
+field or the Code tab.
+
+<KeyboardShortcuts />

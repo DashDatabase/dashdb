@@ -1,0 +1,40 @@
+---
+title: Safety rules
+description: The checks DashDB runs on every migration - table rewrites, long locks, blocking index builds and data loss - with a guide to the safer way for each.
+---
+
+A migration can be correct and still take your application down. Adding an index can block
+writes for minutes; changing a column type can rewrite a table with millions of rows while
+every query waits. DashDB checks each migration against <RuleCount /> rules that know how
+PostgreSQL and MySQL take locks, and reports what it finds next to the statement responsible.
+
+## Reading a finding
+
+Every finding has:
+
+- a **severity**: **dangerous** (likely to lose data or block traffic), **caution** (risky on
+  a busy or large table) or **info** (fine here, worth knowing);
+- an **explanation** of what goes wrong and why;
+- a **safer alternative**: SQL or ordered steps that make the same change with less risk,
+  which you can [swap into the migration](/docs/migrations#using-a-safer-alternative);
+- a **Docs** link to the rule's guide, with a worked example.
+
+Changes to tables created in the same migration are rated **info**: there are no rows to lock
+or lose. A migration's overall risk is its most severe finding.
+
+## The rules
+
+<SafetyRules />
+
+## Expand and contract
+
+Several rules recommend the same pattern for changes that running code depends on, such as
+renames and type changes:
+
+1. **Expand**: add the new column or table next to the old one.
+2. **Migrate**: deploy code that writes both, backfill existing rows in batches, then move
+   reads to the new one.
+3. **Contract**: once nothing uses the old one, drop it in a later migration.
+
+Each step is safe on its own, and the application keeps working between them. DashDB's safer
+alternatives spell out the SQL for each step, with the steps that wait for a deploy marked.
