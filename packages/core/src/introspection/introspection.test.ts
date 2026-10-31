@@ -1,280 +1,241 @@
 import { describe, expect, it } from 'vitest';
+import { parseIntrospectionJSON } from '../parsers/introspection';
 import {
-  assembleMysql,
+  INTROSPECTION_QUERIES,
   introspect,
-  MYSQL_INTROSPECTION_QUERIES,
-  POSTGRES_INTROSPECTION_SQL,
-  type Row,
+  MYSQL_INTROSPECTION_QUERY,
+  normalizeIntrospectionPaste,
+  POSTGRES_INTROSPECTION_QUERY,
 } from '.';
 
-const mysqlRows = {
+const postgresDoc = {
+  tables: [{ schema: 'public', name: 't', kind: 'table', comment: null }],
+  columns: [
+    {
+      schema: 'public',
+      table: 't',
+      name: 'id',
+      position: 1,
+      type: 'integer',
+      nullable: false,
+      default: null,
+      identity: null,
+      comment: null,
+    },
+  ],
+  constraints: [],
+  indexes: [],
+  enums: [],
+};
+
+/** What MySQL's query returns: entries out of key order, tagged with `seq`. */
+const mysqlDoc = {
   tables: [
     {
+      schema: 'default',
       name: 'posts',
-      type: 'BASE TABLE',
+      kind: 'table',
       comment: 'Blog posts',
       engine: 'InnoDB',
       collation: 'utf8mb4_0900_ai_ci',
     },
-    { name: 'recent', type: 'VIEW', comment: '', engine: null, collation: null },
+    { schema: 'default', name: 'recent', kind: 'view', comment: null },
   ],
   columns: [
-    {
-      tbl: 'posts',
-      name: 'id',
-      position: 1,
-      type: 'int',
-      nullable: 'NO',
-      dflt: null,
-      extra: 'auto_increment',
-      comment: '',
-    },
-    {
-      tbl: 'posts',
-      name: 'author',
-      position: 2,
-      type: 'int',
-      nullable: 'YES',
-      dflt: null,
-      extra: '',
-      comment: 'Writer',
-    },
-    {
-      tbl: 'posts',
-      name: 'body',
-      position: 3,
-      type: 'text',
-      nullable: 'YES',
-      dflt: undefined,
-      extra: '',
-      comment: '',
-    },
-    {
-      tbl: 'posts',
-      name: 'score',
-      position: 4,
-      type: 'int',
-      nullable: 'YES',
-      dflt: 0,
-      extra: '',
-      comment: '',
-    },
-  ],
+    ['score', 3],
+    ['id', 1],
+    ['author', 2],
+  ].map(([name, position]) => ({
+    schema: 'default',
+    table: 'posts',
+    name: name as string,
+    position: position as number,
+    type: 'int',
+    nullable: name !== 'id',
+    default: null,
+    extra: name === 'id' ? 'auto_increment' : null,
+    comment: null,
+  })),
   constraints: [
     {
-      tbl: 'posts',
+      schema: 'default',
+      table: 'posts',
       name: 'PRIMARY',
       type: 'PRIMARY KEY',
-      col: 'id',
-      ref_schema: null,
-      ref_table: null,
-      ref_col: null,
-      on_delete: null,
-      on_update: null,
-      definition: null,
+      columns: [{ name: 'id', seq: 1 }],
     },
     {
-      tbl: 'posts',
-      name: 'posts_author_fk',
+      schema: 'default',
+      table: 'posts',
+      name: 'posts_pair_fk',
       type: 'FOREIGN KEY',
-      col: 'author',
+      columns: [
+        { name: 'score', seq: 2 },
+        { name: 'author', seq: 1 },
+      ],
       ref_schema: 'default',
-      ref_table: 'users',
-      ref_col: 'id',
+      ref_table: 'posts',
+      ref_columns: [
+        { name: 'author', seq: 2 },
+        { name: 'id', seq: 1 },
+      ],
       on_delete: 'CASCADE',
       on_update: 'NO ACTION',
-      definition: null,
-    },
-    {
-      tbl: 'posts',
-      name: 'posts_score_chk',
-      type: 'CHECK',
-      col: null,
-      ref_schema: null,
-      ref_table: null,
-      ref_col: null,
-      on_delete: null,
-      on_update: null,
-      definition: '(`score` >= 0)',
     },
   ],
   indexes: [
     {
-      tbl: 'posts',
-      name: 'PRIMARY',
-      non_unique: 0,
-      col: 'id',
-      collation: 'A',
-      expression: null,
-      method: 'BTREE',
-    },
-    {
-      tbl: 'posts',
+      schema: 'default',
+      table: 'posts',
       name: 'posts_author_score',
-      non_unique: 1,
-      col: 'author',
-      collation: 'A',
-      expression: null,
-      method: 'BTREE',
-    },
-    {
-      tbl: 'posts',
-      name: 'posts_author_score',
-      non_unique: 1,
-      col: 'score',
-      collation: 'D',
-      expression: null,
-      method: 'BTREE',
-    },
-    {
-      tbl: 'posts',
-      name: 'posts_body_ft',
-      non_unique: 1,
-      col: 'body',
-      collation: null,
-      expression: null,
-      method: 'FULLTEXT',
+      unique: false,
+      primary: false,
+      method: null,
+      columns: [
+        { name: 'score', expression: null, order: 'desc', seq: 2 },
+        { name: 'author', expression: null, order: 'asc', seq: 1 },
+      ],
     },
   ],
-} satisfies Record<string, Row[]>;
+  enums: [],
+};
 
-describe('assembleMysql', () => {
-  it('maps flat information_schema rows to the introspection contract', () => {
-    const result = assembleMysql(mysqlRows);
-    expect(result.tables).toEqual([
-      {
-        schema: 'default',
-        name: 'posts',
-        kind: 'table',
-        comment: 'Blog posts',
-        engine: 'InnoDB',
-        collation: 'utf8mb4_0900_ai_ci',
-      },
-      {
-        schema: 'default',
-        name: 'recent',
-        kind: 'view',
-        comment: null,
-        engine: null,
-        collation: null,
-      },
-    ]);
-    expect(result.columns.map((c) => [c.name, c.nullable, c.default, c.extra, c.comment])).toEqual([
-      ['id', false, null, 'auto_increment', null],
-      ['author', true, null, null, 'Writer'],
-      ['body', true, null, null, null],
-      ['score', true, '0', null, null],
-    ]);
-    expect(result.constraints).toEqual([
-      expect.objectContaining({
-        name: 'PRIMARY',
-        type: 'PRIMARY KEY',
-        columns: ['id'],
-        ref_table: null,
-        ref_columns: null,
-      }),
-      expect.objectContaining({
-        name: 'posts_author_fk',
-        columns: ['author'],
-        ref_schema: 'default',
-        ref_table: 'users',
-        ref_columns: ['id'],
-        on_delete: 'CASCADE',
-      }),
-      expect.objectContaining({
-        name: 'posts_score_chk',
-        type: 'CHECK',
-        columns: [],
-        definition: '(`score` >= 0)',
-      }),
-    ]);
-    expect(result.indexes).toEqual([
-      expect.objectContaining({ name: 'PRIMARY', primary: true, unique: true, method: null }),
-      expect.objectContaining({
-        name: 'posts_author_score',
-        unique: false,
-        primary: false,
-        columns: [
-          { name: 'author', expression: null, order: 'asc' },
-          { name: 'score', expression: null, order: 'desc' },
-        ],
-      }),
-      expect.objectContaining({ name: 'posts_body_ft', method: 'fulltext' }),
-    ]);
-  });
-});
+describe('introspection queries', () => {
+  it.each(Object.entries(INTROSPECTION_QUERIES))(
+    '%s is one read-only statement returning a `result` column',
+    (_, sql) => {
+      // One statement: the only semicolon ends it (none appear inside string literals).
+      expect(sql.trim().endsWith('AS result;')).toBe(true);
+      expect(sql.indexOf(';')).toBe(sql.length - 1);
+      expect(sql.trim()).toMatch(/^(WITH|SELECT)\b/);
+      expect(sql).not.toMatch(
+        /\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|GRANT|COPY|CALL|SET)\s/i,
+      );
+    },
+  );
 
-describe('assembleMysql driver values', () => {
-  it('turns whatever the driver returns into text', () => {
-    const column = (dflt: unknown) => ({
-      tbl: 't',
-      name: 'c',
-      position: 1,
-      type: 'int',
-      nullable: 'YES',
-      dflt,
-      extra: '',
-      comment: '',
-    });
-    const { columns } = assembleMysql({
-      tables: [],
-      columns: [10n, true, Buffer.from('abc'), { a: 1 }].map(column),
-      constraints: [],
-      indexes: [],
-    });
-    expect(columns.map((c) => c.default)).toEqual(['10', 'true', 'abc', '{"a":1}']);
+  it('read every object kind of the contract', () => {
+    for (const sql of [POSTGRES_INTROSPECTION_QUERY, MYSQL_INTROSPECTION_QUERY]) {
+      for (const key of ['tables', 'columns', 'constraints', 'indexes', 'enums'])
+        expect(sql).toContain(`'${key}'`);
+    }
+    expect(POSTGRES_INTROSPECTION_QUERY).toContain('pg_catalog');
+    expect(MYSQL_INTROSPECTION_QUERY).toContain('information_schema');
   });
 });
 
 describe('introspect', () => {
-  it('runs the Postgres query and parses its JSON document (object or text)', async () => {
-    const doc = {
-      tables: [{ schema: 'public', name: 't', kind: 'table', comment: null }],
-      columns: [
-        {
-          schema: 'public',
-          table: 't',
-          name: 'id',
-          position: 1,
-          type: 'integer',
-          nullable: false,
-          default: null,
-          identity: null,
-          comment: null,
-        },
-      ],
-      constraints: [],
-      indexes: [],
-      enums: [],
-    };
-    const seen: string[] = [];
-    const run = (result: unknown) => (sql: string) => {
+  const runner = (result: unknown, seen: string[] = []) => ({
+    seen,
+    run: (sql: string) => {
       seen.push(sql);
       return Promise.resolve([{ result }]);
-    };
-    const fromObject = await introspect(run(doc), 'postgres');
-    expect(fromObject.schema.tables.map((t) => t.name)).toEqual(['t']);
-    const fromText = await introspect(run(JSON.stringify(doc)), 'postgres');
-    expect(fromText.schema.tables[0]?.columns.map((c) => c.name)).toEqual(['id']);
-    expect(seen).toEqual([POSTGRES_INTROSPECTION_SQL, POSTGRES_INTROSPECTION_SQL]);
+    },
   });
 
-  it('reports an empty Postgres result as invalid input', async () => {
+  it('runs the Postgres query and parses its JSON document (object or text)', async () => {
+    const a = runner(postgresDoc);
+    const fromObject = await introspect(a.run, 'postgres');
+    expect(fromObject.schema.tables.map((t) => t.name)).toEqual(['t']);
+    const b = runner(JSON.stringify(postgresDoc));
+    const fromText = await introspect(b.run, 'postgres');
+    expect(fromText.schema.tables[0]?.columns.map((c) => c.name)).toEqual(['id']);
+    expect([...a.seen, ...b.seen]).toEqual([
+      POSTGRES_INTROSPECTION_QUERY,
+      POSTGRES_INTROSPECTION_QUERY,
+    ]);
+  });
+
+  it('runs the single MySQL query and orders entries by seq', async () => {
+    const { run, seen } = runner(mysqlDoc);
+    const result = await introspect(run, 'mysql', { createId: (hint) => hint });
+    expect(seen).toEqual([MYSQL_INTROSPECTION_QUERY]);
+    expect(result.schema.tables.map((t) => t.name)).toEqual(['posts']);
+    const posts = result.schema.tables[0];
+    const columnName = (id: string) => posts?.columns.find((c) => c.id === id)?.name;
+    expect(posts?.columns.map((c) => c.name)).toEqual(['id', 'author', 'score']);
+    expect(posts?.foreignKeys[0]?.columns.map(columnName)).toEqual(['author', 'score']);
+    expect(posts?.foreignKeys[0]?.refColumns.map(columnName)).toEqual(['id', 'author']);
+    expect(posts?.indexes[0]?.columns.map((c) => [columnName(c.column), c.order])).toEqual([
+      ['author', 'asc'],
+      ['score', 'desc'],
+    ]);
+  });
+
+  it('reports an empty result as invalid input', async () => {
     const result = await introspect(() => Promise.resolve([]), 'postgres');
     expect(result.diagnostics[0]).toMatchObject({ severity: 'error', code: 'invalid-input' });
   });
+});
 
-  it('runs the four MySQL queries and assembles them', async () => {
-    const byQuery = new Map<string, Row[]>(
-      Object.entries(MYSQL_INTROSPECTION_QUERIES).map(([k, sql]) => [
-        sql,
-        mysqlRows[k as keyof typeof mysqlRows],
-      ]),
+describe('seq ordering in the contract', () => {
+  it('keeps the given order when no entry has a seq', () => {
+    const { schema } = parseIntrospectionJSON(
+      {
+        tables: [{ schema: 'public', name: 't' }],
+        columns: ['a', 'b'].map((name, i) => ({
+          schema: 'public',
+          table: 't',
+          name,
+          position: i + 1,
+          type: 'int',
+          nullable: false,
+        })),
+        indexes: [{ schema: 'public', table: 't', name: 'ix', unique: false, columns: ['b', 'a'] }],
+        constraints: [
+          { schema: 'public', table: 't', name: 'uq', type: 'UNIQUE', columns: ['b', 'a'] },
+        ],
+      },
+      'postgres',
     );
-    const result = await introspect((sql) => Promise.resolve(byQuery.get(sql) ?? []), 'mysql');
-    const posts = result.schema.tables.find((t) => t.name === 'posts');
-    expect(posts?.columns.map((c) => c.name)).toEqual(['id', 'author', 'body', 'score']);
-    expect(posts?.indexes.map((i) => i.name)).toEqual(['posts_author_score', 'posts_body_ft']);
-    expect(result.schema.tables.map((t) => t.name)).toEqual(['posts']);
+    const t = schema.tables[0];
+    const names = (ids: readonly string[]) =>
+      ids.map((id) => t?.columns.find((c) => c.id === id)?.name);
+    expect(names(t?.uniques[0]?.columns ?? [])).toEqual(['b', 'a']);
+    expect(names(t?.indexes[0]?.columns.map((c) => c.column) ?? [])).toEqual(['b', 'a']);
+  });
+});
+
+describe('normalizeIntrospectionPaste', () => {
+  const doc = '{"tables": [{"schema": "public", "name": "it\'s \\"q\\""}], "columns": []}';
+
+  it('leaves a clean document alone (trimmed, BOM removed)', () => {
+    expect(normalizeIntrospectionPaste(`\uFEFF  ${doc}\n`)).toBe(doc);
+  });
+
+  it('strips psql aligned output: header, rule and row count', () => {
+    expect(normalizeIntrospectionPaste(` result\n--------\n ${doc}\n(1 row)\n`)).toBe(doc);
+  });
+
+  it('strips a column header line (TablePlus, DBeaver "copy with header")', () => {
+    expect(normalizeIntrospectionPaste(`result\n${doc}`)).toBe(doc);
+  });
+
+  it('unquotes a CSV field', () => {
+    expect(normalizeIntrospectionPaste(`"${doc.replaceAll('"', '""')}"`)).toBe(doc);
+  });
+
+  it('decodes a JSON string literal', () => {
+    expect(normalizeIntrospectionPaste(JSON.stringify(doc))).toBe(doc);
+  });
+
+  it('keeps a malformed string literal for the parser to report', () => {
+    expect(normalizeIntrospectionPaste('"{\\"a\\": \\x}"')).toBe('{\\"a\\": \\x}');
+  });
+
+  it('returns text without a document trimmed', () => {
+    expect(normalizeIntrospectionPaste('  ERROR: permission denied  ')).toBe(
+      'ERROR: permission denied',
+    );
+  });
+
+  it('round-trips through the parser', () => {
+    const pasted = ` result\n--------\n ${JSON.stringify(postgresDoc)}\n(1 row)`;
+    const { schema, diagnostics } = parseIntrospectionJSON(
+      normalizeIntrospectionPaste(pasted),
+      'postgres',
+    );
+    expect(diagnostics).toEqual([]);
+    expect(schema.tables.map((t) => t.name)).toEqual(['t']);
   });
 });

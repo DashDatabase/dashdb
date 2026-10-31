@@ -11,7 +11,6 @@ import {
   TooltipTrigger,
 } from '@dashdb/ui';
 import {
-  DownloadIcon,
   GitCompareArrowsIcon,
   Redo2Icon,
   SearchIcon,
@@ -28,6 +27,7 @@ import { useRunAction } from '../hooks';
 import { useEditor } from '../store';
 import { ActionButton, ShortcutKeys } from './action-button';
 import { CommitInput } from './commit-input';
+import { ExportMenu } from './export-menu';
 import { GithubIcon } from './github-icon';
 
 const DIALECT_LABELS = { postgres: 'PostgreSQL', mysql: 'MySQL', sqlite: 'SQLite' } as const;
@@ -86,9 +86,7 @@ export function TopBar() {
       <ActionButton action="file.import" variant="ghost" size="sm">
         <UploadIcon aria-hidden /> <span className="hidden xl:inline">Import</span>
       </ActionButton>
-      <ActionButton action="file.export" variant="ghost" size="sm">
-        <DownloadIcon aria-hidden /> <span className="hidden xl:inline">Export</span>
-      </ActionButton>
+      <ExportMenu />
 
       <div className="flex-1" />
 

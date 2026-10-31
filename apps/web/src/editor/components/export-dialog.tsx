@@ -34,7 +34,8 @@ export function ExportDialog() {
   const open = useEditor((s) => s.dialog === 'export');
   const closeDialog = useEditor((s) => s.closeDialog);
   const project = useEditor((s) => s.doc);
-  const [chosen, setChosen] = useState<ExportFormat | null>(null);
+  const chosen = useEditor((s) => s.exportFormat);
+  const openExport = useEditor((s) => s.openExport);
   const [result, setResult] = useState<{ format: ExportFormat; value: SerializeResult } | null>(
     null,
   );
@@ -80,7 +81,7 @@ export function ExportDialog() {
           <Select
             value={format}
             onValueChange={(value) => {
-              if (isExportFormat(value)) setChosen(value);
+              if (isExportFormat(value)) openExport(value);
             }}
           >
             <SelectTrigger id={formatId} className="w-64">

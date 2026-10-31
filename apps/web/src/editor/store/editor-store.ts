@@ -16,6 +16,7 @@ import { applyPatches, enablePatches, produceWithPatches, type Draft, type Patch
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import { immer } from 'zustand/middleware/immer';
 import type { CodeFormat } from '../code/code-formats';
+import type { ExportFormat } from '../formats';
 import { normalizeProjectName } from '../project-name';
 import { record, stepBack, stepForward, type History, type HistoryEntry } from './history';
 import { freePosition, layoutFor, syncLayout } from './layout';
@@ -34,7 +35,8 @@ enablePatches();
 
 export const VALIDATION_DELAY_MS = 150;
 
-export type EditorDialog = 'import' | 'export' | 'problems' | 'rename' | 'deleteTables';
+export type EditorDialog =
+  'import' | 'export' | 'exportImage' | 'problems' | 'rename' | 'deleteTables';
 /** One-shot requests the canvas fulfils (it owns the viewport). */
 export type CanvasCommand = 'fitView' | 'zoomIn' | 'zoomOut' | 'arrange' | 'selectAll';
 export type SaveState = 'saved' | 'saving' | 'error' | 'conflict';
@@ -76,6 +78,8 @@ export interface EditorState {
   leftOpen: boolean;
   rightOpen: boolean;
   dialog: EditorDialog | null;
+  /** Format the export dialog shows; null means the schema's own dialect. */
+  exportFormat: ExportFormat | null;
   paletteOpen: boolean;
   searchRequest: number;
   saveState: SaveState;
@@ -130,6 +134,8 @@ export interface EditorActions {
   toggleLeft: () => void;
   toggleRight: () => void;
   openDialog: (dialog: EditorDialog) => void;
+  /** Opens the export dialog on `format` (or switches it while open). */
+  openExport: (format: ExportFormat) => void;
   closeDialog: () => void;
   setPaletteOpen: (open: boolean) => void;
   requestSearch: () => void;
@@ -194,6 +200,7 @@ const initialState: EditorState = {
   leftOpen: true,
   rightOpen: true,
   dialog: null,
+  exportFormat: null,
   paletteOpen: false,
   searchRequest: 0,
   saveState: 'saved',
@@ -574,6 +581,9 @@ export function createEditorStore(options: { now?: () => number } = {}): EditorS
           set((state) => {
             state.rightOpen = !state.rightOpen;
           });
+        },
+        openExport: (exportFormat) => {
+          set({ dialog: 'export', exportFormat, paletteOpen: false });
         },
         openDialog: (dialog) => {
           set({ dialog, paletteOpen: false });

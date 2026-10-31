@@ -8,7 +8,7 @@ import { DraftSchema, draftColumn, emptyResult, finalize, type DraftTable } from
 import type { ParseOptions, ParseResult } from './types';
 
 /*
- * The introspection contract: what DashDB's "smart query" (P17) returns from a live database.
+ * The introspection contract: what DashDB's "smart query" (`introspection/queries.ts`) returns.
  * Rows mirror the system catalogs, one array per object kind. Each column carries its full
  * native type as the database spells it (Postgres `format_type()`, MySQL `COLUMN_TYPE`), so no
  * type has to be reassembled from catalog fragments.
@@ -16,6 +16,21 @@ import type { ParseOptions, ParseResult } from './types';
 
 const name = z.string().min(1);
 const nullableText = z.string().nullish();
+
+/**
+ * Entries in key order. Engines whose JSON aggregates keep no order (MySQL's `JSON_ARRAYAGG`)
+ * tag each entry with a 1-based `seq` instead; the sort is stable for untagged entries.
+ */
+function bySeq<T>(entries: T[]): T[] {
+  const seq = (e: T) =>
+    typeof e === 'object' && e !== null && 'seq' in e && typeof e.seq === 'number' ? e.seq : 0;
+  return entries.some((e) => seq(e) !== 0) ? [...entries].sort((a, b) => seq(a) - seq(b)) : entries;
+}
+
+/** Key columns: names, or `{ name, seq }` entries (see `bySeq`). */
+const keyColumns = z
+  .array(z.union([name, z.object({ name, seq: z.number().int().positive() })]))
+  .transform((entries) => bySeq(entries).map((e) => (typeof e === 'string' ? e : e.name)));
 
 export const introspectedTableSchema = z.object({
   schema: name,
@@ -56,10 +71,10 @@ export const introspectedConstraintSchema = z.object({
   name,
   type: z.enum(['PRIMARY KEY', 'UNIQUE', 'FOREIGN KEY', 'CHECK']),
   /** Constrained columns, in key order. */
-  columns: z.array(name),
+  columns: keyColumns,
   ref_schema: nullableText,
   ref_table: nullableText,
-  ref_columns: z.array(name).nullish(),
+  ref_columns: keyColumns.nullish(),
   /** Words (`CASCADE`, `SET NULL`) or Postgres `confdeltype` codes (`a r c n d`). */
   on_delete: actionSchema,
   on_update: actionSchema,
@@ -76,18 +91,22 @@ export const introspectedIndexSchema = z.object({
   method: nullableText,
   /** Partial-index predicate. */
   predicate: nullableText,
-  columns: z.array(
-    z.union([
-      name,
-      z.object({
-        name: name.nullish(),
-        /** Set for expression index entries. */
-        expression: nullableText,
-        order: z.enum(['asc', 'desc']).optional(),
-        nulls: z.enum(['first', 'last']).nullish(),
-      }),
-    ]),
-  ),
+  columns: z
+    .array(
+      z.union([
+        name,
+        z.object({
+          name: name.nullish(),
+          /** Set for expression index entries. */
+          expression: nullableText,
+          order: z.enum(['asc', 'desc']).optional(),
+          nulls: z.enum(['first', 'last']).nullish(),
+          /** Position in the index (see `bySeq`). */
+          seq: z.number().int().positive().optional(),
+        }),
+      ]),
+    )
+    .transform(bySeq),
 });
 
 export const introspectedEnumSchema = z.object({

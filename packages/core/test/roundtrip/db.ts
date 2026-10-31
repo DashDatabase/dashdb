@@ -3,7 +3,7 @@ import mysql from 'mysql2/promise';
 import postgres from 'postgres';
 import { inject } from 'vitest';
 import type { Schema } from '../../src/ir/types';
-import { introspect, type Row } from '../../src/introspection';
+import { INTROSPECTION_QUERIES, introspect, type Row } from '../../src/introspection';
 import type { MigrationDialect, Statement } from '../../src/migrations/types';
 
 /** A fresh, empty database on the shared container, for one case. */
@@ -13,6 +13,8 @@ export interface CaseDatabase {
   /** Run generated statements the way the migration file lays them out. */
   migrate(statements: readonly Statement[]): Promise<void>;
   introspect(): Promise<Schema>;
+  /** The introspection query's result as text, the way a SQL client shows it to the user. */
+  introspectionText(): Promise<string>;
   close(): Promise<void>;
 }
 
@@ -27,6 +29,16 @@ function withDatabase(url: string, database: string): string {
   const u = new URL(url);
   u.pathname = `/${database}`;
   return u.toString();
+}
+
+/** The query as a subquery: without its terminating semicolon. */
+const asSubquery = (dialect: MigrationDialect) =>
+  INTROSPECTION_QUERIES[dialect].trim().replace(/;$/, '');
+
+async function textOf(run: (sql: string) => Promise<readonly Row[]>, sql: string) {
+  const [row] = await run(sql);
+  if (typeof row?.result !== 'string') throw new Error('The introspection query returned no text');
+  return row.result;
 }
 
 async function schemaOf(run: (sql: string) => Promise<readonly Row[]>, dialect: MigrationDialect) {
@@ -66,6 +78,8 @@ async function openPostgres(label: string): Promise<CaseDatabase> {
       for (const s of phase('after')) await sql.unsafe(s.sql);
     },
     introspect: () => schemaOf(run, 'postgres'),
+    introspectionText: () =>
+      textOf(run, `SELECT q.result::text AS result FROM (${asSubquery('postgres')}) q`),
     close: async () => {
       await sql.end();
       const drop = postgres(inject('postgresUrl'), { max: 1, onnotice: () => undefined });
@@ -95,6 +109,8 @@ async function openMysql(label: string): Promise<CaseDatabase> {
       for (const s of statements) await connection.query(s.sql);
     },
     introspect: () => schemaOf(run, 'mysql'),
+    introspectionText: () =>
+      textOf(run, `SELECT CAST(q.result AS CHAR) AS result FROM (${asSubquery('mysql')}) q`),
     close: async () => {
       await connection.query(`DROP DATABASE IF EXISTS ${name}`);
       await connection.end();

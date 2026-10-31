@@ -12,6 +12,7 @@ import { attachAutosave } from '../store/autosave';
 import { watchProjectTabs } from '../store/tab-sync';
 import { CommandPalette } from './command-palette';
 import { ExportDialog } from './export-dialog';
+import { ExportImageDialog } from './export-image-dialog';
 import { ImportDialog } from './import-dialog';
 import { ReadOnlyView } from './read-only-view';
 import { RightPanel } from './right-panel';
@@ -143,6 +144,7 @@ function EditorLayout() {
       <CommandPalette />
       <ImportDialog />
       <ExportDialog />
+      <ExportImageDialog />
       <ProblemsDialog />
     </div>
   );

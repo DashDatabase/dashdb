@@ -163,12 +163,100 @@ test.describe('editor', () => {
     await page.goto('/app');
     await page.getByRole('button', { name: 'From template' }).click();
     await page.getByRole('menuitem', { name: /SaaS/ }).click();
-    await page.getByRole('button', { name: 'Export schema…' }).click();
+    await page.getByRole('button', { name: 'Export', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'PostgreSQL DDL' }).click();
     const output = page.getByTestId('export-output');
     await expect(output).toContainText('CREATE TABLE');
     await page.getByRole('dialog').getByLabel('Format').click();
     await page.getByRole('option', { name: 'Prisma schema' }).click();
     await expect(output).toContainText('model ');
+  });
+
+  test('exports the diagram as SVG and PNG', async ({ page }) => {
+    await page.goto('/app');
+    await page.getByRole('button', { name: 'From template' }).click();
+    await page.getByRole('menuitem', { name: /Blog/ }).click();
+    await page.getByRole('button', { name: 'Export', exact: true }).click();
+    await page.getByRole('menuitem', { name: /PNG or SVG image/ }).click();
+    const dialog = page.getByRole('dialog', { name: 'Export diagram' });
+    await expect(dialog.getByRole('img', { name: 'Diagram preview' })).toBeVisible();
+    await dialog.getByLabel('Transparent background').click();
+    await dialog.getByLabel('DashDB watermark').click();
+
+    await dialog.getByLabel('Format').click();
+    await page.getByRole('option', { name: /SVG/ }).click();
+    const svgDownload = page.waitForEvent('download');
+    await dialog.getByRole('button', { name: 'Download SVG' }).click();
+    const svg = await svgDownload;
+    expect(svg.suggestedFilename()).toMatch(/\.svg$/);
+    const text = await (await svg.createReadStream()).toArray();
+    const markup = Buffer.concat(text).toString('utf8');
+    expect(markup).toContain('>posts<');
+    expect(markup).not.toContain('Made with DashDB');
+
+    await dialog.getByLabel('Format').click();
+    await page.getByRole('option', { name: /PNG/ }).click();
+    const pngDownload = page.waitForEvent('download');
+    await dialog.getByRole('button', { name: 'Download PNG' }).click();
+    expect((await pngDownload).suggestedFilename()).toMatch(/\.png$/);
+    await expectNoAxeViolations(page);
+  });
+
+  test('imports pasted SQL with dialect detection', async ({ page }) => {
+    await createProject(page, 'Pasted');
+    await page.getByRole('button', { name: 'Import schema…' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Import schema' });
+    await dialog
+      .getByLabel('Schema source')
+      .fill('CREATE TABLE `users` (id int unsigned AUTO_INCREMENT PRIMARY KEY) ENGINE=InnoDB;');
+    await expect(dialog.getByLabel('Format')).toContainText('Auto-detect (MySQL DDL)');
+    await dialog.getByRole('button', { name: 'Import', exact: true }).click();
+    await expect(page.getByTestId('table-count')).toHaveText('1 table');
+  });
+
+  test('imports the pasted result of the introspection query', async ({ page }) => {
+    await createProject(page, 'Introspected');
+    await page.getByRole('button', { name: 'Import schema…' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Import schema' });
+    await dialog.getByRole('tab', { name: 'From existing database' }).click();
+    await expect(dialog).toContainText('DashDB never connects to your database.');
+    await expect(dialog.getByTestId('introspection-query')).toContainText('pg_catalog');
+    for (const client of ['psql', 'TablePlus', 'DBeaver', 'pgAdmin'])
+      await expect(dialog.getByRole('tab', { name: client })).toBeVisible();
+    await dialog.getByRole('tab', { name: 'MySQL 8' }).click();
+    await expect(dialog.getByTestId('introspection-query')).toContainText('information_schema');
+    await dialog.getByRole('tab', { name: 'PostgreSQL' }).click();
+
+    const result = {
+      tables: [{ schema: 'public', name: 'accounts' }],
+      columns: [
+        {
+          schema: 'public',
+          table: 'accounts',
+          name: 'id',
+          position: 1,
+          type: 'bigint',
+          nullable: false,
+        },
+      ],
+      constraints: [
+        {
+          schema: 'public',
+          table: 'accounts',
+          name: 'accounts_pkey',
+          type: 'PRIMARY KEY',
+          columns: ['id'],
+        },
+      ],
+    };
+    // As psql prints it without -A -t: a header, a rule and a row count.
+    await dialog.getByLabel('Query result (JSON)').fill(` result
+--------
+ ${JSON.stringify(result)}
+(1 row)`);
+    await expectNoAxeViolations(page);
+    await dialog.getByRole('button', { name: 'Import', exact: true }).click();
+    await expect(page.getByTestId('table-count')).toHaveText('1 table');
   });
 
   test('shows a read-only notice below 1024px', async ({ page }) => {

@@ -9,6 +9,7 @@ import { downloadText } from '@/lib/download';
 import { fileSlug } from './formats';
 import { PROJECT_FILE_EXTENSION, serializeProjectFile } from './project-file';
 import type { PasteOutcome } from './canvas/operations';
+import { toMermaid } from './export/mermaid';
 import { saveBaseline } from './projects';
 import { editorStore } from './store';
 
@@ -41,6 +42,15 @@ function downloadCurrentProject() {
   );
 }
 
+function copyCurrentMermaid() {
+  const { doc } = editorStore.getState();
+  if (!doc) return;
+  navigator.clipboard.writeText(toMermaid(doc.schema)).then(
+    () => toast.success('Mermaid ERD copied', { description: 'Paste it into a ```mermaid block.' }),
+    () => toast.error('Could not copy to the clipboard'),
+  );
+}
+
 /** Returns a function that builds a fresh ActionContext (current store state) at call time. */
 export function useActionContext(): () => ActionContext {
   const router = useRouter();
@@ -56,6 +66,7 @@ export function useActionContext(): () => ActionContext {
       },
       saveBaseline: saveCurrentBaseline,
       downloadProject: downloadCurrentProject,
+      copyMermaid: copyCurrentMermaid,
       reportPaste,
     }),
     [router, resolvedTheme, setTheme],

@@ -20,6 +20,8 @@ export interface ActionContext {
   readonly saveBaseline: () => void;
   /** Downloads the whole project as `.dashdb.json`. */
   readonly downloadProject: () => void;
+  /** Copies the schema to the clipboard as a Mermaid ERD. */
+  readonly copyMermaid: () => void;
   /** Shows a paste that could not happen (e.g. tables from another database type). */
   readonly reportPaste: (outcome: PasteOutcome) => void;
 }
@@ -135,6 +137,30 @@ export const ACTIONS = [
     isEnabled: hasProject,
     run: ({ state }) => {
       state.openDialog('export');
+    },
+  },
+  {
+    id: 'file.exportImage',
+    title: 'Export diagram as image (PNG, SVG)…',
+    group: 'File',
+    shortcut: 'mod+alt+e',
+    keywords: ['png', 'svg', 'picture', 'screenshot', 'download'],
+    allowInInput: true,
+    isEnabled: hasTables,
+    run: ({ state }) => {
+      state.openDialog('exportImage');
+    },
+  },
+  {
+    id: 'file.copyMermaid',
+    title: 'Copy as Mermaid ERD',
+    group: 'File',
+    shortcut: 'mod+alt+m',
+    keywords: ['mermaid', 'erd', 'markdown', 'diagram', 'clipboard'],
+    allowInInput: true,
+    isEnabled: hasTables,
+    run: ({ copyMermaid }) => {
+      copyMermaid();
     },
   },
   {

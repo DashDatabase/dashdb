@@ -11,6 +11,7 @@ function context() {
   const toggleTheme = vi.fn();
   const saveBaseline = vi.fn();
   const downloadProject = vi.fn();
+  const copyMermaid = vi.fn();
   const reportPaste = vi.fn();
   const ctx = (): ActionContext => ({
     state: store.getState(),
@@ -18,9 +19,10 @@ function context() {
     toggleTheme,
     saveBaseline,
     downloadProject,
+    copyMermaid,
     reportPaste,
   });
-  return { store, ctx, goToProjects, toggleTheme, saveBaseline, downloadProject };
+  return { store, ctx, goToProjects, toggleTheme, saveBaseline, downloadProject, copyMermaid };
 }
 
 describe('action registry', () => {
@@ -80,6 +82,21 @@ describe('action registry', () => {
     expect(store.getState().dialog).toBe('import');
     runAction(getAction('palette.open'), ctx());
     expect(store.getState().paletteOpen).toBe(true);
+  });
+
+  it('wires the export entries, which need tables', () => {
+    const { store, ctx, copyMermaid } = context();
+    const image = getAction('file.exportImage');
+    const mermaid = getAction('file.copyMermaid');
+    expect(isActionEnabled(image, store.getState())).toBe(false);
+    expect(isActionEnabled(mermaid, store.getState())).toBe(false);
+    store.getState().addTable();
+    runAction(image, ctx());
+    expect(store.getState().dialog).toBe('exportImage');
+    runAction(mermaid, ctx());
+    expect(copyMermaid).toHaveBeenCalledOnce();
+    store.getState().openExport('prisma');
+    expect(store.getState()).toMatchObject({ dialog: 'export', exportFormat: 'prisma' });
   });
 
   it('throws for unknown ids', () => {

@@ -4,10 +4,11 @@ import { expect } from 'vitest';
 import { z } from 'zod';
 import { labels } from '../../src/diff/__test-utils__/harness';
 import { diffSchemas } from '../../src/diff/diff';
+import { normalizeIntrospectionPaste } from '../../src/introspection';
 import type { Schema } from '../../src/ir/types';
 import { generateSQL } from '../../src/migrations/sql';
 import type { MigrationDialect } from '../../src/migrations/types';
-import { parseMySQLDDL, parsePostgresDDL } from '../../src/parsers';
+import { parseIntrospectionJSON, parseMySQLDDL, parsePostgresDDL } from '../../src/parsers';
 import { openDatabase } from './db';
 
 export const FIXTURES = join(import.meta.dirname, 'fixtures', 'migrations');
@@ -118,5 +119,33 @@ export async function roundTrip(c: RoundTripCase): Promise<void> {
     }
   } finally {
     await Promise.all([db.close(), reference.close()]);
+  }
+}
+
+/**
+ * The import dialog's path: after.sql → database → the introspection query's text, as a user
+ * would copy it out of their client → normalizeIntrospectionPaste → parseIntrospectionJSON.
+ * The result must equal after.sql parsed, and match what `introspect()` (the harness) reads.
+ */
+export async function pastedQueryCase(c: RoundTripCase): Promise<void> {
+  const { dialect } = c.meta;
+  const db = await openDatabase(dialect, `${c.name}_paste`);
+  try {
+    await db.exec(c.after);
+    const text = await db.introspectionText();
+    const pasted = parseIntrospectionJSON(normalizeIntrospectionPaste(text), dialect);
+    const errors = pasted.diagnostics.filter((d) => d.severity === 'error');
+    expect(errors, 'pasted query output parses without errors').toEqual([]);
+    const expected = parseSql(dialect, c.after);
+    assertSameSchema(
+      'pasted query output (vs after.sql parsed)',
+      withoutCheckText(pasted.schema),
+      withoutCheckText(expected),
+    );
+    expect(checksOf(pasted.schema), 'CHECK expressions (vs introspect())').toEqual(
+      checksOf(await db.introspect()),
+    );
+  } finally {
+    await db.close();
   }
 }
