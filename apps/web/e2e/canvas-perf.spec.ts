@@ -1,5 +1,5 @@
 // Canvas performance check. Opt-in (PERF=1) because timings depend on the machine; it needs the
-// dev server, whose FPS panel loads the stress fixture and exposes a viewport hook.
+// dev server, which exposes a hook on `window` to load the stress fixture and drive the viewport.
 //   PERF=1 pnpm --filter @dashdb/web e2e canvas-perf
 import { expect, test, type Page } from '@playwright/test';
 
@@ -16,6 +16,7 @@ interface CanvasHook {
   setViewport: (viewport: Viewport, options?: { duration?: number }) => Promise<boolean>;
   getViewport: () => Viewport;
   fitView: (options?: { duration?: number }) => Promise<boolean>;
+  loadStress: (count: number) => Promise<void>;
 }
 interface FrameStats {
   fps: number;
@@ -72,7 +73,10 @@ for (const count of [300, 500]) {
     await dialog.getByRole('button', { name: 'Create project' }).click();
     await expect(page.getByTestId('editor')).toBeVisible();
 
-    await page.getByRole('button', { name: `Load ${String(count)}` }).click();
+    await page.evaluate(
+      (n) => (window as unknown as { __dashdbCanvas: CanvasHook }).__dashdbCanvas.loadStress(n),
+      count,
+    );
     await expect(page.getByTestId('table-count')).toHaveText(`${String(count)} tables`);
     const arrange = page.getByRole('button', { name: 'Arrange' });
     await expect(arrange).toBeDisabled();

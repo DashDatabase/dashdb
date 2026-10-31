@@ -206,7 +206,14 @@ test.describe('migration panel', () => {
     const dialog = page.getByRole('dialog', { name: 'New project' });
     await dialog.getByLabel('Name').fill('Big');
     await dialog.getByRole('button', { name: 'Create project' }).click();
-    await page.getByTestId('fps-meter').getByRole('button', { name: 'Load 300' }).click();
+    await expect(page.getByTestId('editor')).toBeVisible();
+    // The dev server's test hook (see canvas.tsx) loads the stress fixture.
+    await page.waitForFunction(() => '__dashdbCanvas' in window);
+    await page.evaluate(() =>
+      (
+        window as unknown as { __dashdbCanvas: { loadStress: (n: number) => Promise<void> } }
+      ).__dashdbCanvas.loadStress(300),
+    );
     await expect(page.getByTestId('table-count')).toHaveText('300 tables');
 
     await page.getByRole('tab', { name: 'Migration' }).click();

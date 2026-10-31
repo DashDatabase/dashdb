@@ -63,7 +63,7 @@ time when importing.
   `src/editor/formats.ts` and `src/editor/templates.ts`. The root `@dashdb/core` still exports
   everything, for Web Workers, the API and tests.
 - **Closed things are lazy.** Import, export, image export, command palette, shortcuts, the Code
-  and Migration tabs, the read-only view and the FPS meter load on first use
+  and Migration tabs, and the read-only view load on first use
   (`src/editor/components/lazy.tsx`).
 - **Heavy work runs in Web Workers**: ELK layout, Code panel parsing, migration generation.
 

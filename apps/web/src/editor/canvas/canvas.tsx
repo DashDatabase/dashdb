@@ -21,7 +21,6 @@ import {
   type OnNodeDrag,
   type Viewport,
 } from '@xyflow/react';
-import dynamic from 'next/dynamic';
 import { LayoutGridIcon, Loader2Icon, MaximizeIcon, PlusIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { getAction } from '../actions';
@@ -60,11 +59,8 @@ const SNAP_GRID: [number, number] = [GRID_SIZE, GRID_SIZE];
 const FIT_OPTIONS = { padding: 0.15, maxZoom: 1 };
 /** Hides the "React Flow" corner link (allowed by its MIT licence). */
 const PRO_OPTIONS = { hideAttribution: true };
-/** Loaded only when shown: it carries the stress-test schemas. */
-const FpsMeter = dynamic(() => import('./fps-meter').then((m) => m.FpsMeter), { ssr: false });
-
-/** The FPS panel is for development, or production builds made for profiling. */
-const SHOW_FPS =
+/** Test hooks on `window`: development, or production builds made for profiling. */
+const TEST_HOOKS =
   process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_CANVAS_PERF === '1';
 
 function prefersReducedMotion(): boolean {
@@ -313,13 +309,20 @@ function CanvasFlow({ projectId }: { projectId: string }) {
       }),
     [flow],
   );
-  // Development only: lets the performance spec drive the viewport deterministically.
+  // Development only: lets e2e specs load the stress fixture and drive the viewport.
   useEffect(() => {
-    if (!SHOW_FPS) return;
+    if (!TEST_HOOKS) return;
     const hook = {
       setViewport: flow.setViewport,
       getViewport: flow.getViewport,
       fitView: flow.fitView,
+      /** Replaces the schema with `count` stress tables and arranges them. */
+      loadStress: async (count: number) => {
+        const { stressSchema } = await import('./stress-fixture');
+        const state = editorStore.getState();
+        state.editSchema('Load stress fixture', () => stressSchema(count));
+        state.runCanvasCommand('arrange');
+      },
     };
     Object.assign(window, { __dashdbCanvas: hook });
     return () => {
@@ -455,11 +458,6 @@ function CanvasFlow({ projectId }: { projectId: string }) {
             >
               <MaximizeIcon aria-hidden />
             </ActionButton>
-          </Panel>
-        )}
-        {SHOW_FPS && (
-          <Panel position="top-right">
-            <FpsMeter />
           </Panel>
         )}
         {tableCount === 0 && <EmptyState />}
