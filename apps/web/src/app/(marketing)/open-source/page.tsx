@@ -49,7 +49,11 @@ export default function OpenSourcePage() {
           </p>
 
           <h2>License</h2>
-          <p>The license will be announced when the repository is published.</p>
+          <p>
+            DashDB is released under the <a href={`${repo}/blob/HEAD/LICENSE`}>MIT License</a>. You
+            can use, modify and self-host it, including commercially, as long as the license notice
+            stays with the code.
+          </p>
 
           <h2>Feedback and contributions</h2>
           <p>

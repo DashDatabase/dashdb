@@ -52,3 +52,7 @@ pnpm dev                   # web :3000, api :8787
   `pnpm audit --audit-level=high`, and Semgrep (`p/owasp-top-ten`, `p/typescript`).
 - **Dependabot**: weekly, with minor and patch updates grouped into one PR per ecosystem.
 - Reporting vulnerabilities: see [SECURITY.md](SECURITY.md).
+
+## License
+
+[MIT](LICENSE)
