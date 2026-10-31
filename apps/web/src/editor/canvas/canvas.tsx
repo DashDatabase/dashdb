@@ -58,6 +58,8 @@ const nodeTypes = { table: TableNode };
 const edgeTypes = { relationship: RelationshipEdge };
 const SNAP_GRID: [number, number] = [GRID_SIZE, GRID_SIZE];
 const FIT_OPTIONS = { padding: 0.15, maxZoom: 1 };
+/** Hides the "React Flow" corner link (allowed by its MIT licence). */
+const PRO_OPTIONS = { hideAttribution: true };
 /** Loaded only when shown: it carries the stress-test schemas. */
 const FpsMeter = dynamic(() => import('./fps-meter').then((m) => m.FpsMeter), { ssr: false });
 
@@ -358,6 +360,7 @@ function CanvasFlow({ projectId }: { projectId: string }) {
         edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
+        proOptions={PRO_OPTIONS}
         onNodesChange={onNodesChange}
         onNodeDragStop={onNodeDragStop}
         onConnect={onConnect}
