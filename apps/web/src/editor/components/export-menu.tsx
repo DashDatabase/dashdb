@@ -40,9 +40,16 @@ export function ExportMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" disabled={!hasProject} aria-label="Export">
-          <DownloadIcon aria-hidden /> <span className="hidden xl:inline">Export</span>
-          <ChevronDownIcon aria-hidden className="size-3 opacity-60" />
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={!hasProject}
+          aria-label="Export"
+          className="gap-2 has-[>svg]:px-3"
+        >
+          <DownloadIcon aria-hidden className="size-4" />{' '}
+          <span className="hidden xl:inline">Export</span>
+          <ChevronDownIcon aria-hidden className="size-4 text-text-muted" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-72">

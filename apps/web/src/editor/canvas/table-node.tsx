@@ -34,7 +34,7 @@ import {
 } from './model';
 
 const handleClass =
-  '!size-2.5 !min-w-0 !rounded-full !border-2 !border-background !bg-primary opacity-0 transition-opacity group-hover/node:opacity-100 [.connecting_&]:opacity-100';
+  '!size-3 !min-w-0 !rounded-full !border-2 !border-background !bg-primary opacity-0 transition-opacity group-hover/node:opacity-100 [.connecting_&]:opacity-100';
 
 function commitRename(label: string, apply: (schema: Schema) => Schema) {
   if (!editorStore.getState().editSchema(label, apply)) {
@@ -94,15 +94,31 @@ function InlineName({
 function ColumnIcons({ table, column }: { table: Table; column: Column }) {
   const flags = columnFlags(table, column);
   return (
-    <span className="flex w-10 shrink-0 items-center gap-0.5 text-text-muted [&_svg]:size-3">
+    <span className="flex w-12 shrink-0 items-center text-text-muted">
       {flags.pk && (
-        <KeyRoundIcon role="img" aria-label="Primary key" className="text-warning-text" />
+        <span className="grid size-4 place-items-center">
+          <KeyRoundIcon
+            role="img"
+            aria-label="Primary key"
+            className="size-3 translate-y-px text-warning-text"
+          />
+        </span>
       )}
-      {flags.fk && <Link2Icon role="img" aria-label="Foreign key" className="text-primary-text" />}
+      {flags.fk && (
+        <span className="grid size-4 place-items-center">
+          <Link2Icon role="img" aria-label="Foreign key" className="size-3 text-primary-text" />
+        </span>
+      )}
       {flags.unique && !flags.pk && (
-        <FingerprintIcon role="img" aria-label="Unique" className="text-accent-text" />
+        <span className="grid size-4 place-items-center">
+          <FingerprintIcon role="img" aria-label="Unique" className="size-3 text-accent-text" />
+        </span>
       )}
-      {flags.nullable && <CircleDashedIcon role="img" aria-label="Nullable" />}
+      {flags.nullable && (
+        <span className="grid size-4 place-items-center">
+          <CircleDashedIcon role="img" aria-label="Nullable" className="size-3.5" />
+        </span>
+      )}
     </span>
   );
 }
@@ -117,8 +133,8 @@ function useTableChange(tableId: string): TableChange | null {
 }
 
 const CHANGE_ROW: Record<ChangeKind, string> = {
-  added: 'bg-success/10 shadow-[inset_3px_0_0_var(--success)]',
-  changed: 'bg-warning/10 shadow-[inset_3px_0_0_var(--warning)]',
+  added: 'bg-success/10 shadow-[inset_4px_0_0_var(--success)]',
+  changed: 'bg-warning/10 shadow-[inset_4px_0_0_var(--warning)]',
 };
 
 const CHANGE_NODE: Record<ChangeKind, string> = {
@@ -148,9 +164,9 @@ function ColumnRow({
       data-testid="column-row"
       data-column={column.name}
       className={cn(
-        'relative flex items-center gap-1.5 px-3 text-xs last:rounded-b-lg',
+        'relative flex items-center gap-1 px-3 text-xs leading-4 last:rounded-b-lg',
         change && CHANGE_ROW[change],
-        selected && 'bg-primary/10',
+        selected && 'bg-primary/10 dark:bg-primary/20',
       )}
       data-change={change ?? undefined}
       style={{ height: ROW_HEIGHT }}
@@ -177,12 +193,12 @@ function ColumnRow({
           }}
         />
       ) : (
-        <span className="min-w-0 flex-1 truncate font-mono" title={column.name}>
+        <span className="min-w-0 flex-1 truncate font-mono leading-4" title={column.name}>
           {column.name}
         </span>
       )}
       <span
-        className="max-w-28 shrink-0 truncate font-mono text-text-muted"
+        className="max-w-28 shrink-0 truncate font-mono text-xs leading-4 text-text-muted"
         title={column.nativeType}
       >
         {column.nativeType}
@@ -220,13 +236,15 @@ function TableNodeView({ data, selected }: NodeProps<TableFlowNode>) {
       data-selected={selected ? 'true' : undefined}
       data-change={change?.kind}
       className={cn(
-        'group/node rounded-lg border bg-surface-raised text-text shadow-sm',
+        'group/node rounded-lg border border-border bg-surface-raised text-text shadow-sm',
+        'transition-[transform,box-shadow] duration-200 ease-out motion-reduce:transition-none',
+        'hover:shadow-md motion-safe:hover:-translate-y-0.5',
         change && CHANGE_NODE[change.kind],
-        selected && 'border-primary ring-2 ring-primary/40',
+        selected && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
       )}
       style={{ width: NODE_WIDTH }}
     >
-      <header className="relative flex h-10 items-center gap-2 rounded-t-lg border-b bg-surface pr-1 pl-3">
+      <header className="relative flex h-10 items-center gap-2 rounded-t-lg border-b border-border bg-surface px-3">
         <Handle
           type="source"
           position={Position.Left}
@@ -235,7 +253,7 @@ function TableNodeView({ data, selected }: NodeProps<TableFlowNode>) {
           isConnectable={false}
         />
         <span
-          className={cn('size-2.5 shrink-0 rounded-full', COLOR_CLASSES[layout.color])}
+          className={cn('size-3 shrink-0 rounded-full', COLOR_CLASSES[layout.color])}
           aria-hidden
         />
         {renaming ? (
@@ -311,17 +329,17 @@ function TableNodeView({ data, selected }: NodeProps<TableFlowNode>) {
             <li
               key={`removed:${name}`}
               data-testid="removed-column"
-              className="flex items-center gap-1.5 bg-danger/10 px-3 font-mono text-xs text-danger-text line-through shadow-[inset_3px_0_0_var(--danger)] last:rounded-b-lg"
+              className="flex items-center gap-1 bg-danger/10 px-3 font-mono text-xs leading-4 text-danger-text line-through shadow-[inset_4px_0_0_var(--danger)] last:rounded-b-lg"
               style={{ height: ROW_HEIGHT }}
             >
-              <span className="w-10 shrink-0" aria-hidden />
+              <span className="w-12 shrink-0" aria-hidden />
               <span className="sr-only">Removed column </span>
               {name}
             </li>
           ))}
           {columns.length === 0 && hidden === 0 && (
             <li
-              className="flex items-center px-3 text-xs text-text-muted"
+              className="flex items-center px-3 text-xs leading-4 text-text-muted"
               style={{ height: ROW_HEIGHT }}
             >
               No columns
@@ -329,7 +347,7 @@ function TableNodeView({ data, selected }: NodeProps<TableFlowNode>) {
           )}
           {hidden > 0 && (
             <li
-              className="flex items-center px-3 text-xs text-text-muted"
+              className="flex items-center px-3 text-xs leading-4 text-text-muted"
               style={{ height: ROW_HEIGHT }}
             >
               {hidden} more {hidden === 1 ? 'column' : 'columns'}
