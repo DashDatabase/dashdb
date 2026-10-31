@@ -1,5 +1,7 @@
 // The public site's pages: one registry feeds page metadata, the sitemap, OG images,
-// breadcrumbs and the footer, so a page added here shows up everywhere.
+// breadcrumbs and the footer, so a page added here shows up everywhere. The converter tools
+// (src/tools/registry.ts) join it through `toolPage`.
+import { FORMATS, TOOLS, type ToolDefinition } from '@/tools/registry';
 
 export const SITE = {
   name: 'DashDB',
@@ -66,6 +68,17 @@ export const PAGES = [
     label: 'Pricing',
     description:
       'The DashDB editor is free, with no signup and no limits on tables or projects. Cloud sync and team features are planned.',
+    group: 'Product',
+    changeFrequency: 'monthly',
+    priority: 0.8,
+  },
+  {
+    slug: 'tools',
+    path: '/tools',
+    title: 'Free schema converter tools',
+    label: 'Tools',
+    description:
+      'Free converters between SQL, Prisma, Drizzle, DBML and Mermaid, and between PostgreSQL and MySQL. They run in your browser; nothing is uploaded.',
     group: 'Product',
     changeFrequency: 'monthly',
     priority: 0.8,
@@ -144,8 +157,28 @@ export function getPage(slug: PageSlug): SitePage {
   return page;
 }
 
+/** A converter tool as a site page: `/tools/<slug>`, under the Tools hub. */
+export function toolPage(tool: ToolDefinition): SitePage {
+  return {
+    slug: `tool-${tool.slug}`,
+    path: `/tools/${tool.slug}`,
+    title: tool.title,
+    label: `${FORMATS[tool.from].label} to ${tool.diagram ? 'ER diagram' : FORMATS[tool.to].label}`,
+    description: tool.description,
+    parent: '/tools',
+    changeFrequency: 'monthly',
+    priority: 0.7,
+  };
+}
+
+/** Every public page: the registry above plus one per converter tool. */
+export function allPages(): SitePage[] {
+  const tools: readonly ToolDefinition[] = TOOLS;
+  return [...PAGES, ...tools.map(toolPage)];
+}
+
 export function findPage(slug: string): SitePage | undefined {
-  return PAGES.find((p) => p.slug === slug);
+  return allPages().find((p) => p.slug === slug);
 }
 
 /** The trail from the home page to `page`, inclusive. */

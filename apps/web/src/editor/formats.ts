@@ -1,6 +1,12 @@
 // Import/export formats, mapped onto the @dashdb/core parsers and serializers. Those carry
 // large dependencies (SQL grammars, DBML, Prettier), so they load on first use.
-import type { ParseResult, Schema, SerializeResult } from '@dashdb/core/lite';
+import {
+  detectSourceFormat,
+  detectSqlDialect,
+  type ParseResult,
+  type Schema,
+  type SerializeResult,
+} from '@dashdb/core/lite';
 
 const loadParsers = () => import('@dashdb/core/parsers');
 const loadSerializers = () => import('@dashdb/core/serializers');
@@ -37,54 +43,9 @@ export function isExportFormat(value: string): value is ExportFormat {
   return Object.hasOwn(EXPORT_FORMATS, value);
 }
 
-// Signals that only one dialect writes. Each kind counts once.
-const MYSQL_SIGNALS = [
-  /`/,
-  /\bENGINE\s*=/i,
-  /\bAUTO_INCREMENT\b/i,
-  /\bUNSIGNED\b/i,
-  /\b(TINYINT|MEDIUMINT|MEDIUMTEXT|LONGTEXT|DATETIME)\b/i,
-  /\bDEFAULT\s+CHARSET\b/i,
-  /\bON\s+UPDATE\s+CURRENT_TIMESTAMP\b/i,
-  /\bENUM\s*\(/i,
-];
-const POSTGRES_SIGNALS = [
-  /::\s*[a-z]/i,
-  /\b(BIG)?SERIAL\b/i,
-  /\bGENERATED\s+(ALWAYS|BY\s+DEFAULT)\s+AS\s+IDENTITY\b/i,
-  // Bounded, so text full of "CREATE TYPE" without semicolons cannot backtrack quadratically.
-  /\bCREATE\s+TYPE\s[^;]{0,200}?\bAS\s+ENUM\b/i,
-  /\bCOMMENT\s+ON\b/i,
-  /\b(TIMESTAMPTZ|JSONB|BYTEA|UUID)\b/i,
-  /\bCREATE\s+(SCHEMA|EXTENSION)\b/i,
-  /\$\$/,
-];
-
-/**
- * Detection runs on every keystroke and on files from anywhere, so it reads only the start:
- * a dialect shows itself in the first statements.
- */
-const DETECT_SCAN_CHARS = 64 * 1024;
-
-/** The SQL dialect a script is written in: MySQL when its signals outnumber Postgres's. */
-export function detectSqlDialect(text: string): 'postgres' | 'mysql' {
-  const head = text.slice(0, DETECT_SCAN_CHARS);
-  const score = (signals: readonly RegExp[]) => signals.filter((re) => re.test(head)).length;
-  return score(MYSQL_SIGNALS) > score(POSTGRES_SIGNALS) ? 'mysql' : 'postgres';
-}
-
-/** Guesses the format of pasted schema source from its contents. */
-export function detectPastedFormat(text: string): ImportFormat {
-  const head = text.slice(0, DETECT_SCAN_CHARS);
-  // Indentation is matched with [ \t]*, not \s*, which would rescan every following line.
-  if (/^[ \t]*(datasource|generator|model)[ \t]+\w+[ \t]*\{/m.test(head)) return 'prisma';
-  if (
-    /^[ \t]*(Table|Ref|Enum|Project)\b[^\n;]{0,200}[{:]/m.test(head) &&
-    !/\bCREATE\s+TABLE\b/i.test(head)
-  )
-    return 'dbml';
-  return detectSqlDialect(head);
-}
+// Detection lives in @dashdb/core (the converter tools share it); the import dialog calls it
+// on pasted text, so it keeps its name here.
+export { detectSqlDialect, detectSourceFormat as detectPastedFormat } from '@dashdb/core/lite';
 
 /** Guesses the format of an imported file from its name, then its contents. */
 export function detectImportFormat(fileName: string, text: string): ImportFormat {
@@ -92,7 +53,7 @@ export function detectImportFormat(fileName: string, text: string): ImportFormat
   if (lower.endsWith('.prisma')) return 'prisma';
   if (lower.endsWith('.dbml')) return 'dbml';
   if (lower.endsWith('.sql')) return detectSqlDialect(text);
-  return detectPastedFormat(text);
+  return detectSourceFormat(text);
 }
 
 export async function importSchema(format: ImportFormat, text: string): Promise<ParseResult> {

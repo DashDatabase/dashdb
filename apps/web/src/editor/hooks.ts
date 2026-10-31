@@ -1,5 +1,6 @@
 'use client';
 
+import { toMermaid } from '@dashdb/core/lite';
 import { toast, useTheme } from '@dashdb/ui';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
@@ -9,7 +10,6 @@ import { downloadText } from '@/lib/download';
 import { fileSlug } from './formats';
 import { PROJECT_FILE_EXTENSION, serializeProjectFile } from './project-file';
 import type { PasteOutcome } from './canvas/operations';
-import { toMermaid } from './export/mermaid';
 import { tourStore } from './onboarding/tour';
 import { saveBaseline } from './projects';
 import { editorStore } from './store';
@@ -46,7 +46,7 @@ function downloadCurrentProject() {
 function copyCurrentMermaid() {
   const { doc } = editorStore.getState();
   if (!doc) return;
-  navigator.clipboard.writeText(toMermaid(doc.schema)).then(
+  navigator.clipboard.writeText(toMermaid(doc.schema).code).then(
     () => toast.success('Mermaid ERD copied', { description: 'Paste it into a ```mermaid block.' }),
     () => toast.error('Could not copy to the clipboard'),
   );

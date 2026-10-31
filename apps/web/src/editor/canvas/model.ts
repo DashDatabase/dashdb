@@ -1,5 +1,13 @@
 // Pure mapping from the Schema IR and layout to React Flow nodes and edges.
-import type { Column, ForeignKey, Id, Schema, Table } from '@dashdb/core/lite';
+import {
+  cardinality,
+  type Cardinality,
+  type Column,
+  type ForeignKey,
+  type Id,
+  type Schema,
+  type Table,
+} from '@dashdb/core/lite';
 import type { Edge, Node } from '@xyflow/react';
 import type { Layout, NodeLayout } from '../store';
 
@@ -20,7 +28,8 @@ export interface TableNodeData extends Record<string, unknown> {
 export type TableFlowNode = Node<TableNodeData, 'table'>;
 
 /** Left = the referenced ("one") end, right = the referencing ("many") end. */
-export type Cardinality = 'one' | 'zero-one' | 'many';
+// Key and cardinality rules live in @dashdb/core (Mermaid export shares them).
+export { cardinality, columnFlags, type Cardinality, type ColumnFlags } from '@dashdb/core/lite';
 
 export interface RelationshipData extends Record<string, unknown> {
   readonly name: string;
@@ -31,32 +40,6 @@ export interface RelationshipData extends Record<string, unknown> {
   readonly targetEnd: Cardinality;
 }
 export type RelationshipFlowEdge = Edge<RelationshipData, 'relationship'>;
-
-export interface ColumnFlags {
-  readonly pk: boolean;
-  readonly fk: boolean;
-  readonly unique: boolean;
-  readonly nullable: boolean;
-}
-
-export function columnFlags(table: Table, column: Column): ColumnFlags {
-  const pk = table.primaryKey?.columns.includes(column.id) ?? false;
-  const single = (columns: readonly Id[]) => columns.length === 1 && columns[0] === column.id;
-  return {
-    pk,
-    fk: table.foreignKeys.some((fk) => fk.columns.includes(column.id)),
-    unique:
-      table.uniques.some((u) => single(u.columns)) ||
-      table.indexes.some(
-        (i) =>
-          i.unique &&
-          i.where === null &&
-          i.columns.length === 1 &&
-          i.columns[0]?.column === column.id,
-      ),
-    nullable: column.nullable && !pk,
-  };
-}
 
 /** Collapsed tables only show key columns: primary key first, then foreign keys. */
 export function visibleColumns(table: Table, collapsed: boolean): readonly Column[] {
@@ -138,29 +121,6 @@ export function syncNodes(
     });
   }
   return next;
-}
-
-function isUniqueSet(table: Table, columns: readonly Id[]): boolean {
-  const same = (ids: readonly Id[]) =>
-    ids.length === columns.length && ids.every((id) => columns.includes(id));
-  return (
-    same(table.primaryKey?.columns ?? []) ||
-    table.uniques.some((u) => same(u.columns)) ||
-    table.indexes.some((i) => i.unique && i.where === null && same(i.columns.map((c) => c.column)))
-  );
-}
-
-export function cardinality(
-  table: Table,
-  fk: ForeignKey,
-): { sourceEnd: Cardinality; targetEnd: Cardinality } {
-  const nullable = fk.columns.some(
-    (id) => table.columns.find((c) => c.id === id)?.nullable ?? false,
-  );
-  return {
-    sourceEnd: isUniqueSet(table, fk.columns) ? 'zero-one' : 'many',
-    targetEnd: nullable ? 'zero-one' : 'one',
-  };
 }
 
 function handleFor(table: Table, node: NodeLayout, columnId: Id | undefined, side: Side): string {

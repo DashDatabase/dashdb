@@ -6,11 +6,22 @@
  */
 export * from './ir';
 export * from './parsers/types';
+// Format detection is a handful of bounded regexes: cheap enough to run on every keystroke.
+export * from './detect';
+// Mermaid needs only the IR, so the editor can copy a diagram without loading the serializers.
+export { toMermaid } from './serializers/mermaid';
 // Types only: free at runtime, so code that only describes diffs, migrations, safety reports
 // or introspection can stay on this entry.
 export type * from './diff/types';
 export type * from './migrations/types';
 export type * from './safety/types';
 export type * from './serializers/types';
+export type {
+  ConvertFrom,
+  ConvertRequest,
+  ConvertResult,
+  ConvertTo,
+  TargetFormat,
+} from './convert';
 export type { IntrospectionDialect, QueryRunner, Row } from './introspection';
 export type { IntrospectionResult } from './parsers/introspection';

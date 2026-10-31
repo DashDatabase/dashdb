@@ -26,14 +26,17 @@ describe('parseDBML', () => {
   });
 
   it.each([
-    ['MySQL', 'mysql'],
-    ['PostgreSQL', 'postgres'],
-    ['SQLite', 'sqlite'],
-  ])('maps database_type %s to %s', (databaseType, dialect) => {
+    ['MySQL', 'mysql', 'default'],
+    ['PostgreSQL', 'postgres', 'public'],
+    ['SQLite', 'sqlite', 'main'],
+  ])('maps database_type %s to %s, with its default namespace', (databaseType, dialect, ns) => {
     const { schema } = parse(
-      `Project p {\n  database_type: '${databaseType}'\n}\nTable a {\n  id int [pk]\n}`,
+      `Project p {\n  database_type: '${databaseType}'\n}\nEnum e {\n  x\n}\nTable a {\n  id int [pk]\n  e e\n}\nTable b {\n  a_id int [ref: > a.id]\n}`,
     );
     expect(schema.dialect).toBe(dialect);
+    // DBML's default schema is called "public" whatever the database; MySQL has no such thing.
+    expect(schema.namespaces.map((n) => n.name)).toEqual([ns]);
+    expect(schema.tables.find((t) => t.name === 'b')?.foreignKeys).toHaveLength(1);
   });
 
   it('warns about unsupported database types and defaults to postgres', () => {

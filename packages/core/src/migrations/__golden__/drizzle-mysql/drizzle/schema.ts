@@ -58,12 +58,12 @@ export const refunds = mysqlTable(
 );
 
 export const clientsRelations = relations(clients, ({ many }) => ({
-  orderses: many(orders),
+  orders: many(orders),
 }));
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({
   customer: one(clients, { fields: [orders.customerId], references: [clients.id] }),
-  refundses: many(refunds),
+  refunds: many(refunds),
 }));
 
 export const refundsRelations = relations(refunds, ({ one }) => ({

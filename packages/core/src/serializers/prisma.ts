@@ -458,6 +458,8 @@ class PrismaWriter {
         return '@default(autoincrement())';
     }
     if (!def) return null;
+    // `DEFAULT NULL` on a nullable column is what Prisma does anyway: no attribute needed.
+    if (def.kind === 'literal' && def.value === null && column.nullable) return null;
     if (type.list) {
       // Postgres spells an empty array '{}'; Prisma lists take list literals.
       if (def.kind === 'literal' && def.value === '{}') return '@default([])';

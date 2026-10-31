@@ -5,7 +5,22 @@ import { DraftSchema, draftColumn, emptyResult, finalize, type DraftTable } from
 import type { Diagnostic, ParseOptions, ParseResult, SourceLocation } from './types';
 
 /** DBML's implicit schema. */
+/** DBML's own name for its default schema. */
 const DEFAULT_NAMESPACE = 'public';
+
+/** Where DBML's default schema lands in each dialect's IR (MySQL has no `public`). */
+const DIALECT_NAMESPACE: Record<IrDialect, string> = {
+  postgres: 'public',
+  mysql: 'default',
+  sqlite: 'main',
+};
+
+/** A DBML schema name in the IR: the default schema becomes the dialect's own default. */
+function namespaceOf(draft: DraftSchema, schemaName: string | null | undefined): string {
+  return schemaName == null || schemaName === DEFAULT_NAMESPACE
+    ? draft.defaultNamespace
+    : schemaName;
+}
 
 // @dbml/core types most model fields as `any`; these describe what we read.
 interface Token {
@@ -132,7 +147,7 @@ export function parseDBML(input: string, options: ParseOptions = {}): ParseResul
 
   const databaseType = db.databaseType?.toLowerCase() ?? null;
   const dialect = databaseType ? DATABASE_TYPES[databaseType] : undefined;
-  const draft = new DraftSchema(dialect ?? 'postgres', DEFAULT_NAMESPACE);
+  const draft = new DraftSchema(dialect ?? 'postgres', DIALECT_NAMESPACE[dialect ?? 'postgres']);
   if (databaseType && !dialect) {
     draft.report(
       'warning',
@@ -144,14 +159,14 @@ export function parseDBML(input: string, options: ParseOptions = {}): ParseResul
   for (const schema of db.schemas) {
     for (const en of schema.enums)
       draft.addEnum(
-        schema.name,
+        namespaceOf(draft, schema.name),
         en.name,
         en.values.map((v) => v.name),
         at(en.token),
       );
   }
   for (const schema of db.schemas) {
-    for (const table of schema.tables) addTable(draft, schema.name, table);
+    for (const table of schema.tables) addTable(draft, namespaceOf(draft, schema.name), table);
   }
   for (const schema of db.schemas) {
     for (const ref of schema.refs) addRef(draft, ref);
@@ -266,7 +281,7 @@ function addRef(draft: DraftSchema, ref: DbmlRef): void {
   // The "many" side holds the foreign key; for one-to-one, the second endpoint does (as with inline refs).
   const [owner, target] = first.relation === '*' ? [first, second] : [second, first];
   const table = draft.findTable({
-    namespace: owner.schemaName ?? DEFAULT_NAMESPACE,
+    namespace: namespaceOf(draft, owner.schemaName),
     name: owner.tableName,
   });
   if (!table) {
@@ -281,7 +296,7 @@ function addRef(draft: DraftSchema, ref: DbmlRef): void {
   table.foreignKeys.push({
     name: ref.name ?? null,
     columns: [...owner.fieldNames],
-    ref: { namespace: target.schemaName ?? DEFAULT_NAMESPACE, name: target.tableName },
+    ref: { namespace: namespaceOf(draft, target.schemaName), name: target.tableName },
     refColumns: [...target.fieldNames],
     onDelete: action(ref.onDelete),
     onUpdate: action(ref.onUpdate),

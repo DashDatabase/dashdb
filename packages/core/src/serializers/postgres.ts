@@ -6,8 +6,25 @@ import {
   quotePostgres as q,
   sqlString,
   targetNativeType,
+  warnForeignDefault,
 } from './sql-common';
+import { warnClientGenerated } from './prisma-client';
 import type { SerializeResult } from './types';
+
+const IDENTITY_TYPES = new Set(['smallint', 'integer', 'int', 'bigint']);
+
+/**
+ * MySQL writes boolean defaults as numbers (`tinyint(1) DEFAULT 0`), which Postgres rejects for
+ * a boolean column; returns TRUE/FALSE for those, or null to use the default as written.
+ */
+function booleanDefault(column: Column): string | null {
+  const def = column.default;
+  if (column.logicalType.kind !== 'boolean' || def?.kind !== 'literal') return null;
+  const value = def.value;
+  if (value === 0 || value === '0') return 'FALSE';
+  if (value === 1 || value === '1') return 'TRUE';
+  return null;
+}
 
 /** `serial` types the Postgres parser expands back to these native types. */
 const SERIAL_FOR: Record<string, string> = {
@@ -130,10 +147,30 @@ function columnSql(model: SchemaModel, table: Table, column: Column, element: st
     parts.push(`GENERATED ALWAYS AS (${column.metadata.generated}) STORED`);
   } else if (column.autoIncrement && def === null) {
     // Identity columns, and auto-increment columns from other dialects.
+    if (!IDENTITY_TYPES.has(type)) {
+      // MySQL's `bigint unsigned` maps to numeric(20,0), which cannot be an identity column.
+      model.warn(
+        'lossy-type',
+        element,
+        `Identity columns must be integers; "${type}" written as bigint (max 9223372036854775807)`,
+      );
+      type = 'bigint';
+    }
     const always = column.metadata.identity === 'always';
     parts.push(`GENERATED ${always ? 'ALWAYS' : 'BY DEFAULT'} AS IDENTITY`);
   }
-  if (def && !(serial && type === serial)) parts.push(`DEFAULT ${defaultSql(def, 'postgres')}`);
+  if (def && !(serial && type === serial)) {
+    warnForeignDefault(model, column, 'postgres', element);
+    parts.push(`DEFAULT ${booleanDefault(column) ?? defaultSql(def, 'postgres')}`);
+  }
+  if (column.metadata.onUpdate && model.schema.dialect !== 'postgres') {
+    model.warn(
+      'unsupported-feature',
+      element,
+      `Postgres has no ON UPDATE ${column.metadata.onUpdate}; dropped (use a trigger, or set it in your app)`,
+    );
+  }
+  warnClientGenerated(model, column, element);
   if (!column.nullable) parts.push('NOT NULL');
   return [q(column.name), type, ...parts].join(' ');
 }

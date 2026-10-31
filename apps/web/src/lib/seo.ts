@@ -22,7 +22,11 @@ export const OG_SIZE = { width: 1200, height: 630 } as const;
  * canonical URL, Open Graph and Twitter cards with the page's generated image.
  */
 export function pageMetadata(slug: PageSlug, siteUrl: string = getSiteUrl()): Metadata {
-  const page = getPage(slug);
+  return metadataFor(getPage(slug), siteUrl);
+}
+
+/** `pageMetadata` for any site page, including the converter tools' generated ones. */
+export function metadataFor(page: SitePage, siteUrl: string = getSiteUrl()): Metadata {
   const url = absoluteUrl(page.path, siteUrl);
   const isHome = page.path === '/';
   // The home page leads with the brand; every other page uses the template.

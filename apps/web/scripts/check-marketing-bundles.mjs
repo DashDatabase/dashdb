@@ -19,6 +19,8 @@ const PAGES = [
   '/features/migrations',
   '/features/diagram',
   '/pricing',
+  // The hub only; tool pages load Monaco and the converter by design.
+  '/tools',
   '/open-source',
   '/changelog',
   '/about',

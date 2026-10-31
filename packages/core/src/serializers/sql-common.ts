@@ -2,6 +2,27 @@ import { toNativeType } from '../ir/types-map';
 import type { Column, ColumnDefault, ReferentialAction } from '../ir/types';
 import type { SchemaModel } from './model';
 
+/** Native types Postgres and MySQL both accept with the same meaning. */
+const PORTABLE_NATIVE = /^(?:char|character)\s*\(\d+\)$|^time$/i;
+
+/**
+ * Same type, different name, keyed by the target dialect. Postgres `real` is 4-byte like MySQL
+ * `float` (MySQL's own `real` means `double`); MySQL `year` fits in a Postgres `smallint`.
+ */
+const NATIVE_ALIASES: Record<'postgres' | 'mysql', ReadonlyMap<string, string>> = {
+  mysql: new Map([
+    ['real', 'float'],
+    ['float4', 'float'],
+    ['double precision', 'double'],
+    ['float8', 'double'],
+  ]),
+  postgres: new Map([
+    ['float', 'real'],
+    ['double', 'double precision'],
+    ['year', 'smallint'],
+  ]),
+};
+
 /**
  * The column's type in the target dialect: verbatim when the IR is already in that dialect,
  * otherwise translated through its logical type (with a warning when that loses information).
@@ -12,8 +33,28 @@ export function targetNativeType(
   dialect: 'postgres' | 'mysql',
   element: string,
 ): string {
-  if (model.schema.dialect === dialect) return column.nativeType;
   const type = column.logicalType;
+  if (type.kind === 'enum' && dialect === 'postgres') {
+    const en = model.enum(type.enumId);
+    // Same dialect: keep the type as written (e.g. `public.mood`), unless the name needs quotes.
+    // A Prisma enum `Role` must be written "Role", or Postgres folds it to `role`.
+    if (model.schema.dialect === dialect && quotePostgres(en.name) === en.name) {
+      return column.nativeType;
+    }
+    const ns = model.targetNamespace(en.namespace, 'postgres');
+    return ns === 'public'
+      ? quotePostgres(en.name)
+      : `${quotePostgres(ns)}.${quotePostgres(en.name)}`;
+  }
+  if (model.schema.dialect === dialect) return column.nativeType;
+  // Types without a logical equivalent that both dialects spell the same way are fine as is,
+  // and a few have a direct counterpart under another name.
+  if (type.kind === 'unknown') {
+    const native = column.nativeType.trim();
+    if (PORTABLE_NATIVE.test(native)) return column.nativeType;
+    const alias = NATIVE_ALIASES[dialect].get(native.toLowerCase());
+    if (alias) return alias;
+  }
   if (type.kind === 'unknown') {
     model.warn(
       'lossy-type',
@@ -21,13 +62,6 @@ export function targetNativeType(
       `Type "${column.nativeType}" has no ${dialect} equivalent; kept verbatim`,
     );
     return column.nativeType;
-  }
-  if (type.kind === 'enum' && dialect === 'postgres') {
-    const en = model.enum(type.enumId);
-    const ns = model.targetNamespace(en.namespace, 'postgres');
-    return ns === 'public'
-      ? quotePostgres(en.name)
-      : `${quotePostgres(ns)}.${quotePostgres(en.name)}`;
   }
   return toNativeType(dialect, type, { enums: model.schema.enums });
 }
@@ -92,6 +126,30 @@ export function literalSql(
   if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
   if (typeof value === 'number') return String(value);
   return sqlString(value, dialect);
+}
+
+/** Default expressions both Postgres and MySQL accept as written. */
+const PORTABLE_DEFAULT =
+  /^(?:now\(\)|current_timestamp|current_timestamp\(\d*\)|current_date|true|false|null)$/i;
+
+/**
+ * Warns when a column's default is an expression written for another dialect: it is copied as
+ * is (functions differ, e.g. Postgres `gen_random_uuid()` vs MySQL `(UUID())`), so it needs a look.
+ */
+export function warnForeignDefault(
+  model: SchemaModel,
+  column: Column,
+  dialect: 'postgres' | 'mysql',
+  element: string,
+): void {
+  const def = column.default;
+  if (def?.kind !== 'expression' || model.schema.dialect === dialect) return;
+  if (PORTABLE_DEFAULT.test(def.sql.trim())) return;
+  model.warn(
+    'unsupported-feature',
+    element,
+    `Default "${def.sql}" was written for ${model.schema.dialect} and is copied as is; check it works in ${dialect}`,
+  );
 }
 
 export function defaultSql(def: ColumnDefault, dialect: 'postgres' | 'mysql'): string {

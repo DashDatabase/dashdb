@@ -44,3 +44,14 @@ export * from './diff';
 export * from './migrations';
 export * from './safety';
 export * from './introspection';
+export * from './detect';
+export {
+  convert,
+  resolveSource,
+  resolveTarget,
+  type ConvertFrom,
+  type ConvertRequest,
+  type ConvertResult,
+  type ConvertTo,
+  type TargetFormat,
+} from './convert';

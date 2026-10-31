@@ -3,7 +3,8 @@ import * as typescript from 'prettier/plugins/typescript';
 import { format } from 'prettier/standalone';
 import type { Column, ColumnDefault, Enum, ForeignKey, Id, Schema, Table } from '../ir/types';
 import { SchemaModel } from './model';
-import { NameScope, camelCase, fieldName, plural } from './naming';
+import { NameScope, camelCase, fieldName, plural, singular } from './naming';
+import { CLIENT_GENERATED } from './prisma-client';
 import type { SerializeResult } from './types';
 
 type Core = 'pg' | 'mysql';
@@ -262,7 +263,28 @@ class DrizzleWriter {
     }
     if (column.default && !serial) mods.push(this.defaultExpr(column.default, builder, element));
     if (this.core === 'mysql' && column.metadata.onUpdate) mods.push('.onUpdateNow()');
+    mods.push(...this.clientHooks(column, element));
     return call + mods.join('');
+  }
+
+  /**
+   * Values Prisma Client fills in itself (`@default(uuid())`, `@updatedAt`) have no database
+   * default; Drizzle's `$defaultFn` / `$onUpdate` do the same job in application code.
+   */
+  private clientHooks(column: Column, element: string): string[] {
+    const hooks: string[] = [];
+    const generator = column.default === null ? column.metadata.prismaDefault : undefined;
+    if (generator === 'uuid()' || generator === 'uuid(4)') {
+      hooks.push('.$defaultFn(() => crypto.randomUUID())');
+    } else if (generator && CLIENT_GENERATED.test(generator)) {
+      this.model.warn(
+        'unsupported-feature',
+        element,
+        `Prisma Client generates ${generator} values; add .$defaultFn() with a library that does the same`,
+      );
+    }
+    if (column.metadata.prismaUpdatedAt) hooks.push('.$onUpdate(() => new Date())');
+    return hooks;
   }
 
   private defaultExpr(def: ColumnDefault, builder: Builder, element: string): string {
@@ -573,12 +595,11 @@ class DrizzleWriter {
     const stripped = key.replace(/_?[iI]d$/, '');
     const forward = stripped && stripped !== key ? stripped : camelCase(targetVar);
     const oneToOne = this.isKey(owner, fk.columns);
+    // Table variables are usually plural already (`posts`): singularize before pluralizing,
+    // so the back-relation is `posts`, not `postses`, and a one-to-one one is `profile`.
+    const ownerNoun = singular(camelCase(ownerVar));
     const back =
-      owner.id === target.id
-        ? `${plural(forward)}Of`
-        : oneToOne
-          ? camelCase(ownerVar)
-          : plural(camelCase(ownerVar));
+      owner.id === target.id ? `${plural(forward)}Of` : oneToOne ? ownerNoun : plural(ownerNoun);
     const relationName = this.ambiguous(owner.id, target.id) ? `${ownerVar}_${forward}` : null;
     const names = { forward, back, relationName };
     this.relationNames.set(fk, names);

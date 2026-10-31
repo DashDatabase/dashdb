@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Schema } from '../ir/types';
+import { parseMySQLDDL, parsePostgresDDL } from '../parsers';
 import { loadFixtures, reversed } from './__test-utils__/fixtures';
 import { toDBML, toDrizzle, toMySQLDDL, toPostgresDDL, toPrisma } from '.';
 import type { SerializeResult } from './types';
@@ -68,6 +69,45 @@ describe('cross-format serialization', () => {
     expect(messages(result)).toContain(
       'public.warehouses.location: Type "point" has no mysql equivalent; kept verbatim',
     );
+  });
+
+  it('keeps types both dialects share without a warning', () => {
+    const result = toMySQLDDL(parsePostgresDDL('CREATE TABLE t (code char(4), at time);').schema);
+    expect(result.code).toContain('code char(4)');
+    expect(result.code).toContain('at time');
+    expect(messages(result)).toEqual([]);
+  });
+
+  it('renames float types to their counterpart in the other dialect', () => {
+    const toMy = toMySQLDDL(
+      parsePostgresDDL('CREATE TABLE t (a real, b double precision);').schema,
+    );
+    expect(toMy.code).toContain('a float');
+    expect(toMy.code).toContain('b double');
+    const toPg = toPostgresDDL(parseMySQLDDL('CREATE TABLE t (a float, b double, y year);').schema);
+    expect(toPg.code).toContain('a real');
+    expect(toPg.code).toContain('b double precision');
+    expect(toPg.code).toContain('y smallint');
+    expect([...messages(toMy), ...messages(toPg)]).toEqual([]);
+  });
+
+  it('flags expression defaults written for the other dialect, but not portable ones', () => {
+    const pg = parsePostgresDDL(`CREATE TABLE t (
+      id uuid DEFAULT gen_random_uuid(),
+      at timestamptz DEFAULT now(),
+      day date DEFAULT CURRENT_DATE
+    );`).schema;
+    expect(messages(toMySQLDDL(pg))).toEqual([
+      'public.t.id: Default "gen_random_uuid()" was written for postgres and is copied as is; check it works in mysql',
+    ]);
+    // Same dialect: nothing to flag.
+    expect(messages(toPostgresDDL(pg))).toEqual([]);
+    const mysql = parseMySQLDDL(
+      'CREATE TABLE t (id char(36) DEFAULT (UUID()), at datetime DEFAULT CURRENT_TIMESTAMP);',
+    ).schema;
+    expect(messages(toPostgresDDL(mysql))).toEqual([
+      expect.stringMatching(/^default\.t\.id: Default "\(?UUID\(\)\)?" was written for mysql/),
+    ]);
   });
 
   it('refuses SQLite for Drizzle with a warning', async () => {

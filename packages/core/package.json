@@ -20,6 +20,14 @@
     "./serializers": {
       "types": "./dist/serializers.d.ts",
       "default": "./dist/serializers.js"
+    },
+    "./convert": {
+      "types": "./dist/convert.d.ts",
+      "default": "./dist/convert.js"
+    },
+    "./examples": {
+      "types": "./dist/examples.d.ts",
+      "default": "./dist/examples.js"
     }
   },
   "scripts": {

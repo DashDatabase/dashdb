@@ -2,14 +2,14 @@ import { renderMarkSvg } from '@dashdb/ui/server';
 import { ImageResponse } from 'next/og';
 import { BRAND } from '@/lib/brand-colors';
 import { OG_SIZE } from '@/lib/seo';
-import { findPage, PAGES, SITE } from '@/lib/site';
+import { allPages, findPage, SITE } from '@/lib/site';
 
 // One Open Graph image per public page, rendered at build time (see `ogImagePath` in lib/seo).
 
 export const dynamicParams = false;
 
 export function generateStaticParams(): { slug: string }[] {
-  return PAGES.map((page) => ({ slug: page.slug }));
+  return allPages().map((page) => ({ slug: page.slug }));
 }
 
 // The app icon's palette.

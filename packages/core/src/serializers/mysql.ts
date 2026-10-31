@@ -1,6 +1,15 @@
+import { columnFlags } from '../ir/relations';
 import type { Column, Schema, Table } from '../ir/types';
 import { SchemaModel } from './model';
-import { actionSql, defaultSql, quoteMysql as q, sqlString, targetNativeType } from './sql-common';
+import {
+  actionSql,
+  defaultSql,
+  quoteMysql as q,
+  sqlString,
+  targetNativeType,
+  warnForeignDefault,
+} from './sql-common';
+import { warnClientGenerated } from './prisma-client';
 import type { SerializeResult } from './types';
 
 /** Namespace the MySQL parser uses for tables without a database qualifier. */
@@ -34,7 +43,9 @@ export function toMySQLDDL(schema: Schema): SerializeResult {
   const tables = model.sortedTables();
   for (const table of tables) {
     const element = model.qualified(table);
-    const lines = table.columns.map((c) => `  ${columnSql(model, c, `${element}.${c.name}`)}`);
+    const lines = table.columns.map(
+      (c) => `  ${columnSql(model, table, c, `${element}.${c.name}`)}`,
+    );
     if (table.primaryKey) {
       lines.push(
         `  PRIMARY KEY (${table.primaryKey.columns.map((id) => q(model.columnName(id))).join(', ')})`,
@@ -107,8 +118,41 @@ export function toMySQLDDL(schema: Schema): SerializeResult {
   };
 }
 
-function columnSql(model: SchemaModel, column: Column, element: string): string {
-  const parts = [q(column.name), targetNativeType(model, column, 'mysql', element)];
+/** MySQL can only index TEXT/BLOB with a prefix length; DashDB writes varchar(255) instead. */
+const UNINDEXABLE = /^(?:tiny|medium|long)?text$/i;
+/** Types whose literal defaults MySQL (8.0.13+) only accepts as an expression in parentheses. */
+const EXPRESSION_DEFAULT_ONLY = /^(?:(?:tiny|medium|long)?(?:text|blob)|json|geometry)$/i;
+/** `datetime(3)` / `timestamp(6)`: fractional seconds precision. */
+const FRACTIONAL = /^(?:datetime|timestamp)\((\d)\)$/i;
+const CURRENT_TIMESTAMP = /^(?:current_timestamp|now\(\))$/i;
+
+/** In a key or a B-tree index (FULLTEXT and SPATIAL indexes take TEXT as is). */
+function isKeyed(table: Table, column: Column): boolean {
+  const flags = columnFlags(table, column);
+  return (
+    flags.pk ||
+    flags.unique ||
+    table.uniques.some((u) => u.columns.includes(column.id)) ||
+    table.indexes.some(
+      (i) =>
+        !/^(?:fulltext|spatial)$/i.test(i.method ?? '') &&
+        i.columns.some((c) => c.column === column.id),
+    )
+  );
+}
+
+function columnSql(model: SchemaModel, table: Table, column: Column, element: string): string {
+  let type = targetNativeType(model, column, 'mysql', element);
+  // MySQL sources are left as written: a prefix length, if any, belongs to the index.
+  if (model.schema.dialect !== 'mysql' && UNINDEXABLE.test(type) && isKeyed(table, column)) {
+    model.warn(
+      'lossy-type',
+      element,
+      `MySQL cannot index "${type}" without a prefix length; written as varchar(255)`,
+    );
+    type = 'varchar(255)';
+  }
+  const parts = [q(column.name), type];
   if (!column.nullable) parts.push('NOT NULL');
   if (column.autoIncrement) parts.push('AUTO_INCREMENT');
   const def = column.default;
@@ -120,8 +164,19 @@ function columnSql(model: SchemaModel, column: Column, element: string): string 
         `MySQL has no sequences; default "${def.name}" dropped`,
       );
   } else if (def) {
-    parts.push(`DEFAULT ${defaultSql(def, 'mysql')}`);
+    warnForeignDefault(model, column, 'mysql', element);
+    const sql = defaultSql(def, 'mysql');
+    const precision = FRACTIONAL.exec(type)?.[1];
+    if (def.kind === 'literal' && def.value !== null && EXPRESSION_DEFAULT_ONLY.test(type)) {
+      parts.push(`DEFAULT (${sql})`);
+    } else if (precision && def.kind === 'expression' && CURRENT_TIMESTAMP.test(def.sql.trim())) {
+      // datetime(3) needs CURRENT_TIMESTAMP(3); a precision mismatch is an invalid default.
+      parts.push(`DEFAULT CURRENT_TIMESTAMP(${precision})`);
+    } else {
+      parts.push(`DEFAULT ${sql}`);
+    }
   }
+  warnClientGenerated(model, column, element);
   if (column.metadata.onUpdate) parts.push(`ON UPDATE ${column.metadata.onUpdate}`);
   if (column.comment !== null) parts.push(`COMMENT ${sqlString(column.comment, 'mysql')}`);
   return parts.join(' ');

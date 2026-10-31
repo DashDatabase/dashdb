@@ -1,10 +1,10 @@
 import { rules } from '@dashdb/core';
 import type { MetadataRoute } from 'next';
 import { absoluteUrl } from '@/lib/seo';
-import { PAGES } from '@/lib/site';
+import { allPages } from '@/lib/site';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const pages = PAGES.map((page) => ({
+  const pages = allPages().map((page) => ({
     url: absoluteUrl(page.path),
     changeFrequency: page.changeFrequency,
     priority: page.priority,
