@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "@dashdb/shared": "workspace:*",
-    "@dbml/core": "10.3.1",
+    "@dbml/core": "11.0.0",
     "@mrleebo/prisma-ast": "0.16.0",
     "nanoid": "^5.1.16",
     "node-sql-parser": "5.4.0",
