@@ -145,5 +145,8 @@ In plain language:
   production needs a commercial license. There is no code in `/ee` yet.
 - **Need different terms?** If the AGPL doesn't work for your company, a commercial license is
   available. Contact licensing@dashdb.dev.
+- **The name and logo are not covered by the license.** Saying your project works with or is
+  based on DashDB is fine. If you offer a changed version to other people, give it a different
+  name and logo. See the [trademark policy](TRADEMARKS.md).
 
 This summary is not legal advice; the [LICENSE](LICENSE) file is what counts.

@@ -72,6 +72,12 @@ export default function OpenSourcePage() {
               <code>/ee</code> directory under a separate commercial license. A commercial license
               for the rest of DashDB is available if the AGPL doesn&apos;t suit your company.
             </li>
+            <li>
+              <strong>The name and logo are not covered by the license.</strong> Saying your project
+              works with or is based on DashDB is fine; a changed version you offer to others needs
+              its own name and logo. See the{' '}
+              <a href={`${repo}/blob/HEAD/TRADEMARKS.md`}>trademark policy</a>.
+            </li>
           </ul>
 
           <h2>Feedback and contributions</h2>
