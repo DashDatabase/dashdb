@@ -2,11 +2,13 @@
 import { schemaSchema } from '@dashdb/core/lite';
 import { z } from 'zod';
 import {
+  BUILTIN_RIGHT_TABS,
   NODE_COLORS,
   type Baseline,
   type Layout,
   type NodeLayout,
   type Project,
+  type ProjectDocument,
   type ViewState,
 } from './store/types';
 
@@ -23,9 +25,16 @@ export const layoutSchema: z.ZodType<Layout> = z.strictObject({
 
 export const viewStateSchema: z.ZodType<ViewState> = z.strictObject({
   selection: z.strictObject({ tableId: z.string().nullable(), columnId: z.string().nullable() }),
-  rightTab: z.enum(['inspector', 'code', 'migration']),
+  rightTab: z.enum(BUILTIN_RIGHT_TABS),
   leftOpen: z.boolean(),
   rightOpen: z.boolean(),
+});
+
+/** The undoable part of a project, checked after applying patches from another source. */
+export const projectDocumentSchema: z.ZodType<ProjectDocument> = z.strictObject({
+  name: z.string().max(200),
+  schema: schemaSchema,
+  layout: layoutSchema,
 });
 
 export const projectSchema: z.ZodType<Project> = z.strictObject({

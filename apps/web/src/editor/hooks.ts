@@ -4,7 +4,8 @@ import { toMermaid } from '@dashdb/core/lite';
 import { toast, useTheme } from '@dashdb/ui';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
-import { ACTIONS, runAction, shortcutsOf, type ActionContext, type EditorAction } from './actions';
+import { runAction, shortcutsOf, type ActionContext, type EditorAction } from './actions';
+import { ALL_ACTIONS } from './edition-actions';
 import { isEditableTarget, isMacPlatform, matchesShortcut } from './shortcuts';
 import { downloadText } from '@/lib/download';
 import { fileSlug } from './formats';
@@ -96,7 +97,7 @@ export function useEditorShortcuts(): void {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.repeat) return;
       const editable = isEditableTarget(event.target);
-      for (const action of ACTIONS as readonly EditorAction[]) {
+      for (const action of ALL_ACTIONS) {
         if (!shortcutsOf(action).some((s) => matchesShortcut(event, s, isMac))) continue;
         if (editable && !action.allowInInput) return;
         event.preventDefault();

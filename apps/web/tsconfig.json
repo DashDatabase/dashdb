@@ -3,13 +3,15 @@
   "compilerOptions": {
     "paths": {
       "@/*": ["./src/*"],
-      "collections/*": ["./.source/*"]
+      "collections/*": ["./.source/*"],
+      "@dashdb/active-edition": ["./src/edition/oss.ts"]
     }
   },
   "include": [
     "next-env.d.ts",
     "src",
     "e2e",
+    "test",
     "scripts/**/*.ts",
     "*.config.ts",
     ".next/types/**/*.ts",

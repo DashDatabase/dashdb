@@ -23,6 +23,7 @@ import {
 } from '@xyflow/react';
 import { LayoutGridIcon, Loader2Icon, MaximizeIcon, PlusIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
+import { edition } from '@/edition/active';
 import { getAction } from '../actions';
 import { ActionButton, ShortcutKeys } from '../components/action-button';
 import { useRunAction } from '../hooks';
@@ -32,6 +33,7 @@ import { takeArrangeIntent } from './arrange-intent';
 import { useCanvasUi } from './canvas-ui';
 import { ConnectPopover } from './connect-popover';
 import { DeleteTablesDialog } from './delete-dialog';
+import { EditionOverlays } from './edition-overlays';
 import { MigrationGhosts } from './migration-ghosts';
 import { animatePositions, ARRANGE_DURATION_MS, layoutInWorker } from './layout/auto-layout';
 import { RelationshipMarkers } from './markers';
@@ -462,6 +464,9 @@ function CanvasFlow({ projectId }: { projectId: string }) {
         )}
         {tableCount === 0 && <EmptyState />}
         <MigrationGhosts />
+        {edition.editor.canvasOverlays.length > 0 && (
+          <EditionOverlays overlays={edition.editor.canvasOverlays} />
+        )}
       </ReactFlow>
       <CanvasContextMenu />
       <ConnectPopover />

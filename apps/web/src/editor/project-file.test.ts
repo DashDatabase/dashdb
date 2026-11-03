@@ -5,7 +5,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DashDb, db, setDb } from './db';
 import {
   PROJECT_FILE_VERSION,
+  exportProject,
   importProjectFile,
+  listLocalProjects,
   isProjectFileName,
   parseProjectFile,
   serializeProjectFile,
@@ -32,6 +34,24 @@ async function blogProject() {
   const baselines = await saveBaseline(project.id, project.schema, 'v1');
   return { project, baselines };
 }
+
+describe('local projects for edition code', () => {
+  it('lists ids and names, and exports a stored project with its baselines', async () => {
+    const { project, baselines } = await blogProject();
+    const other = await createProject({ name: 'Other' });
+    expect(await listLocalProjects()).toEqual(
+      expect.arrayContaining([
+        { id: project.id, name: 'Blog' },
+        { id: other.id, name: 'Other' },
+      ]),
+    );
+    const now = new Date('2026-11-03T00:00:00Z');
+    expect(await exportProject(project.id, now)).toBe(
+      serializeProjectFile(project, baselines, now),
+    );
+    expect(await exportProject('missing')).toBeNull();
+  });
+});
 
 describe('project files', () => {
   it('round-trips a project and its baselines into a new project', async () => {

@@ -1,4 +1,5 @@
 export * from './types';
+export * from './schema';
 export { analyzeMigration } from './analyze';
 export {
   planExpandContract,

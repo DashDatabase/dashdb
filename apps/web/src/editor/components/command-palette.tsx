@@ -11,7 +11,8 @@ import {
 } from '@dashdb/ui';
 import type { Table } from '@dashdb/core/lite';
 import { TableIcon } from 'lucide-react';
-import { ACTIONS, GROUP_ORDER, isActionEnabled, type EditorAction } from '../actions';
+import { isActionEnabled, type EditorAction } from '../actions';
+import { ALL_ACTIONS, PALETTE_GROUPS } from '../edition-actions';
 import { useRunAction } from '../hooks';
 import { useEditor } from '../store';
 import { ShortcutKeys } from './action-button';
@@ -46,10 +47,8 @@ export function CommandPalette() {
       <CommandInput placeholder="Type a command or table name…" />
       <CommandList>
         <CommandEmpty>No results.</CommandEmpty>
-        {GROUP_ORDER.map((group) => {
-          const actions = (ACTIONS as readonly EditorAction[]).filter(
-            (a) => a.group === group && a.id !== 'palette.open',
-          );
+        {PALETTE_GROUPS.map((group) => {
+          const actions = ALL_ACTIONS.filter((a) => a.group === group && a.id !== 'palette.open');
           return (
             <CommandGroup key={group} heading={group}>
               {actions.map((action) => (
@@ -63,9 +62,11 @@ export function CommandPalette() {
                   }}
                 >
                   {action.title}
-                  <CommandShortcut>
-                    <ShortcutKeys shortcut={action.shortcut} />
-                  </CommandShortcut>
+                  {action.shortcut && (
+                    <CommandShortcut>
+                      <ShortcutKeys shortcut={action.shortcut} />
+                    </CommandShortcut>
+                  )}
                 </CommandItem>
               ))}
             </CommandGroup>

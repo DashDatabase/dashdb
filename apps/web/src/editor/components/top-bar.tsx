@@ -22,8 +22,10 @@ import {
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 import { isCloudEdition } from '@dashdb/edition';
+import { edition } from '@/edition/active';
 import { getGithubUrl } from '@/lib/config';
 import { getAction } from '../actions';
+import { editorApi } from '../edition-api';
 import { useRunAction } from '../hooks';
 import { useEditor } from '../store';
 import { ActionButton, ShortcutKeys } from './action-button';
@@ -113,6 +115,9 @@ export function TopBar() {
       </ActionButton>
       <Separator orientation="vertical" className="mx-1 h-4" />
       <ThemeToggle className="size-8" />
+      {edition.editor.topBarItems.map(({ id, Component }) => (
+        <Component key={id} editor={editorApi} />
+      ))}
       {isCloudEdition() && (
         <Tooltip>
           <TooltipTrigger asChild>

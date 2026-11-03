@@ -18,17 +18,19 @@ import { immer } from 'zustand/middleware/immer';
 import type { CodeFormat } from '../code/code-formats';
 import type { ExportFormat } from '../formats';
 import { normalizeProjectName } from '../project-name';
+import { projectDocumentSchema } from '../record-schemas';
 import { record, stepBack, stepForward, type History, type HistoryEntry } from './history';
 import { freePosition, layoutFor, syncLayout } from './layout';
 import { reconcile } from './reconcile';
-import type {
-  Baseline,
-  NodeColor,
-  Project,
-  ProjectDocument,
-  RightTab,
-  Selection,
-  ViewState,
+import {
+  isBuiltinRightTab,
+  type Baseline,
+  type NodeColor,
+  type Project,
+  type ProjectDocument,
+  type RightTab,
+  type Selection,
+  type ViewState,
 } from './types';
 
 enablePatches();
@@ -99,6 +101,12 @@ export interface EditorActions {
   rename: (name: string) => void;
   undo: () => void;
   redo: () => void;
+  /**
+   * Applies a change made elsewhere (by a sync provider) without recording it for undo. Returns
+   * false, changing nothing, if the patches don't apply or leave an invalid document. Undo steps
+   * recorded before it that no longer apply are dropped when reached.
+   */
+  applyRemoteChange: (patches: readonly Patch[]) => boolean;
 
   addTable: () => Id | null;
   addEnum: () => Id | null;
@@ -242,6 +250,28 @@ export function createEditorStore(options: { now?: () => number } = {}): EditorS
         if (schemaChanged) validateSoon();
       };
 
+      /** Applies patches to a document, or returns null if they fail or leave it invalid. */
+      const applyChecked = (
+        doc: ProjectDocument,
+        patches: readonly Patch[],
+      ): ProjectDocument | null => {
+        let next: ProjectDocument;
+        try {
+          next = applyPatches(doc, patches as Patch[]);
+        } catch {
+          return null;
+        }
+        return projectDocumentSchema.safeParse(next).success ? next : null;
+      };
+
+      /** Undo/redo after a remote change can meet patches that no longer apply: forget them. */
+      const dropHistory = () => {
+        set((state) => {
+          state.past = [];
+          state.future = [];
+        });
+      };
+
       /** Every document mutation funnels through here so it is recorded for undo. */
       const change = (
         label: string,
@@ -338,7 +368,7 @@ export function createEditorStore(options: { now?: () => number } = {}): EditorS
           if (!s.doc || !s.projectId) return null;
           const view: ViewState = {
             selection: s.selection,
-            rightTab: s.rightTab,
+            rightTab: isBuiltinRightTab(s.rightTab) ? s.rightTab : 'inspector',
             leftOpen: s.leftOpen,
             rightOpen: s.rightOpen,
           };
@@ -395,7 +425,11 @@ export function createEditorStore(options: { now?: () => number } = {}): EditorS
           const { doc } = get();
           const step = stepBack(history());
           if (!doc || !step) return;
-          const next = applyPatches(doc, step.entry.inversePatches as Patch[]);
+          const next = applyChecked(doc, step.entry.inversePatches);
+          if (!next) {
+            dropHistory();
+            return;
+          }
           commit(next, step.history, next.schema !== doc.schema);
         },
 
@@ -403,8 +437,21 @@ export function createEditorStore(options: { now?: () => number } = {}): EditorS
           const { doc } = get();
           const step = stepForward(history());
           if (!doc || !step) return;
-          const next = applyPatches(doc, step.entry.patches as Patch[]);
+          const next = applyChecked(doc, step.entry.patches);
+          if (!next) {
+            dropHistory();
+            return;
+          }
           commit(next, step.history, next.schema !== doc.schema);
+        },
+
+        applyRemoteChange: (patches) => {
+          const { doc } = get();
+          if (!doc || patches.length === 0) return false;
+          const next = applyChecked(doc, patches);
+          if (!next) return false;
+          commit(next, history(), next.schema !== doc.schema);
+          return true;
         },
 
         addTable: () => {

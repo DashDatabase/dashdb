@@ -1,6 +1,7 @@
 # Keep the build context small and free of local state and secrets.
 **/node_modules
 **/.next
+**/.next-fixture
 **/.turbo
 **/dist
 **/coverage

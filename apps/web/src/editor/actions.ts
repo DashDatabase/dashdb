@@ -7,10 +7,13 @@ import {
   selectedTableIds,
   type PasteOutcome,
 } from './canvas/operations';
+import type { EditionCommand, EditorApi } from '@dashdb/edition';
 import { readClipboard } from './canvas/clipboard';
+import { parseShortcut } from './shortcuts';
 import type { EditorActions, EditorState } from './store';
 
-export type ActionGroup = 'File' | 'Edit' | 'Schema' | 'View' | 'Navigate' | 'Help';
+/** `Edition` holds the active edition's commands; it is listed only when there are some. */
+export type ActionGroup = 'File' | 'Edit' | 'Schema' | 'View' | 'Navigate' | 'Help' | 'Edition';
 
 /** Display order of groups in the palette and the shortcuts cheat sheet. */
 export const GROUP_ORDER: readonly ActionGroup[] = [
@@ -42,7 +45,10 @@ export interface EditorAction {
   readonly id: string;
   readonly title: string;
   readonly group: ActionGroup;
-  /** e.g. `mod+shift+z`; see shortcuts.ts. Unique across the registry. Shown in the UI. */
+  /**
+   * e.g. `mod+shift+z`; see shortcuts.ts. Unique across the registry. Shown in the UI. Empty
+   * only for edition commands without one.
+   */
   readonly shortcut: string;
   /** Further keys that also run the action (e.g. Backspace where keyboards lack Delete). */
   readonly altShortcuts?: readonly string[];
@@ -55,7 +61,7 @@ export interface EditorAction {
 
 /** Every key combination that runs `action`, the displayed one first. */
 export function shortcutsOf(action: EditorAction): readonly string[] {
-  return [action.shortcut, ...(action.altShortcuts ?? [])];
+  return [action.shortcut, ...(action.altShortcuts ?? [])].filter(Boolean);
 }
 
 const hasProject = (state: EditorState) => state.doc !== null;
@@ -444,4 +450,40 @@ export function runAction(action: EditorAction, ctx: ActionContext): boolean {
   if (!isActionEnabled(action, ctx.state)) return false;
   action.run(ctx);
   return true;
+}
+
+function isValidShortcut(shortcut: string): boolean {
+  try {
+    parseShortcut(shortcut);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The active edition's commands as actions in the `Edition` group. A shortcut that is invalid or
+ * already used by `existing` is dropped, so an edition can never take over a built-in key.
+ */
+export function editionActions(
+  commands: readonly EditionCommand[],
+  editor: EditorApi,
+  existing: readonly EditorAction[] = ACTIONS,
+): EditorAction[] {
+  const taken = new Set(existing.flatMap(shortcutsOf).map((s) => s.toLowerCase()));
+  return commands.map((command) => {
+    const shortcut = command.shortcut?.toLowerCase() ?? '';
+    const usable = shortcut !== '' && isValidShortcut(shortcut) && !taken.has(shortcut);
+    if (usable) taken.add(shortcut);
+    return {
+      id: `edition.${command.id}`,
+      title: command.label,
+      group: 'Edition',
+      shortcut: usable ? shortcut : '',
+      allowInInput: false,
+      run: () => {
+        command.run(editor);
+      },
+    };
+  });
 }

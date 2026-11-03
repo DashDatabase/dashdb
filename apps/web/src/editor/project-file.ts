@@ -2,7 +2,14 @@
 import { schemaSchema } from '@dashdb/core/lite';
 import { z } from 'zod';
 import { templateMetaSchema } from '@/templates/meta';
-import { buildProject, insertProjectWithBaselines, MAX_BASELINES } from './projects';
+import {
+  buildProject,
+  getProject,
+  insertProjectWithBaselines,
+  listBaselines,
+  listProjects,
+  MAX_BASELINES,
+} from './projects';
 import { layoutSchema } from './record-schemas';
 import type { Baseline, Project } from './store/types';
 
@@ -55,6 +62,17 @@ export function serializeProjectFile(
     },
   };
   return `${JSON.stringify(file, null, 2)}\n`;
+}
+
+/** Every project in this browser, newest first: what an "upload to cloud" flow offers. */
+export async function listLocalProjects(): Promise<{ id: string; name: string }[]> {
+  return (await listProjects()).map(({ id, name }) => ({ id, name }));
+}
+
+/** A stored project as `.dashdb.json` text with its baselines, or null if it doesn't exist. */
+export async function exportProject(id: string, now?: Date): Promise<string | null> {
+  const [project, baselines] = await Promise.all([getProject(id), listBaselines(id)]);
+  return project ? serializeProjectFile(project, baselines, now) : null;
 }
 
 export type ParseProjectFileResult =

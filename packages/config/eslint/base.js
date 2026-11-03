@@ -11,6 +11,7 @@ import { dashdbPlugin } from './rules/no-outside-repo-imports.js';
 export const ignores = globalIgnores([
   '**/dist/**',
   '**/.next/**',
+  '**/.next-fixture/**',
   // fumadocs-mdx output
   '**/.source/**',
   '**/.turbo/**',

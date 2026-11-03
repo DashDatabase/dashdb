@@ -15,12 +15,7 @@ export function isCloudEdition(value?: string): boolean {
   return getEdition(value) === 'cloud';
 }
 
-/**
- * The contract a non-Community build implements to plug into this repository. The private
- * dashdb-cloud repository provides the implementation; this repository only defines the shape and
- * never imports one. Extension points are added here, as typed members, when the first paid
- * feature needs one.
- */
-export interface EditionExtension {
-  readonly edition: Edition;
-}
+export * from './editor';
+export * from './module';
+export * from './providers';
+export * from './oss/providers';

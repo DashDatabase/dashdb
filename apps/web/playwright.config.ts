@@ -1,6 +1,21 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
+/** Specs start as returning users; onboarding.spec.ts opts back into the first run. */
+export const returningUser = (url: string) => ({
+  cookies: [],
+  origins: [
+    {
+      origin: new URL(url).origin,
+      localStorage: [
+        {
+          name: 'dashdb-onboarding',
+          value: JSON.stringify({ status: 'dismissed', step: 0, projectId: null }),
+        },
+      ],
+    },
+  ],
+});
 
 export default defineConfig({
   testDir: './e2e',
@@ -14,22 +29,10 @@ export default defineConfig({
   use: {
     baseURL,
     trace: 'on-first-retry',
-    // Specs start as returning users; onboarding.spec.ts opts back into the first run.
-    storageState: {
-      cookies: [],
-      origins: [
-        {
-          origin: new URL(baseURL).origin,
-          localStorage: [
-            {
-              name: 'dashdb-onboarding',
-              value: JSON.stringify({ status: 'dismissed', step: 0, projectId: null }),
-            },
-          ],
-        },
-      ],
-    },
+    storageState: returningUser(baseURL),
   },
+  // e2e/edition runs against the test edition: playwright.edition.config.ts.
+  testIgnore: 'edition/**',
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
     command: 'pnpm dev',

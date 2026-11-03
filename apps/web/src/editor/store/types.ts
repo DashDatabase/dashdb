@@ -30,7 +30,14 @@ export interface ProjectDocument {
   readonly layout: Layout;
 }
 
-export type RightTab = 'inspector' | 'code' | 'migration';
+export const BUILTIN_RIGHT_TABS = ['inspector', 'code', 'migration'] as const;
+export type BuiltinRightTab = (typeof BUILTIN_RIGHT_TABS)[number];
+/** A built-in tab, or `edition:<id>` for a tab the active edition adds. */
+export type RightTab = BuiltinRightTab | `edition:${string}`;
+
+export function isBuiltinRightTab(tab: string): tab is BuiltinRightTab {
+  return (BUILTIN_RIGHT_TABS as readonly string[]).includes(tab);
+}
 
 export interface Selection {
   readonly tableId: Id | null;
@@ -40,7 +47,8 @@ export interface Selection {
 /** Per-project UI state, persisted so a reload reopens the editor exactly as it was. */
 export interface ViewState {
   readonly selection: Selection;
-  readonly rightTab: RightTab;
+  /** Edition tabs aren't saved: the project may be opened by a build without them. */
+  readonly rightTab: BuiltinRightTab;
   readonly leftOpen: boolean;
   readonly rightOpen: boolean;
 }

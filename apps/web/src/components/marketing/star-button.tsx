@@ -14,12 +14,7 @@ function GithubMark() {
 export async function StarButton() {
   const stars = await getStarCount();
   return (
-    <a
-      href={getGithubUrl()}
-      className={buttonClass('outline')}
-      data-testid="star-button"
-      aria-label={stars === null ? 'Star on GitHub' : `Star on GitHub (${String(stars)} stars)`}
-    >
+    <a href={getGithubUrl()} className={buttonClass('outline')} data-testid="star-button">
       <GithubMark />
       Star on GitHub
       {stars !== null && (
@@ -29,6 +24,10 @@ export async function StarButton() {
         >
           {formatStars(stars)}
         </span>
+      )}
+      {/* The visible label stays the start of the accessible name (WCAG 2.5.3). */}
+      {stars !== null && (
+        <span className="sr-only">{`, ${String(stars)} ${stars === 1 ? 'star' : 'stars'}`}</span>
       )}
     </a>
   );
