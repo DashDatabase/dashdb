@@ -36,7 +36,7 @@ export default function TemplatesPage() {
               key={template.slug}
               className="relative flex flex-col overflow-hidden rounded-xl border hover:bg-highlight/40"
             >
-              <div className="aspect-[16/10] overflow-hidden border-b bg-white">
+              <div className="aspect-[16/10] overflow-hidden border-b bg-[var(--white)]">
                 {/* eslint-disable-next-line @next/next/no-img-element -- static SVG with intrinsic size */}
                 <img
                   src={templateFiles(template.slug).preview}

@@ -14,6 +14,7 @@ const schema: Schema = parsePostgresDDL(`
   CREATE UNIQUE INDEX orders_code_key ON orders (code);
   CREATE UNIQUE INDEX orders_partial ON orders (coupon_id) WHERE code IS NOT NULL;
   CREATE TABLE profiles (customer_id bigint PRIMARY KEY REFERENCES customers (id), bio text);
+  CREATE TABLE tags (name text NOT NULL UNIQUE);
 `).schema;
 
 function table(name: string): Table {
@@ -52,6 +53,14 @@ describe('isUniqueSet', () => {
     expect(isUniqueSet(orders, [columnId(orders, 'code')])).toBe(true);
     expect(isUniqueSet(orders, [columnId(orders, 'coupon_id')])).toBe(false);
     expect(isUniqueSet(orders, [columnId(orders, 'id'), columnId(orders, 'code')])).toBe(false);
+    const customers = table('customers');
+    expect(isUniqueSet(customers, [columnId(customers, 'email')])).toBe(true);
+    expect(isUniqueSet(customers, [columnId(customers, 'name')])).toBe(false);
+  });
+
+  it('handles tables without a primary key', () => {
+    const tags = table('tags');
+    expect(isUniqueSet(tags, [columnId(tags, 'name')])).toBe(true);
   });
 });
 
@@ -66,5 +75,13 @@ describe('cardinality', () => {
     const [profile] = profiles.foreignKeys;
     if (!profile) throw new Error('profile key');
     expect(cardinality(profiles, profile)).toEqual({ sourceEnd: 'zero-one', targetEnd: 'one' });
+  });
+
+  it('treats a key column missing from the table as required', () => {
+    const orders = table('orders');
+    const [required] = orders.foreignKeys;
+    if (!required) throw new Error('foreign key');
+    const dangling = { ...required, columns: ['missing'] };
+    expect(cardinality(orders, dangling)).toEqual({ sourceEnd: 'many', targetEnd: 'one' });
   });
 });

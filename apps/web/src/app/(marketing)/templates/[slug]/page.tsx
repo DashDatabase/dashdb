@@ -82,7 +82,7 @@ export default async function TemplatePage({ params }: { params: Promise<Params>
       <figure
         role="img"
         aria-label={`Diagram of the ${meta.title} schema: ${schema.tables.map((t) => t.name).join(', ')}`}
-        className="mt-10 overflow-hidden rounded-xl border bg-white [&>svg]:h-auto [&>svg]:w-full"
+        className="mt-10 overflow-hidden rounded-xl border bg-[var(--white)] [&>svg]:h-auto [&>svg]:w-full"
         style={{ aspectRatio: `${String(preview.width)} / ${String(preview.height)}` }}
         data-testid="template-preview"
         dangerouslySetInnerHTML={{

@@ -21,8 +21,12 @@ export function next(tsconfigRootDir) {
     security.configs.recommended,
     {
       languageOptions: { parserOptions: { projectService: true, tsconfigRootDir } },
-      // Lets @next/next rules find the app when ESLint runs from the repo root (lint-staged).
-      settings: { next: { rootDir: tsconfigRootDir } },
+      settings: {
+        // Lets @next/next rules find the app when ESLint runs from the repo root (lint-staged).
+        next: { rootDir: tsconfigRootDir },
+        // As in base.js: never parse dependency sources (@dbml/core overflows the parser).
+        'import/ignore': ['node_modules'],
+      },
       rules: sharedRules,
     },
     { files: jsFiles, extends: rulesOnly(tseslint.configs.disableTypeChecked) },

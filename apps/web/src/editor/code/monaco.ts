@@ -43,55 +43,62 @@ function registerLanguage(
   monaco.languages.setLanguageConfiguration(id, configuration);
 }
 
-/** A CSS color (token value) as `#rrggbb`, which is all Monaco themes accept. */
-function hex(value: string, fallback: string): string {
+/**
+ * A CSS color (token value) as `#rrggbb`, which is all Monaco themes accept, or undefined when it
+ * can't be resolved (or has alpha), so the base theme's color applies instead.
+ */
+function hex(value: string): string | undefined {
   const context = document.createElement('canvas').getContext('2d');
-  if (!context || !value) return fallback;
-  context.fillStyle = fallback;
+  if (!context || !value) return undefined;
+  // An invalid value leaves fillStyle unchanged, and transparent never serializes with a #.
+  context.fillStyle = 'transparent';
   context.fillStyle = value;
   const result = context.fillStyle;
-  return result.startsWith('#') ? result : fallback;
+  return result.startsWith('#') ? result : undefined;
 }
 
 /** Defines (or redefines) the `dashdb` theme from the current design tokens and applies it. */
 export function applyTheme(monaco: MonacoApi, dark: boolean): void {
   const styles = getComputedStyle(document.documentElement);
-  const token = (name: string, fallback: string) =>
-    hex(styles.getPropertyValue(`--${name}`).trim(), fallback);
-  const text = token('text', dark ? '#e5e7eb' : '#111827');
-  const muted = token('text-muted', '#6b7280');
-  const surface = token('surface', dark ? '#111827' : '#f9fafb');
-  const highlight = token('highlight', dark ? '#1f2937' : '#f3f4f6');
-  const primary = token('primary-text', dark ? '#a5b4fc' : '#4338ca');
-  const accent = token('accent-text', dark ? '#5eead4' : '#115e59');
-  const success = token('success-text', dark ? '#86efac' : '#166534');
-  const warning = token('warning-text', dark ? '#fcd34d' : '#92400e');
-  const danger = token('danger-text', dark ? '#fca5a5' : '#b91c1c');
-  const strip = (color: string) => color.slice(1);
+  const token = (name: string) => hex(styles.getPropertyValue(`--${name}`).trim());
+  const text = token('text');
+  const muted = token('text-muted');
+  const surface = token('surface');
+  const highlight = token('highlight');
+  const primary = token('primary-text');
+  const accent = token('accent-text');
+  const success = token('success-text');
+  const warning = token('warning-text');
+  const danger = token('danger-text');
+  const rule = (name: string, color: string | undefined, fontStyle?: string) =>
+    color ? [{ token: name, foreground: color.slice(1), ...(fontStyle && { fontStyle }) }] : [];
+  const colors: Record<string, string | undefined> = {
+    'editor.background': surface,
+    'editor.foreground': text,
+    'editor.lineHighlightBackground': highlight,
+    'editorLineNumber.foreground': muted,
+    'editorGutter.background': surface,
+  };
 
   monaco.editor.defineTheme('dashdb', {
     base: dark ? 'vs-dark' : 'vs',
     inherit: true,
     rules: [
-      { token: 'comment', foreground: strip(muted), fontStyle: 'italic' },
-      { token: 'keyword', foreground: strip(primary), fontStyle: 'bold' },
-      { token: 'type', foreground: strip(accent) },
-      { token: 'type.identifier', foreground: strip(accent) },
-      { token: 'annotation', foreground: strip(warning) },
-      { token: 'attribute.name', foreground: strip(warning) },
-      { token: 'string', foreground: strip(success) },
-      { token: 'identifier.quoted', foreground: strip(text) },
-      { token: 'number', foreground: strip(danger) },
-      { token: 'constant', foreground: strip(danger) },
-      { token: 'operator', foreground: strip(primary) },
+      ...rule('comment', muted, 'italic'),
+      ...rule('keyword', primary, 'bold'),
+      ...rule('type', accent),
+      ...rule('type.identifier', accent),
+      ...rule('annotation', warning),
+      ...rule('attribute.name', warning),
+      ...rule('string', success),
+      ...rule('identifier.quoted', text),
+      ...rule('number', danger),
+      ...rule('constant', danger),
+      ...rule('operator', primary),
     ],
-    colors: {
-      'editor.background': surface,
-      'editor.foreground': text,
-      'editor.lineHighlightBackground': highlight,
-      'editorLineNumber.foreground': muted,
-      'editorGutter.background': surface,
-    },
+    colors: Object.fromEntries(
+      Object.entries(colors).filter((entry): entry is [string, string] => entry[1] !== undefined),
+    ),
   });
   monaco.editor.setTheme('dashdb');
 }

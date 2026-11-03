@@ -8,12 +8,16 @@ const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
 const scanned = ['packages/ui/src', 'apps/web/src'];
 const allowed = new Set([
   'packages/ui/src/styles/globals.css', // the token definitions themselves
-  'packages/ui/src/tokens.test.ts', // the patterns below
   'apps/web/src/app/icon.svg', // generated from the tokens by apps/web/scripts/generate-icons.mjs
   'apps/web/src/lib/brand-colors.ts', // token values for OG images (Satori can't read CSS variables)
+  'apps/web/src/editor/export/diagram-svg.ts', // token values for exported SVGs (standalone files)
 ]);
+// Tests need literal colors as data and in assertions on rendered output.
+const isTest = (name: string) => /\.test\.tsx?$/.test(name);
 
-const literal = /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab|lab|lch)\(/i;
+// Color functions are fine when they derive from a token: rgb(var(--x) / a), rgb(from var(--x) …).
+// eslint-disable-next-line security/detect-unsafe-regex -- linear: no nested quantifiers
+const literal = /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab|lab|lch)\((?!\s*(?:from\s+)?var\()/i;
 const palette =
   /\b(?:bg|text|border|ring|fill|stroke|outline|from|via|to|shadow|divide|decoration|caret|placeholder)-(?:white|black|(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3})\b/;
 
@@ -22,7 +26,7 @@ function* sourceFiles(dir: string): Generator<string> {
   for (const name of readdirSync(dir)) {
     const path = join(dir, name);
     if (statSync(path).isDirectory()) yield* sourceFiles(path);
-    else if (/\.(tsx?|css|svg)$/.test(name)) yield path;
+    else if (/\.(tsx?|css|svg)$/.test(name) && !isTest(name)) yield path;
   }
 }
 
