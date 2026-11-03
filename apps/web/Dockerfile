@@ -65,7 +65,7 @@ RUN case "$TARGETARCH" in \
 
 # Distroless: no shell or package manager, runs as uid 65532 (nonroot). Debian 13, like the
 # build stage, so sharp's glibc binaries match the runtime.
-FROM gcr.io/distroless/nodejs22-debian13:nonroot@sha256:10747a1323be68f206aed893599d43e6697ad67257e7c42703553f99fbce3d33
+FROM gcr.io/distroless/nodejs22-debian13:nonroot@sha256:8ad9cc935b7843c4024b7e1487b5ef472c354ea847b97c667023e2618552607e
 LABEL org.opencontainers.image.title="DashDB" \
       org.opencontainers.image.description="Design your database visually. Ship the migration." \
       org.opencontainers.image.source="https://github.com/DashDatabase/dashdb" \
