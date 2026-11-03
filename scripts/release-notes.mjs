@@ -47,9 +47,11 @@ for (const dir of dirs) {
 parts.sort((a, b) => Number(b.name === '@dashdb/web') - Number(a.name === '@dashdb/web'));
 
 const image = `ghcr.io/dashdatabase/dashdb:${version}`;
+// Keyless signatures name the workflow file that signed: image.yml, called by release.yml on main.
+const signer = 'https://github.com/DashDatabase/dashdb/.github/workflows/image.yml@refs/heads/main';
 process.stdout.write(
   [
     ...parts.map((p) => `### ${p.name}\n\n${p.body}`),
-    `### Docker image\n\n\`\`\`sh\ndocker pull ${image}\ncosign verify ${image} \\\n  --certificate-identity-regexp '^https://github.com/DashDatabase/dashdb/' \\\n  --certificate-oidc-issuer https://token.actions.githubusercontent.com\n\`\`\``,
+    `### Docker image\n\n\`\`\`sh\ndocker pull ${image}\ncosign verify ${image} \\\n  --certificate-identity ${signer} \\\n  --certificate-oidc-issuer https://token.actions.githubusercontent.com\n\`\`\``,
   ].join('\n\n') + '\n',
 );

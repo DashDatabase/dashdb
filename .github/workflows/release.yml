@@ -52,7 +52,9 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      # This job holds a write token, so dependency install scripts don't run: nothing here
+      # needs them (Changesets and release-notes.mjs are plain Node).
+      - run: pnpm install --frozen-lockfile --ignore-scripts
 
       # Only opens or updates the version PR. Changesets v3 no longer prints the "New tag:" lines
       # this action parses to publish, so tagging and the GitHub release are done below.
@@ -120,7 +122,8 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      # As in the version job, so the dry run checks the same install.
+      - run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Apply the pending changesets locally
         run: |
           pnpm changeset version

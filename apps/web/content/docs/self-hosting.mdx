@@ -30,11 +30,12 @@ docker compose -f docker-compose.selfhost.yml up
 Either way DashDB is on [localhost:8080](http://localhost:8080), with a health check at
 `/api/health`. The image runs as a non-root user on a distroless base with no shell or package
 manager; it needs no capabilities (`--cap-drop ALL`). Images are published for `linux/amd64` and `linux/arm64`, each with an
-SBOM and build provenance, and are signed with [cosign](https://docs.sigstore.dev). To verify one:
+SBOM and build provenance, and are signed with [cosign](https://docs.sigstore.dev) by the release
+workflow on `main`. To verify one:
 
 ```bash
 cosign verify ghcr.io/dashdatabase/dashdb:latest \
-  --certificate-identity-regexp '^https://github.com/DashDatabase/dashdb/' \
+  --certificate-identity https://github.com/DashDatabase/dashdb/.github/workflows/image.yml@refs/heads/main \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
