@@ -17,6 +17,8 @@ export const ignores = globalIgnores([
   '**/next-env.d.ts',
   '**/playwright-report/**',
   '**/test-results/**',
+  // tsup writes and deletes these next to tsup.config.ts while a build runs in parallel with lint.
+  '**/*.bundled_*.mjs',
 ]);
 
 /** Plain JS (config files) is outside every tsconfig, so skip type-aware rules there. */
