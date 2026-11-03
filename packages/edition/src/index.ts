@@ -18,4 +18,5 @@ export function isCloudEdition(value?: string): boolean {
 export * from './editor';
 export * from './module';
 export * from './providers';
+export * from './telemetry';
 export * from './oss/providers';

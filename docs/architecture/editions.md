@@ -72,7 +72,8 @@ fails loudly instead of misbehaving. Adding an optional member is not breaking.
 - `AIProvider` (`review(ir)`, `generate(prompt)`): returns `@dashdb/core` types. Providers check
   model output with core's `findingSchema` and `schemaSchema`.
 - `EntitlementsProvider` (`has`, `limits`).
-- `TelemetryProvider`: off unless the user opts in.
+- `TelemetryProvider`: off unless the user opts in. Events are typed (`TelemetryEvents`, see
+  [Telemetry](#telemetry)).
 
 **Editor slots.** Every slot component receives `{ editor: EditorApi }`:
 
@@ -112,6 +113,34 @@ it did before the seam existed.
 
 `NEXT_PUBLIC_DASHDB_EDITION` (`cloud`/`oss`) is a separate flag. It only controls the marketing
 pages on dashdb.dev (pricing, the waitlist).
+
+## Telemetry
+
+App code records product events only through `track()` in `apps/web/src/lib/telemetry.ts`, with
+the events and properties `@dashdb/edition` catalogues in `TelemetryEvents`:
+
+| Event                  | Properties                                                                                  |
+| ---------------------- | ------------------------------------------------------------------------------------------- |
+| `project_created`      | `source` (`blank`, `template`, `file`, `tool`, `starter`, `duplicate`), `dialect`           |
+| `schema_imported`      | `format` (`postgres`, `mysql`, `prisma`, `dbml`, `database`, `project`)                     |
+| `migration_generated`  | `target` (`sql`, `prisma`, `drizzle`), `risk` (`safe`, `caution`, `dangerous`), `ops_count` |
+| `migration_downloaded` | `target`, `bundle` (`file`, `zip`)                                                          |
+| `baseline_saved`       | `reason` (`manual`, `applied`)                                                              |
+
+Every property is a fixed choice or a count. Events never carry schema content, or the names
+of tables, columns, projects or files. `sanitizeTelemetryEvent` enforces this at runtime for
+both `track()` and `createOptInTelemetry`: it drops any property outside the catalogue, and an
+event with a missing or invalid value isn't sent at all.
+
+`migration_generated` fires when the user generates a migration. It doesn't fire for each
+automatic regeneration after an edit.
+
+DashDB Community records nothing: telemetry is off unless the user opts in, and even then the
+Community edition has no destination. An edition that sends events supplies a `send` function
+to `createOptInTelemetry`, and is responsible for the opt-in UI and its privacy policy.
+
+Adding an event, or a property to an existing one, isn't a breaking change. Changing or
+removing one is, and needs an `EDITION_API_VERSION` bump.
 
 ## Plugging in another edition
 

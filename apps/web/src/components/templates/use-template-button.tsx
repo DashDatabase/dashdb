@@ -14,13 +14,15 @@ export function UseTemplateButton({ href }: { href: string }) {
   const open = async () => {
     setState('opening');
     try {
-      const [response, { importProjectFile }] = await Promise.all([
+      const [response, { importProjectFile }, { track }] = await Promise.all([
         fetch(href),
         import('@/editor/project-file'),
+        import('@/lib/telemetry'),
       ]);
       if (!response.ok) throw new Error(`HTTP ${String(response.status)}`);
       const result = await importProjectFile(await response.text());
       if (!result.ok) throw new Error(result.errors.join('; '));
+      track('project_created', { source: 'template', dialect: result.project.schema.dialect });
       router.push(`/app/p/${result.project.id}`);
     } catch {
       setState('failed');

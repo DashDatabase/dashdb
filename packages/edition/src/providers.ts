@@ -1,5 +1,6 @@
 import type { Finding, Schema } from '@dashdb/core';
 import type { DocumentPatch } from './editor';
+import type { TelemetryEventName, TelemetryEvents } from './telemetry';
 
 /** Called to stop listening. */
 export type Unsubscribe = () => void;
@@ -88,13 +89,17 @@ export interface EntitlementsProvider {
   limits(): Limits;
 }
 
-export type TelemetryProps = Readonly<Record<string, string | number | boolean>>;
+/** An event's properties after `sanitizeTelemetryEvent`: fixed choices and counts only. */
+export type TelemetryProps = Readonly<Record<string, string | number>>;
 
-/** Anonymous product telemetry. Off unless the user opts in. */
+/**
+ * Anonymous product telemetry: the events in `TelemetryEvents`, never schema content or names.
+ * Off unless the user opts in. Implementations pass props through `sanitizeTelemetryEvent`.
+ */
 export interface TelemetryProvider {
   isEnabled(): boolean;
   setOptIn(optIn: boolean): void;
-  track(event: string, props?: TelemetryProps): void;
+  track<E extends TelemetryEventName>(event: E, props: TelemetryEvents[E]): void;
 }
 
 export interface EditionProviders {

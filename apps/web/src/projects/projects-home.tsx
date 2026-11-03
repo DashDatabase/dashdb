@@ -65,6 +65,7 @@ import {
 import { edition } from '@/edition/active';
 import { markForArrange } from '@/editor/canvas/arrange-intent';
 import { editorApi } from '@/editor/edition-api';
+import { track } from '@/lib/telemetry';
 import { createStarterProject } from '@/editor/onboarding/start';
 import { isFirstRun } from '@/editor/onboarding/tour';
 import { relativeTime } from '@/editor/schema-text';
@@ -375,8 +376,13 @@ export function ProjectsHome() {
     router.push(`/app/p/${project.id}`);
   };
 
+  const created = (project: Project, source: 'blank' | 'template' | 'file' | 'duplicate') => {
+    track('project_created', { source, dialect: project.schema.dialect });
+    return project;
+  };
+
   const create = async (name: string, dialect: IrDialect) => {
-    open(await createProject({ name, dialect }));
+    open(created(await createProject({ name, dialect }), 'blank'));
   };
 
   /** Opens a project whose tables have no layout yet, arranging them on arrival. */
@@ -403,7 +409,10 @@ export function ProjectsHome() {
 
   const fromTemplate = async (template: Template) => {
     openArranged(
-      await createProject({ name: template.name, schema: await schemaFromTemplate(template) }),
+      created(
+        await createProject({ name: template.name, schema: await schemaFromTemplate(template) }),
+        'template',
+      ),
     );
   };
 
@@ -415,8 +424,10 @@ export function ProjectsHome() {
         return;
       }
       const result = await importProjectFile(await file.text());
-      if (result.ok) open(result.project);
-      else setImportErrors({ fileName: file.name, errors: result.errors });
+      if (result.ok) {
+        track('schema_imported', { format: 'project' });
+        open(created(result.project, 'file'));
+      } else setImportErrors({ fileName: file.name, errors: result.errors });
       return;
     }
     if (file.size > MAX_IMPORT_BYTES) {
@@ -424,12 +435,16 @@ export function ProjectsHome() {
       return;
     }
     const text = await file.text();
-    const { schema, diagnostics } = await importSchema(detectImportFormat(file.name, text), text);
+    const format = detectImportFormat(file.name, text);
+    const { schema, diagnostics } = await importSchema(format, text);
     if (schema.tables.length === 0 && diagnostics.some((d) => d.severity === 'error')) {
       toast.error(`Could not import ${file.name}`, { description: diagnostics[0]?.message });
       return;
     }
-    openArranged(await createProject({ name: file.name.replace(/\.[^.]+$/, ''), schema }));
+    track('schema_imported', { format });
+    openArranged(
+      created(await createProject({ name: file.name.replace(/\.[^.]+$/, ''), schema }), 'file'),
+    );
   };
 
   return (
@@ -537,7 +552,10 @@ export function ProjectsHome() {
                 }}
                 onDuplicate={() => {
                   void duplicateProject(project.id).then(async (copy) => {
-                    if (copy) toast.success(`Created “${copy.name}”`);
+                    if (copy) {
+                      created(copy, 'duplicate');
+                      toast.success(`Created “${copy.name}”`);
+                    }
                     await refresh();
                   });
                 }}

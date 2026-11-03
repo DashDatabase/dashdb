@@ -101,28 +101,36 @@ describe('createOptInTelemetry', () => {
   it('is off and sends nothing until the user opts in', () => {
     const { telemetry, send } = setup(null);
     expect(telemetry.isEnabled()).toBe(false);
-    telemetry.track('opened');
+    telemetry.track('baseline_saved', { reason: 'manual' });
     expect(send).not.toHaveBeenCalled();
 
     telemetry.setOptIn(true);
     expect(telemetry.isEnabled()).toBe(true);
-    telemetry.track('opened');
-    telemetry.track('exported', { format: 'sql' });
+    telemetry.track('baseline_saved', { reason: 'manual' });
+    telemetry.track('migration_generated', { target: 'sql', risk: 'caution', ops_count: 3 });
     expect(send.mock.calls).toEqual([
-      ['opened', {}],
-      ['exported', { format: 'sql' }],
+      ['baseline_saved', { reason: 'manual' }],
+      ['migration_generated', { target: 'sql', risk: 'caution', ops_count: 3 }],
     ]);
 
     telemetry.setOptIn(false);
-    telemetry.track('opened');
+    telemetry.track('baseline_saved', { reason: 'manual' });
     expect(send).toHaveBeenCalledTimes(2);
+  });
+
+  it('sends only catalogued properties, and drops invalid events', () => {
+    const { telemetry, send } = setup(true);
+    const leaky = { format: 'prisma', schema: 'model User { email String }', name: 'Acme' };
+    telemetry.track('schema_imported', leaky as never);
+    telemetry.track('schema_imported', { format: 'oracle' } as never);
+    expect(send.mock.calls).toEqual([['schema_imported', { format: 'prisma' }]]);
   });
 
   it('drops events when opted in without a destination', () => {
     const { telemetry } = setup(true, false);
     expect(telemetry.isEnabled()).toBe(true);
     expect(() => {
-      telemetry.track('opened');
+      telemetry.track('baseline_saved', { reason: 'manual' });
     }).not.toThrow();
   });
 });

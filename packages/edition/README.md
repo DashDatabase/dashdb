@@ -14,8 +14,11 @@ developed separately under a commercial license. See
   - `noAuthProvider`.
   - `createByokAIProvider`: unavailable until a key can be set; no network calls.
   - `allLocalEntitlements`: everything unlocked; Community never shows a paywall.
-  - `createOptInTelemetry`: off unless opted in.
+  - `createOptInTelemetry`: off unless opted in; sends only sanitized, catalogued events.
   - `createOssProviders` composes them.
+- `TelemetryEvents`: the typed product events (`project_created`, `schema_imported`,
+  `migration_generated`, `migration_downloaded`, `baseline_saved`). Their properties are fixed
+  choices and counts only, never schema content or names. `sanitizeTelemetryEvent` enforces this.
 - `getEdition()` / `isCloudEdition()`: the marketing build flag from `NEXT_PUBLIC_DASHDB_EDITION` (`oss` for self-hosted builds, `cloud` otherwise). Fixed at build time and separate from the edition module.
 
 Paid features plug in only through this package. Never add server, billing, auth, collaboration

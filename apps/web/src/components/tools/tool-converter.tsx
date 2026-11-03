@@ -199,11 +199,13 @@ export function ToolConverter(props: ToolConverterProps) {
     if (!result?.ok) return;
     setOpening(true);
     try {
-      const [{ createProject }, { markForArrange }] = await Promise.all([
+      const [{ createProject }, { markForArrange }, { track }] = await Promise.all([
         import('@/editor/projects'),
         import('@/editor/canvas/arrange-intent'),
+        import('@/lib/telemetry'),
       ]);
       const project = await createProject({ name: props.projectName, schema: result.schema });
+      track('project_created', { source: 'tool', dialect: project.schema.dialect });
       markForArrange(project.id);
       router.push(`/app/p/${project.id}`);
     } catch {

@@ -17,6 +17,21 @@ test('the edition adds a top-bar item to the editor', async ({ page }) => {
   );
 });
 
+test('telemetry records catalogued events, without names', async ({ page }) => {
+  await page.goto('/app');
+  await page.getByRole('button', { name: 'New project' }).first().click();
+  const dialog = page.getByRole('dialog', { name: 'New project' });
+  await dialog.getByLabel('Name').fill('Secret project name');
+  await dialog.getByRole('button', { name: 'Create project' }).click();
+  await expect(page).toHaveURL(/\/app\/p\/[\w-]+$/, { timeout: 60_000 });
+  // Client-side navigation keeps the page, so events recorded on /app are still there.
+  const events = await page.evaluate(
+    () => (window as { __dashdbTelemetry?: unknown[] }).__dashdbTelemetry ?? [],
+  );
+  expect(events).toEqual([['project_created', { source: 'blank', dialect: 'postgres' }]]);
+  expect(JSON.stringify(events)).not.toContain('Secret');
+});
+
 test('the edition provides /login, not indexed', async ({ page }) => {
   await page.goto('/login?next=/app/p/x');
   await expect(page.getByRole('heading', { name: 'Fixture login' })).toBeVisible();

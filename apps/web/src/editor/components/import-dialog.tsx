@@ -23,6 +23,7 @@ import {
 } from '@dashdb/ui';
 import { FileUpIcon } from 'lucide-react';
 import { useId, useRef, useState } from 'react';
+import { track } from '@/lib/telemetry';
 import {
   IMPORT_FORMATS,
   detectPastedFormat,
@@ -136,7 +137,11 @@ export function ImportDialog() {
   };
 
   /** Puts a parsed schema into the project, or shows why it cannot. */
-  const applySchema = ({ schema, diagnostics }: ParseResult, emptyHint?: string) => {
+  const applySchema = (
+    format: ImportFormat | 'database',
+    { schema, diagnostics }: ParseResult,
+    emptyHint?: string,
+  ) => {
     const fatal = diagnostics.filter((d) => d.severity === 'error');
     if (fatal.length > 0 && schema.tables.length === 0) {
       setProblems(
@@ -152,6 +157,7 @@ export function ImportDialog() {
       return;
     }
     if (editSchema('Import schema', () => schema)) runCanvasCommand('arrange');
+    track('schema_imported', { format });
     close();
     const notes = diagnostics.length;
     toast.success(
@@ -163,16 +169,19 @@ export function ImportDialog() {
   const submit = async () => {
     setProblems([]);
     if (source === 'paste') {
-      applySchema(await importSchema(pasteOverride ?? detectedPaste, pasted));
+      const format = pasteOverride ?? detectedPaste;
+      applySchema(format, await importSchema(format, pasted));
     } else if (source === 'database') {
       applySchema(
+        'database',
         importIntrospection(dialect, result),
         dialect === 'mysql'
           ? 'The result has no tables. Select the database to import before running the query: it reads the current database (DATABASE()).'
           : 'The result has no tables. Check that you ran the query against the right database.',
       );
     } else if (upload?.file.kind === 'schema') {
-      applySchema(await importSchema(uploadOverride ?? upload.file.format, upload.file.text));
+      const format = uploadOverride ?? upload.file.format;
+      applySchema(format, await importSchema(format, upload.file.text));
     } else if (upload?.file.kind === 'project') {
       const { file } = upload.file;
       if (
@@ -181,6 +190,7 @@ export function ImportDialog() {
           file,
         )
       ) {
+        track('schema_imported', { format: 'project' });
         close();
         toast.success(`Imported ${String(file.project.schema.tables.length)} tables`, {
           description: `Schema and layout from “${file.project.name}”.`,

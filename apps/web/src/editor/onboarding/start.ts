@@ -1,4 +1,5 @@
 // First run: a ready-made "SaaS starter" project with the guided tour switched on.
+import { track } from '@/lib/telemetry';
 import { createProject } from '../projects';
 import type { Project } from '../store';
 import { TEMPLATES, schemaFromTemplate } from '../templates';
@@ -14,5 +15,6 @@ export async function createStarterProject(): Promise<Project> {
     schema: await schemaFromTemplate(template),
   });
   tourStore.getState().start(project.id);
+  track('project_created', { source: 'starter', dialect: project.schema.dialect });
   return project;
 }
