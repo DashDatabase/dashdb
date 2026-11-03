@@ -1,0 +1,11 @@
+# Render Blueprint for the "Deploy to Render" button in the README.
+# Runs the published image; Render sets PORT, which the server reads.
+services:
+  - type: web
+    name: dashdb
+    runtime: image
+    image:
+      url: ghcr.io/dashdatabase/dashdb:latest
+    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: false

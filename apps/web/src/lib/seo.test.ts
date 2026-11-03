@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { absoluteUrl, pageMetadata } from './seo';
 import { rules } from '@dashdb/core';
-import { allPages, breadcrumbTrail, getPage, guidePage, guidePages, PAGES } from './site';
+import {
+  allPages,
+  breadcrumbTrail,
+  getPage,
+  guidePage,
+  guidePages,
+  listedPages,
+  PAGES,
+} from './site';
 
 const SITE = 'https://example.test';
 
@@ -48,6 +56,13 @@ describe('site pages', () => {
       '/features/migrations',
     ]);
     expect(breadcrumbTrail(getPage('home')).map((p) => p.path)).toEqual(['/']);
+  });
+
+  it('leave cloud-only pages out of self-hosted (OSS) builds', () => {
+    const paths = (cloud: boolean) => listedPages(cloud).map((p) => p.path);
+    expect(paths(true)).toContain('/pricing');
+    expect(paths(false)).not.toContain('/pricing');
+    expect(paths(false)).toHaveLength(PAGES.length - 1);
   });
 });
 

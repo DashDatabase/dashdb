@@ -1,5 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { getApiUrl, getGithubUrl, getSiteUrl, githubRepoSlug } from './config';
+import {
+  getApiUrl,
+  getEdition,
+  getGithubUrl,
+  getSiteUrl,
+  githubRepoSlug,
+  isCloudEdition,
+} from './config';
+
+describe('getEdition', () => {
+  it('is cloud unless OSS mode is asked for', () => {
+    expect(getEdition('')).toBe('cloud');
+    expect(getEdition('enterprise')).toBe('cloud');
+    expect(getEdition(' OSS ')).toBe('oss');
+    expect(isCloudEdition('oss')).toBe(false);
+    expect(isCloudEdition('cloud')).toBe(true);
+  });
+});
 
 describe('getApiUrl', () => {
   it('falls back to the local API', () => {

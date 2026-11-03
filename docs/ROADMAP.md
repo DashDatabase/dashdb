@@ -21,12 +21,13 @@ Items are grouped by status, not dates. "Later" means wanted but not yet schedul
 - Local-first editor: canvas with auto-layout, two-way Code tab, undo, baselines, migration
   panel with visual diff and safety review
 - Browser-side converter tools (`/tools`), schema templates gallery, docs, blog and safety guides
+- Self-hosting: signed multi-arch Docker image (`ghcr.io/dashdatabase/dashdb`), Compose file,
+  Railway and Render deploys, and an automated Changesets release pipeline
 
 ## 🚧 Now
 
 - Open-source launch: license, contributor docs, issue forms, DCO check
 - Demo GIF and launch materials
-- Official Docker image (`ghcr.io/dashdatabase/dashdb`)
 
 ## 🔜 Next
 

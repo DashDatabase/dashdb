@@ -6,6 +6,7 @@ import { MigrationShowcase } from '@/components/marketing/migration-showcase';
 import { ButtonLink, Container, Section } from '@/components/marketing/primitives';
 import { StarButton } from '@/components/marketing/star-button';
 import { WaitlistForm } from '@/components/marketing/waitlist-form';
+import { isCloudEdition } from '@/lib/config';
 import { softwareApplicationLd, type FaqItem } from '@/lib/json-ld';
 import { pageMetadata } from '@/lib/seo';
 import { SITE } from '@/lib/site';
@@ -70,8 +71,9 @@ const HOME_FAQ: readonly FaqItem[] = [
   },
   {
     question: 'Is it free?',
-    answer:
-      'Yes. The editor is free with no limits on projects or tables. Cloud sync and team features are planned; join the waitlist to hear when they arrive.',
+    answer: isCloudEdition()
+      ? 'Yes. The editor is free with no limits on projects or tables. Cloud sync and team features are planned; join the waitlist to hear when they arrive.'
+      : 'Yes. DashDB is open source under the AGPL-3.0, with no limits on projects or tables.',
   },
 ];
 
@@ -258,9 +260,11 @@ export default function HomePage() {
           <ButtonLink href="/app" prefetch={false} className="mt-8 h-12 px-6 text-base">
             Open the editor — no signup
           </ButtonLink>
-          <div className="mt-12 w-full max-w-md text-left">
-            <WaitlistForm source="/" label="Or get product updates by email" cta="Subscribe" />
-          </div>
+          {isCloudEdition() && (
+            <div className="mt-12 w-full max-w-md text-left">
+              <WaitlistForm source="/" label="Or get product updates by email" cta="Subscribe" />
+            </div>
+          )}
         </Container>
       </section>
     </>

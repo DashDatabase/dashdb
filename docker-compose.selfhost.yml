@@ -1,0 +1,27 @@
+# Self-host DashDB with one command:
+#   docker compose -f docker-compose.selfhost.yml up
+# then open http://localhost:8080. This runs the published image. If it can't be pulled (before
+# the first release, or offline), Compose builds it from this checkout instead, which takes a
+# few minutes and about 6 GB of memory for Docker. Add --build to always build your checkout.
+# The editor keeps projects in each user's browser, so there is no database or volume to manage.
+name: dashdb-selfhost
+
+services:
+  dashdb:
+    image: ghcr.io/dashdatabase/dashdb:latest
+    pull_policy: missing
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # Compiled into the pages: set before building, e.g. to your own domain.
+        NEXT_PUBLIC_SITE_URL: ${DASHDB_SITE_URL:-http://localhost:8080}
+    ports:
+      - '${DASHDB_PORT:-8080}:8080'
+    restart: unless-stopped
+    # Not read_only: Next.js writes regenerated (ISR) pages next to the prerendered ones in
+    # /app/apps/web/.next/server. The container runs as a non-root user with no capabilities.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL

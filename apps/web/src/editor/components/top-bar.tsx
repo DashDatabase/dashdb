@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
-import { getGithubUrl } from '@/lib/config';
+import { getGithubUrl, isCloudEdition } from '@/lib/config';
 import { getAction } from '../actions';
 import { useRunAction } from '../hooks';
 import { useEditor } from '../store';
@@ -112,28 +112,30 @@ export function TopBar() {
       </ActionButton>
       <Separator orientation="vertical" className="mx-1 h-4" />
       <ThemeToggle className="size-8" />
-      <Tooltip>
-        <TooltipTrigger asChild>
-          {/* Disabled buttons swallow pointer events, so the tooltip hangs off a focusable wrapper. */}
-          <span
-            tabIndex={0}
-            className="rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-          >
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled
-              tabIndex={-1}
-              aria-label="Share"
-              className={barButton}
+      {isCloudEdition() && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {/* Disabled buttons swallow pointer events, so the tooltip hangs off a focusable wrapper. */}
+            <span
+              tabIndex={0}
+              className="rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
-              <Share2Icon aria-hidden className="size-4" />{' '}
-              <span className="hidden xl:inline">Share</span>
-            </Button>
-          </span>
-        </TooltipTrigger>
-        <TooltipContent>Sharing arrives with DashDB Cloud</TooltipContent>
-      </Tooltip>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled
+                tabIndex={-1}
+                aria-label="Share"
+                className={barButton}
+              >
+                <Share2Icon aria-hidden className="size-4" />{' '}
+                <span className="hidden xl:inline">Share</span>
+              </Button>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>Sharing arrives with DashDB Cloud</TooltipContent>
+        </Tooltip>
+      )}
       <Button variant="outline" size="sm" asChild className={barButton}>
         <a
           href={getGithubUrl()}

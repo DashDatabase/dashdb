@@ -52,16 +52,33 @@ Open **[dashdb.dev/app](https://dashdb.dev/app)**. Nothing to install, no accoun
 
 ### Docker
 
-<!-- TODO: publish an official image (tracked on the roadmap) and replace this section -->
-
-An official image is not published yet. Until it is, self-host from source as described in
-[Self-hosting](https://dashdb.dev/docs/self-hosting): it is a standard Next.js app with no
-database of its own.
+Run your own instance on [localhost:8080](http://localhost:8080) with one command:
 
 ```sh
-# Coming soon
-docker run -p 3000:3000 ghcr.io/dashdatabase/dashdb
+git clone https://github.com/DashDatabase/dashdb.git && cd dashdb
+docker compose -f docker-compose.selfhost.yml up
 ```
+
+Or run the published image directly:
+
+```sh
+docker run -p 8080:8080 ghcr.io/dashdatabase/dashdb:latest
+```
+
+The image is the self-hosted (OSS) edition: the editor, docs and tools, without the hosted
+waitlist and pricing. It needs no database, since projects live in each user's browser. Images
+are multi-arch (amd64, arm64), signed with cosign and ship an SBOM. See
+[Self-hosting](https://dashdb.dev/docs/self-hosting) for configuration and verification.
+
+### One-click deploy
+
+<!-- TODO: publish a Railway template from this repo and replace the URL with its template code -->
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https://github.com/DashDatabase/dashdb)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/DashDatabase/dashdb)
+
+Railway builds the [Dockerfile](apps/web/Dockerfile) ([`railway.json`](railway.json)); Render
+runs the published image ([`render.yaml`](render.yaml)).
 
 ### Local development
 

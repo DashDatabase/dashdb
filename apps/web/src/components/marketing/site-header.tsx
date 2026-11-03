@@ -1,5 +1,6 @@
 import { Logo } from '@dashdb/ui/server';
 import Link from 'next/link';
+import { isCloudEdition } from '@/lib/config';
 import { ButtonLink, Container, prefetchFor } from './primitives';
 
 const NAV = [
@@ -9,7 +10,7 @@ const NAV = [
   { href: '/tools', label: 'Tools' },
   { href: '/docs', label: 'Docs' },
   { href: '/blog', label: 'Blog' },
-  { href: '/pricing', label: 'Pricing' },
+  { href: '/pricing', label: 'Pricing', cloudOnly: true },
 ] as const;
 
 export function SiteHeader() {
@@ -25,7 +26,7 @@ export function SiteHeader() {
         </Link>
         <nav aria-label="Main" className="hidden md:block">
           <ul className="flex items-center gap-1 text-sm">
-            {NAV.map((item) => (
+            {NAV.filter((item) => !('cloudOnly' in item) || isCloudEdition()).map((item) => (
               <li key={item.href}>
                 <Link
                   href={item.href}

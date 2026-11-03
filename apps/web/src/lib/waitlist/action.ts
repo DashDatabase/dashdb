@@ -1,6 +1,7 @@
 'use server';
 
 import { headers } from 'next/headers';
+import { isCloudEdition } from '../config';
 import { clientKey, createRateLimiter } from './rate-limit';
 import { saveSignup, storesFromEnv, type SubscriberStore } from './store';
 import { parseSignup } from './validate';
@@ -24,6 +25,10 @@ export async function joinWaitlist(
   _previous: WaitlistState,
   form: FormData,
 ): Promise<WaitlistState> {
+  // Self-hosted builds render no form, but the action is still reachable by a direct POST.
+  if (!isCloudEdition()) {
+    return { status: 'error', message: 'The waitlist is not available on this server.' };
+  }
   const input = parseSignup(form);
   // Bots get the same answer as people, so the honeypot isn't revealed.
   if (input.kind === 'bot') return SUCCESS;

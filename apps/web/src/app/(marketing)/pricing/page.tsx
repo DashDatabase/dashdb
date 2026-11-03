@@ -2,6 +2,8 @@ import { Breadcrumbs } from '@/components/marketing/breadcrumbs';
 import { Faq } from '@/components/marketing/faq';
 import { ButtonLink, Container, PageHeader, Section } from '@/components/marketing/primitives';
 import { WaitlistForm } from '@/components/marketing/waitlist-form';
+import { notFound } from 'next/navigation';
+import { isCloudEdition } from '@/lib/config';
 import type { FaqItem } from '@/lib/json-ld';
 import { pageMetadata } from '@/lib/seo';
 import { getPage } from '@/lib/site';
@@ -65,6 +67,8 @@ const PRICING_FAQ: readonly FaqItem[] = [
 ];
 
 export default function PricingPage() {
+  // Paid plans are for dashdb.dev; a self-hosted instance has no pricing to show.
+  if (!isCloudEdition()) notFound();
   const page = getPage('pricing');
   return (
     <>

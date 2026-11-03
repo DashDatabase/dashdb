@@ -1,6 +1,6 @@
 ---
 title: Self-hosting
-description: Run your own copy of DashDB on any server with Node.js 22. The editor is fully client-side, so a self-hosted instance needs no database.
+description: Run your own copy of DashDB with Docker or Node.js 22. The editor is fully client-side, so a self-hosted instance needs no database.
 ---
 
 DashDB's editor runs entirely in the browser and stores projects in each user's browser. A
@@ -13,20 +13,54 @@ back up on the server.
   them its source code. See [Open source](/open-source).
 </Callout>
 
-## Requirements
+## Docker (recommended)
 
-- Node.js 22 (the version in `.nvmrc`)
-- pnpm 9 (`corepack enable` installs the version the repository pins)
-- Enough memory for a Next.js build (2 GB is comfortable); running it needs far less
+The quickest way is the published image, the self-hosted (OSS) edition of DashDB:
 
-## Build and run
+```bash
+docker run -d -p 8080:8080 --name dashdb ghcr.io/dashdatabase/dashdb:latest
+```
+
+Or, from a clone of the repository, build and run it with Compose:
+
+```bash
+docker compose -f docker-compose.selfhost.yml up
+```
+
+Either way DashDB is on [localhost:8080](http://localhost:8080), with a health check at
+`/api/health`. The image runs as a non-root user on a distroless base with no shell or package
+manager; it needs no capabilities (`--cap-drop ALL`). Images are published for `linux/amd64` and `linux/arm64`, each with an
+SBOM and build provenance, and are signed with [cosign](https://docs.sigstore.dev). To verify one:
+
+```bash
+cosign verify ghcr.io/dashdatabase/dashdb:latest \
+  --certificate-identity-regexp '^https://github.com/DashDatabase/dashdb/' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+<Callout title="OSS edition">
+  Self-hosted builds set `NEXT_PUBLIC_DASHDB_EDITION=oss`. That hides what only makes sense on
+  dashdb.dev, such as the waitlist, pricing and the "coming with DashDB Cloud" hints. The editor,
+  migrations, safety checks, docs, templates and converter tools are all the same.
+</Callout>
+
+Building the image yourself takes a few minutes and about 6 GB of memory available to Docker
+(Docker Desktop: Settings → Resources); running it needs a few hundred MB. To change a
+`NEXT_PUBLIC_` value, such as your own domain, rebuild the image with a build argument: `DASHDB_SITE_URL=https://db.example.com docker compose -f docker-compose.selfhost.yml
+build`. Set `DASHDB_PORT` to publish on a port other than 8080.
+
+## Build from source
+
+You need Node.js 22 (the version in `.nvmrc`), pnpm 9 (`corepack enable` installs the version
+the repository pins) and enough memory for a Next.js build (2 GB is comfortable); running it
+needs far less.
 
 ```bash
 git clone https://github.com/DashDatabase/dashdb.git
 cd dashdb
 corepack enable
 pnpm install --frozen-lockfile
-pnpm turbo run build --filter=@dashdb/web
+NEXT_PUBLIC_DASHDB_EDITION=oss pnpm turbo run build --filter=@dashdb/web
 pnpm --filter @dashdb/web start
 ```
 
@@ -41,11 +75,12 @@ the build**: values starting with `NEXT_PUBLIC_` are compiled into the pages.
 
 | Variable                               | Used for                                                                                       |
 | -------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_DASHDB_EDITION`           | `oss` for a self-hosted instance (the Docker image's default); `cloud` is dashdb.dev.          |
 | `NEXT_PUBLIC_SITE_URL`                 | The public URL, for canonical links, the sitemap and social images. Set it to your own domain. |
 | `NEXT_PUBLIC_GITHUB_URL`               | The repository linked from the site, if you run a fork.                                        |
 | `GITHUB_TOKEN`                         | Raises GitHub's rate limit when the build reads the star count.                                |
-| `DATABASE_URL`                         | Postgres for waitlist signups (run `pnpm db:migrate` first). Not needed for the editor.        |
-| `RESEND_API_KEY`, `RESEND_AUDIENCE_ID` | Also add waitlist signups to a Resend audience.                                                |
+| `DATABASE_URL`                         | Postgres for waitlist signups (cloud edition only; run `pnpm db:migrate` first).               |
+| `RESEND_API_KEY`, `RESEND_AUDIENCE_ID` | Also add waitlist signups to a Resend audience (cloud edition only).                           |
 
 ## Only the editor
 
@@ -55,6 +90,8 @@ out of search engines, block it at your proxy or put it behind your single sign-
 
 ## Updating
 
-Pull the new release, then run the install and build steps again and restart the server.
+With Docker, pull the new image (`docker compose -f docker-compose.selfhost.yml pull`, or
+`docker pull ghcr.io/dashdatabase/dashdb:latest`) and recreate the container. From source, pull
+the new release, run the install and build steps again and restart the server.
 Projects live in your users' browsers, so updates never touch them; their project files keep
 working across versions.

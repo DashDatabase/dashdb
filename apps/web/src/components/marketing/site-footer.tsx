@@ -1,13 +1,13 @@
 import { Logo } from '@dashdb/ui/server';
 import Link from 'next/link';
 import { getGithubUrl } from '@/lib/config';
-import { PAGES, SITE, type SitePage } from '@/lib/site';
+import { SITE, listedPages } from '@/lib/site';
 import { Container, prefetchFor } from './primitives';
 
 const GROUPS = ['Product', 'Resources', 'Project', 'Legal'] as const;
 
 export function SiteFooter() {
-  const pages: readonly SitePage[] = PAGES;
+  const pages = listedPages();
   return (
     <footer className="border-t bg-surface">
       <Container className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-6">

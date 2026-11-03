@@ -177,6 +177,23 @@ docs: explain baselines in the migrations guide
 Common types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `chore`, `ci`. Use the package
 or app as the scope (`core`, `web`, `api`, `ui`, `db`).
 
+### Add a changeset
+
+DashDB is versioned and released with [Changesets](https://changesets.dev). If your pull request
+changes what users get (a feature, a fix, a new safety rule), add a changeset describing it:
+
+```sh
+pnpm changeset
+```
+
+Pick the bump (`patch` for fixes, `minor` for features) and write one line for the changelog,
+in the user's terms. All packages share one version, so it doesn't matter much which package you
+pick. Docs-only and internal changes don't need one.
+
+When changesets reach `main`, a bot opens a **chore: version packages** pull request. Merging
+it tags the release, publishes the GitHub release with the changelog, and pushes the signed
+multi-arch image to `ghcr.io/dashdatabase/dashdb`.
+
 ### Sign your commits (DCO)
 
 Every commit in a pull request must be signed off under the

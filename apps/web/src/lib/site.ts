@@ -6,6 +6,7 @@ import { rules } from '@dashdb/core';
 import { DIALECT_NAMES, RULE_GUIDES, type GuideDialect } from '@/guides/rule-guides';
 import { getTemplates, type Template } from '@/templates/load';
 import { FORMATS, TOOLS, type ToolDefinition } from '@/tools/registry';
+import { isCloudEdition } from './config';
 
 export const SITE = {
   name: 'DashDB',
@@ -39,6 +40,8 @@ export interface SitePage {
   readonly ogSubtitle?: string;
   readonly changeFrequency: 'weekly' | 'monthly' | 'yearly';
   readonly priority: number;
+  /** Only on dashdb.dev: left out of the footer and sitemap of self-hosted (OSS) builds. */
+  readonly cloudOnly?: boolean;
 }
 
 export const PAGES = [
@@ -85,6 +88,7 @@ export const PAGES = [
     group: 'Product',
     changeFrequency: 'monthly',
     priority: 0.8,
+    cloudOnly: true,
   },
   {
     slug: 'templates',
@@ -276,9 +280,20 @@ export function guidePages(): SitePage[] {
  * Every public page built from code: the registry above, plus one per converter tool, template
  * and safety guide. `everyPage()` in lib/content-pages.ts adds the docs and blog.
  */
+/** The registry pages this edition serves (OSS builds drop the cloud-only ones). */
+export function listedPages(cloud: boolean = isCloudEdition()): SitePage[] {
+  const pages: readonly SitePage[] = PAGES;
+  return pages.filter((p) => cloud || !p.cloudOnly);
+}
+
 export function allPages(): SitePage[] {
   const tools: readonly ToolDefinition[] = TOOLS;
-  return [...PAGES, ...tools.map(toolPage), ...getTemplates().map(templatePage), ...guidePages()];
+  return [
+    ...listedPages(),
+    ...tools.map(toolPage),
+    ...getTemplates().map(templatePage),
+    ...guidePages(),
+  ];
 }
 
 /** The trail from the home page to `page`, inclusive. */

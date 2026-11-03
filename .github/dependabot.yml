@@ -29,6 +29,17 @@ updates:
       minor-and-patch:
         update-types: [minor, patch]
 
+  - package-ecosystem: docker # base image digests in apps/web/Dockerfile
+    directory: /apps/web
+    cooldown:
+      default-days: 7 # let new releases age a week before they are proposed
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: chore
+      include: scope
+
   - package-ecosystem: docker-compose
     directory: /
     cooldown:
