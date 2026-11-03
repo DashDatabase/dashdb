@@ -52,7 +52,7 @@
     "@dashdb/config": "workspace:*",
     "@testcontainers/mysql": "^12.2.1",
     "@testcontainers/postgresql": "^12.2.1",
-    "@types/node": "^22.19.0",
+    "@types/node": "^26.6.5",
     "@vitest/coverage-v8": "5.0.5",
     "drizzle-orm": "^0.45.4",
     "eslint": "^9.39.5",
