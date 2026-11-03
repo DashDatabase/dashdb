@@ -47,6 +47,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Start Postgres and MySQL
         run: docker compose up -d --wait postgres mysql
+      - name: Apply database migrations
+        run: pnpm db:migrate
       - run: pnpm test:db
       - name: Stop databases
         if: always()
