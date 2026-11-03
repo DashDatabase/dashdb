@@ -12,6 +12,10 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    ignore:
+      # Types track the runtime (.nvmrc, Node 22); bump them with it, not on their own.
+      - dependency-name: '@types/node'
+        update-types: [version-update:semver-major]
     groups:
       minor-and-patch:
         update-types: [minor, patch]
@@ -36,6 +40,10 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    ignore:
+      # Node 22 LTS, matching .nvmrc and the distroless nodejs22 runtime; move both together.
+      - dependency-name: node
+        update-types: [version-update:semver-major]
     commit-message:
       prefix: chore
       include: scope
@@ -47,6 +55,14 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    ignore:
+      # The database versions the integration tests target; a new major is a deliberate change.
+      - dependency-name: postgres
+        update-types: [version-update:semver-major]
+      - dependency-name: mysql
+        update-types: [version-update:semver-major]
+      - dependency-name: redis
+        update-types: [version-update:semver-major]
     commit-message:
       prefix: chore
       include: scope
