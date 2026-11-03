@@ -17,6 +17,8 @@ import {
   HardDriveIcon,
   LoaderIcon,
 } from 'lucide-react';
+import { edition } from '@/edition/active';
+import { editorApi } from '../edition-api';
 import { problemTableId } from '../schema-text';
 import { useEditor } from '../store';
 
@@ -59,6 +61,9 @@ export function StatusBar() {
         )}
         {problems.length} {problems.length === 1 ? 'problem' : 'problems'}
       </Button>
+      {edition.editor.statusBarItems.map(({ id, Component }) => (
+        <Component key={id} editor={editorApi} />
+      ))}
       <span
         role="status"
         className={

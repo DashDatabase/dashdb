@@ -1,4 +1,5 @@
 import { renameTable, updateColumn, validateSchema } from '@dashdb/core';
+import { produceWithPatches, type Patch } from 'immer';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { testProject } from '../test-fixtures';
 import {
@@ -145,6 +146,93 @@ describe('undo and redo', () => {
     state().undo();
     state().redo();
     expect(state().doc).toBe(doc);
+  });
+});
+
+describe('applyRemoteChange', () => {
+  /** Patches for a change made elsewhere, against the current document. */
+  const remote = (recipe: (draft: { name: string }) => void): Patch[] => {
+    const doc = state().doc;
+    if (!doc) throw new Error('no document loaded');
+    return produceWithPatches(doc, recipe)[1];
+  };
+
+  it('applies the change without recording it for undo, and triggers a save', () => {
+    const version = state().docVersion;
+    expect(
+      state().applyRemoteChange(
+        remote((d) => {
+          d.name = 'Remote';
+        }),
+      ),
+    ).toBe(true);
+    expect(state().doc?.name).toBe('Remote');
+    expect(state().past).toEqual([]);
+    expect(state().docVersion).toBe(version + 1);
+  });
+
+  it('keeps local undo working for unrelated edits', () => {
+    state().addTable();
+    state().applyRemoteChange(
+      remote((d) => {
+        d.name = 'Remote';
+      }),
+    );
+    state().undo();
+    expect(schema().tables).toEqual([]);
+    expect(state().doc?.name).toBe('Remote');
+  });
+
+  it('drops history when an undo step no longer applies', () => {
+    const id = state().addTable() ?? '';
+    state().addColumn(id);
+    // Another client deleted the table; the column's inverse patch now has nowhere to go.
+    const doc = state().doc;
+    if (!doc) throw new Error('no document loaded');
+    const [, patches] = produceWithPatches(doc, (d) => {
+      d.schema.tables = [];
+      d.layout = { nodes: {} };
+    });
+    expect(state().applyRemoteChange(patches)).toBe(true);
+    expect(() => {
+      state().undo();
+    }).not.toThrow();
+    expect(state().past).toEqual([]);
+    expect(state().future).toEqual([]);
+    expect(schema().tables).toEqual([]);
+  });
+
+  it('drops history when a redo step no longer applies', () => {
+    const id = state().addTable() ?? '';
+    state().addColumn(id);
+    state().undo();
+    const doc = state().doc;
+    if (!doc) throw new Error('no document loaded');
+    const [, patches] = produceWithPatches(doc, (d) => {
+      d.schema.tables = [];
+      d.layout = { nodes: {} };
+    });
+    state().applyRemoteChange(patches);
+    state().redo();
+    expect(state().future).toEqual([]);
+    expect(schema().tables).toEqual([]);
+  });
+
+  it('rejects patches that fail or leave an invalid document', () => {
+    const doc = state().doc;
+    expect(state().applyRemoteChange([])).toBe(false);
+    expect(
+      state().applyRemoteChange([{ op: 'replace', path: ['missing', 'deep'], value: 1 }]),
+    ).toBe(false);
+    expect(state().applyRemoteChange([{ op: 'replace', path: ['name'], value: 42 }])).toBe(false);
+    expect(state().doc).toBe(doc);
+  });
+
+  it('does nothing before a project is loaded', () => {
+    const empty = createEditorStore();
+    expect(
+      empty.getState().applyRemoteChange([{ op: 'replace', path: ['name'], value: 'x' }]),
+    ).toBe(false);
   });
 });
 

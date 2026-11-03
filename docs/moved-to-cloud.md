@@ -28,6 +28,7 @@ history before that date.
 - The CI database job no longer runs migrations; it only starts Postgres and MySQL for
   `pnpm test:db`.
 - The edition (`getEdition`, `isCloudEdition`) moved from `apps/web/src/lib/config.ts` to the new
-  `packages/edition`, the only place paid builds plug in.
+  `packages/edition`, the only place paid builds plug in (the `EditionModule` contract; see
+  `docs/architecture/editions.md`).
 - An ESLint rule rejects imports of `@dashdb-cloud/*` and relative imports that leave the
   repository.

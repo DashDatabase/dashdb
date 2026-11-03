@@ -237,7 +237,9 @@ test.describe('migration panel', () => {
 
   test('safety guides exist for each rule and dialect', async ({ page }) => {
     await page.goto('/guides/postgres/drop-column');
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Dropping a column');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+      'Dropping a column in PostgreSQL',
+    );
     await expect(page.getByRole('heading', { name: 'The safer way' })).toBeVisible();
     // Postgres-only rules have no MySQL page.
     const missing = await page.goto('/guides/mysql/add-fk-validating');

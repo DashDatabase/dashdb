@@ -62,7 +62,9 @@ import {
   importProjectFile,
   isProjectFileName,
 } from '@/editor/project-file';
+import { edition } from '@/edition/active';
 import { markForArrange } from '@/editor/canvas/arrange-intent';
+import { editorApi } from '@/editor/edition-api';
 import { createStarterProject } from '@/editor/onboarding/start';
 import { isFirstRun } from '@/editor/onboarding/tour';
 import { relativeTime } from '@/editor/schema-text';
@@ -324,6 +326,16 @@ function ProjectCard({
             <DropdownMenuItem onSelect={onDuplicate}>
               <CopyIcon aria-hidden /> Duplicate
             </DropdownMenuItem>
+            {edition.editor.projectMenuItems.map((item) => (
+              <DropdownMenuItem
+                key={item.id}
+                onSelect={() => {
+                  item.onSelect(project.id, editorApi);
+                }}
+              >
+                {item.label}
+              </DropdownMenuItem>
+            ))}
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onSelect={onDelete}>
               <Trash2Icon aria-hidden /> Delete

@@ -5,7 +5,9 @@ import { AlertTriangleIcon, CopyIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useEditorShortcuts, useIsDesktop } from '../hooks';
-import { getProject, listBaselines, saveProject } from '../projects';
+import { edition } from '@/edition/active';
+import { listBaselines, type Project } from '../projects';
+import { projectSchema } from '../record-schemas';
 import { editorStore, useEditor } from '../store';
 import { Announcer } from '../a11y/announcer';
 import { Canvas } from '../canvas/canvas';
@@ -27,6 +29,13 @@ import { Sidebar } from './sidebar';
 import { ProblemsDialog, StatusBar } from './status-bar';
 import { TopBar } from './top-bar';
 
+/** Loads a project through the edition's sync provider; anything invalid counts as missing. */
+async function pullProject(projectId: string): Promise<Project | null> {
+  const pulled = await edition.providers.sync.pull(projectId);
+  const parsed = projectSchema.safeParse(pulled);
+  return parsed.success ? parsed.data : null;
+}
+
 /** Autosave plus multi-tab coordination for the loaded project. */
 function usePersistence(projectId: string, active: boolean) {
   useEffect(() => {
@@ -43,10 +52,14 @@ function usePersistence(projectId: string, active: boolean) {
         }
       },
     });
+    const { sync } = edition.providers;
     const autosave = attachAutosave(editorStore, async (project) => {
-      const revision = await saveProject(project);
+      const revision = await sync.push(project);
       tabs.announceSave(revision);
       return revision;
+    });
+    const stopRemote = sync.onRemoteChange((change) => {
+      if (change.projectId === projectId) editorStore.getState().applyRemoteChange(change.patches);
     });
 
     // Flush before the tab goes away or into the background (it may never come back).
@@ -69,6 +82,7 @@ function usePersistence(projectId: string, active: boolean) {
         autosave.dispose();
       });
       tabs.close();
+      stopRemote();
       store.setOtherTabs(0);
     };
   }, [projectId, active]);
@@ -191,7 +205,7 @@ export function EditorShell({ projectId }: { projectId: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([getProject(projectId), listBaselines(projectId)]).then(
+    Promise.all([pullProject(projectId), listBaselines(projectId)]).then(
       ([stored, baselines]) => {
         if (cancelled) return;
         if (!stored) {

@@ -1,13 +1,17 @@
 'use client';
 
 import { ScrollArea, Tabs, TabsContent, TabsList, TabsTrigger } from '@dashdb/ui';
-import { useEditor, type RightTab } from '../store';
+import { edition } from '@/edition/active';
+import { editorApi } from '../edition-api';
+import { isBuiltinRightTab, useEditor, type RightTab } from '../store';
 import { BaselinesPanel } from './baselines-panel';
 import { Inspector } from './inspector';
 import { CodePanel, MigrationPanel } from './lazy';
 
+const editionTabs = edition.editor.rightPanelTabs;
+
 function isRightTab(value: string): value is RightTab {
-  return value === 'inspector' || value === 'code' || value === 'migration';
+  return isBuiltinRightTab(value) || editionTabs.some((t) => value === `edition:${t.id}`);
 }
 
 export function RightPanel() {
@@ -27,6 +31,11 @@ export function RightPanel() {
           <TabsTrigger value="inspector">Inspector</TabsTrigger>
           <TabsTrigger value="code">Code</TabsTrigger>
           <TabsTrigger value="migration">Migration</TabsTrigger>
+          {editionTabs.map((t) => (
+            <TabsTrigger key={t.id} value={`edition:${t.id}`}>
+              {t.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
       </div>
       {/* The code editor scrolls itself and needs the panel's full height. */}
@@ -44,6 +53,11 @@ export function RightPanel() {
             <MigrationPanel />
             <BaselinesPanel />
           </TabsContent>
+          {editionTabs.map(({ id, Panel }) => (
+            <TabsContent key={id} value={`edition:${id}`}>
+              <Panel editor={editorApi} />
+            </TabsContent>
+          ))}
         </ScrollArea>
       )}
     </Tabs>

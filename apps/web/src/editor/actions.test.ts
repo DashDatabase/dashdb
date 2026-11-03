@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { EditorApi } from '@dashdb/edition';
 import {
   ACTIONS,
+  editionActions,
   getAction,
   isActionEnabled,
   runAction,
@@ -136,5 +138,46 @@ describe('action registry', () => {
 
   it('throws for unknown ids', () => {
     expect(() => getAction('nope' as never)).toThrow();
+  });
+});
+
+describe('editionActions', () => {
+  const editor: EditorApi = {
+    projectId: () => 'p1',
+    applyRemoteChange: () => false,
+    listLocalProjects: () => Promise.resolve([]),
+    exportProject: () => Promise.resolve(null),
+  };
+
+  it('turns edition commands into Edition actions that receive the editor', () => {
+    const run = vi.fn();
+    const [action] = editionActions(
+      [{ id: 'upload', label: 'Upload to cloud', shortcut: 'Mod+Alt+U', run }],
+      editor,
+    );
+    expect(action).toMatchObject({
+      id: 'edition.upload',
+      title: 'Upload to cloud',
+      group: 'Edition',
+      shortcut: 'mod+alt+u',
+    });
+    action?.run(context().ctx());
+    expect(run).toHaveBeenCalledWith(editor);
+  });
+
+  it('drops shortcuts that are missing, invalid or already taken', () => {
+    const run = vi.fn();
+    const actions = editionActions(
+      [
+        { id: 'a', label: 'No shortcut', run },
+        { id: 'b', label: 'Invalid', shortcut: 'mod+', run },
+        { id: 'c', label: 'Undo clash', shortcut: 'mod+z', run },
+        { id: 'd', label: 'First', shortcut: 'mod+alt+u', run },
+        { id: 'e', label: 'Second', shortcut: 'mod+alt+u', run },
+      ],
+      editor,
+    );
+    expect(actions.map((a) => a.shortcut)).toEqual(['', '', '', 'mod+alt+u', '']);
+    expect(actions.map(shortcutsOf)).toEqual([[], [], [], ['mod+alt+u'], []]);
   });
 });

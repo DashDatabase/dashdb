@@ -11,6 +11,10 @@ Paid features plug in only through packages/edition interfaces.
   both (`no-restricted-imports` and `dashdb/no-outside-repo-imports` in
   `packages/config/eslint/base.js`); don't disable them.
 - What moved out, and why, is in `docs/moved-to-cloud.md`.
+- The seam is `EditionModule` (`docs/architecture/editions.md`): apps/web loads the active edition
+  through the `@dashdb/active-edition` alias and imports it only via `@/edition/active`. Slots and
+  providers stay generic. Bump `EDITION_API_VERSION` on any breaking change to the contract.
+- DashDB Community never shows a paywall: gate features only with `entitlements.has()`.
 
 ## Layout
 
@@ -20,7 +24,8 @@ pnpm + Turborepo, TypeScript strict, Node 22 (`.nvmrc`).
   Its Next.js version may differ from what you know: read `node_modules/next/dist/docs/` before
   using an API (see `apps/web/AGENTS.md`).
 - `packages/core`: the engine (IR, parsers, serializers, diff, migrations, safety rules).
-- `packages/edition`: the edition (`oss` / `cloud`) and the interfaces paid builds implement.
+- `packages/edition`: the `EditionModule` contract paid builds implement, the Community
+  providers, and the marketing build flag (`oss` / `cloud`).
 - `packages/shared`: zod schemas and types with no Node or React dependencies.
 - `packages/ui`: React components and design tokens. `packages/config`: tsconfig and ESLint.
 
