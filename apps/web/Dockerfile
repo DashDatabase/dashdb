@@ -8,7 +8,7 @@
 # by next/image), whose prebuilt binaries are installed for both architectures; each image
 # keeps only its own.
 
-FROM --platform=$BUILDPLATFORM node:22-trixie-slim@sha256:2117f713a417f3aff682ac8f5bc2ebbdf1beed51f36e67ab1e0fd3866b6d2d8f AS deps
+FROM --platform=$BUILDPLATFORM node:25-trixie-slim@sha256:aabbe39553d15ede8a97cc60c9e1a97034ff772afcf696ea42b94e7f5f2ec71b AS deps
 ENV PNPM_HOME=/pnpm \
     PATH=/pnpm:$PATH \
     CI=1 \
