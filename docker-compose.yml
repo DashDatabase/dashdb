@@ -1,4 +1,5 @@
-# Local development services only. Credentials here are throwaway dev defaults.
+# Databases for the round-trip integration tests (`pnpm test:db`). Credentials here are throwaway
+# dev defaults.
 name: dashdb
 
 services:
@@ -35,28 +36,6 @@ services:
       timeout: 5s
       retries: 20
 
-  redis:
-    image: redis:7
-    ports:
-      - '6379:6379'
-    volumes:
-      - redis-data:/data
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 5s
-      timeout: 3s
-      retries: 10
-
-  mailpit:
-    image: axllent/mailpit:latest
-    ports:
-      - '1025:1025' # SMTP
-      - '8025:8025' # Web UI
-    environment:
-      MP_SMTP_AUTH_ACCEPT_ANY: 1
-      MP_SMTP_AUTH_ALLOW_INSECURE: 1
-
 volumes:
   postgres-data:
   mysql-data:
-  redis-data:

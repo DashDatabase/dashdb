@@ -6,7 +6,7 @@ import { rules } from '@dashdb/core';
 import { DIALECT_NAMES, RULE_GUIDES, type GuideDialect } from '@/guides/rule-guides';
 import { getTemplates, type Template } from '@/templates/load';
 import { FORMATS, TOOLS, type ToolDefinition } from '@/tools/registry';
-import { isCloudEdition } from './config';
+import { isCloudEdition } from '@dashdb/edition';
 
 export const SITE = {
   name: 'DashDB',

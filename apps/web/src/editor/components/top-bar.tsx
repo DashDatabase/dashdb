@@ -21,7 +21,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
-import { getGithubUrl, isCloudEdition } from '@/lib/config';
+import { isCloudEdition } from '@dashdb/edition';
+import { getGithubUrl } from '@/lib/config';
 import { getAction } from '../actions';
 import { useRunAction } from '../hooks';
 import { useEditor } from '../store';

@@ -6,7 +6,7 @@ import { MigrationShowcase } from '@/components/marketing/migration-showcase';
 import { ButtonLink, Container, Section } from '@/components/marketing/primitives';
 import { StarButton } from '@/components/marketing/star-button';
 import { WaitlistForm } from '@/components/marketing/waitlist-form';
-import { isCloudEdition } from '@/lib/config';
+import { isCloudEdition } from '@dashdb/edition';
 import { softwareApplicationLd, type FaqItem } from '@/lib/json-ld';
 import { pageMetadata } from '@/lib/seo';
 import { SITE } from '@/lib/site';

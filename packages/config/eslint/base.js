@@ -6,6 +6,7 @@ import importPlugin from 'eslint-plugin-import';
 import security from 'eslint-plugin-security';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+import { dashdbPlugin } from './rules/no-outside-repo-imports.js';
 
 export const ignores = globalIgnores([
   '**/dist/**',
@@ -24,8 +25,26 @@ export const ignores = globalIgnores([
 /** Plain JS (config files) is outside every tsconfig, so skip type-aware rules there. */
 export const jsFiles = ['**/*.{js,mjs,cjs}'];
 
+/** Plugins this repository defines; every preset registers them next to `sharedRules`. */
+export const localPlugins = { dashdb: dashdbPlugin };
+
 /** Rules shared by every preset, including next (which registers its own plugins). */
 export const sharedRules = {
+  // The public/private boundary: paid features live in the private dashdb-cloud repository and
+  // plug in through packages/edition, so nothing here may import that repository.
+  'no-restricted-imports': [
+    'error',
+    {
+      patterns: [
+        {
+          group: ['@dashdb-cloud', '@dashdb-cloud/*'],
+          message:
+            'This is the public repository: paid features plug in through packages/edition, never by importing @dashdb-cloud.',
+        },
+      ],
+    },
+  ],
+  'dashdb/no-outside-repo-imports': 'error',
   '@typescript-eslint/consistent-type-imports': 'error',
   '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
   '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
@@ -45,6 +64,7 @@ export function base(tsconfigRootDir) {
     importPlugin.flatConfigs.recommended,
     importPlugin.flatConfigs.typescript,
     {
+      plugins: localPlugins,
       languageOptions: {
         globals: { ...globals.node },
         parserOptions: { projectService: true, tsconfigRootDir },

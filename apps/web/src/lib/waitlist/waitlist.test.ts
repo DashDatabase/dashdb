@@ -72,10 +72,11 @@ describe('clientKey', () => {
 describe('stores', () => {
   it('are configured only from the environment variables that are set', () => {
     expect(storesFromEnv({})).toEqual([]);
-    expect(storesFromEnv({ DATABASE_URL: 'postgres://x/y' }).map((s) => s.name)).toEqual([
-      'postgres',
-    ]);
     expect(storesFromEnv({ RESEND_API_KEY: 'k' })).toEqual([]);
+    const audience = '78261eea-8f8b-4381-83c6-79fa7120f1cf';
+    expect(
+      storesFromEnv({ RESEND_API_KEY: 'k', RESEND_AUDIENCE_ID: audience }).map((s) => s.name),
+    ).toEqual(['resend']);
     expect(() =>
       storesFromEnv({ RESEND_API_KEY: 'k', RESEND_AUDIENCE_ID: '../../emails' }),
     ).toThrow(/UUID/);

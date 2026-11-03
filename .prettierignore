@@ -6,7 +6,6 @@ dist
 coverage
 playwright-report
 test-results
-packages/db/migrations
 CLAUDE.md
 **/__snapshots__
 **/__fixtures__

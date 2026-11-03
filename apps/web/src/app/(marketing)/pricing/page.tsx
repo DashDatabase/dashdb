@@ -3,7 +3,7 @@ import { Faq } from '@/components/marketing/faq';
 import { ButtonLink, Container, PageHeader, Section } from '@/components/marketing/primitives';
 import { WaitlistForm } from '@/components/marketing/waitlist-form';
 import { notFound } from 'next/navigation';
-import { isCloudEdition } from '@/lib/config';
+import { isCloudEdition } from '@dashdb/edition';
 import type { FaqItem } from '@/lib/json-ld';
 import { pageMetadata } from '@/lib/seo';
 import { getPage } from '@/lib/site';

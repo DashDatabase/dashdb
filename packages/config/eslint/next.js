@@ -6,7 +6,7 @@ import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
 import security from 'eslint-plugin-security';
 import tseslint from 'typescript-eslint';
-import { ignores, jsFiles, sharedRules } from './base.js';
+import { ignores, jsFiles, localPlugins, sharedRules } from './base.js';
 
 /** Drop `plugins` from configs whose plugins eslint-config-next has already registered. */
 const rulesOnly = (configs) => [configs].flat().map(({ plugins: _plugins, ...config }) => config);
@@ -20,6 +20,7 @@ export function next(tsconfigRootDir) {
     ...rulesOnly(tseslint.configs.strictTypeChecked),
     security.configs.recommended,
     {
+      plugins: localPlugins,
       languageOptions: { parserOptions: { projectService: true, tsconfigRootDir } },
       settings: {
         // Lets @next/next rules find the app when ESLint runs from the repo root (lint-staged).

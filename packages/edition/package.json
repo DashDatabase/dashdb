@@ -1,5 +1,5 @@
 {
-  "name": "@dashdb/db",
+  "name": "@dashdb/edition",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -13,21 +13,12 @@
     "build": "tsup --clean",
     "dev": "tsup --watch",
     "test": "vitest run",
-    "test:db": "vitest run --config vitest.db.config.ts",
     "lint": "eslint . --max-warnings 0",
-    "typecheck": "tsc --noEmit",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
-  },
-  "dependencies": {
-    "@dashdb/shared": "workspace:*",
-    "drizzle-orm": "^0.45.4",
-    "postgres": "^3.4.9"
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@dashdb/config": "workspace:*",
     "@types/node": "^22.19.0",
-    "drizzle-kit": "^0.31.11",
     "eslint": "^10.13.0",
     "tsup": "^9.0.0",
     "typescript": "~6.0.3",

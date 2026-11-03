@@ -1,5 +1,4 @@
 import 'server-only';
-import { createDb, waitlistSignups } from '@dashdb/db';
 
 /** Somewhere a waitlist signup is kept. `add` resolves once stored (duplicates are fine). */
 export interface SubscriberStore {
@@ -8,24 +7,8 @@ export interface SubscriberStore {
 }
 
 export interface WaitlistEnv {
-  readonly DATABASE_URL?: string;
   readonly RESEND_API_KEY?: string;
   readonly RESEND_AUDIENCE_ID?: string;
-}
-
-/** Postgres via `@dashdb/db`; the unique email column makes repeat signups a no-op. */
-export function postgresStore(databaseUrl: string): SubscriberStore {
-  let client: ReturnType<typeof createDb> | undefined;
-  return {
-    name: 'postgres',
-    async add(email, source) {
-      client ??= createDb(databaseUrl);
-      await client.db
-        .insert(waitlistSignups)
-        .values({ email, source })
-        .onConflictDoNothing({ target: waitlistSignups.email });
-    },
-  };
 }
 
 const AUDIENCE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -55,8 +38,6 @@ export function resendStore(
 /** The stores configured by environment variables (none in a fresh checkout). */
 export function storesFromEnv(env: WaitlistEnv): SubscriberStore[] {
   const stores: SubscriberStore[] = [];
-  const databaseUrl = env.DATABASE_URL?.trim();
-  if (databaseUrl) stores.push(postgresStore(databaseUrl));
   const apiKey = env.RESEND_API_KEY?.trim();
   const audienceId = env.RESEND_AUDIENCE_ID?.trim();
   if (apiKey && audienceId) stores.push(resendStore(apiKey, audienceId));
