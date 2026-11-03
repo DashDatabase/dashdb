@@ -8,6 +8,7 @@ import { runAction, shortcutsOf, type ActionContext, type EditorAction } from '.
 import { ALL_ACTIONS } from './edition-actions';
 import { isEditableTarget, isMacPlatform, matchesShortcut } from './shortcuts';
 import { downloadText } from '@/lib/download';
+import { track } from '@/lib/telemetry';
 import { fileSlug } from './formats';
 import { PROJECT_FILE_EXTENSION, serializeProjectFile } from './project-file';
 import type { PasteOutcome } from './canvas/operations';
@@ -22,6 +23,7 @@ function saveCurrentBaseline() {
   saveBaseline(projectId, doc.schema, name).then(
     (baselines) => {
       editorStore.getState().setBaselines(baselines);
+      track('baseline_saved', { reason: 'manual' });
       toast.success('Baseline saved', { description: 'Keeping the 3 most recent baselines.' });
     },
     () => toast.error('Could not save the baseline.'),

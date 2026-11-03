@@ -1,6 +1,13 @@
-// A stand-in for a paid edition, for e2e/edition: DashDB Community plus one top-bar item and a
-// login page. Run the app with DASHDB_EDITION_MODULE=./test/fixtures/test-edition.tsx to use it.
-import type { EditionModule, RouteProps, SlotProps } from '@dashdb/edition';
+// A stand-in for a paid edition, for e2e/edition: DashDB Community plus one top-bar item, a
+// login page, and telemetry that is on and records events in `window.__dashdbTelemetry`.
+// Run the app with DASHDB_EDITION_MODULE=./test/fixtures/test-edition.tsx to use it.
+import {
+  createOptInTelemetry,
+  type EditionModule,
+  type RouteProps,
+  type SlotProps,
+  type TelemetryProps,
+} from '@dashdb/edition';
 import { ossEdition } from '../../src/edition/oss';
 
 function FixtureTopBarItem({ editor }: SlotProps) {
@@ -21,9 +28,24 @@ function FixtureLogin({ searchParams }: RouteProps) {
   );
 }
 
+declare global {
+  interface Window {
+    __dashdbTelemetry?: [string, TelemetryProps][];
+  }
+}
+
+const recordingTelemetry = createOptInTelemetry({
+  read: () => true,
+  write: () => undefined,
+  send: (event, props) => {
+    (window.__dashdbTelemetry ??= []).push([event, props]);
+  },
+});
+
 const testEdition: EditionModule = {
   ...ossEdition,
   id: 'test-fixture',
+  providers: { ...ossEdition.providers, telemetry: recordingTelemetry },
   editor: {
     ...ossEdition.editor,
     topBarItems: [{ id: 'fixture', Component: FixtureTopBarItem }],

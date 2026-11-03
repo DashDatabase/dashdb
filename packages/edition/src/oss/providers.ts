@@ -12,6 +12,7 @@ import type {
   TelemetryProvider,
   Unsubscribe,
 } from '../providers';
+import { sanitizeTelemetryEvent, type TelemetryEventName } from '../telemetry';
 
 const noop: Unsubscribe = () => undefined;
 
@@ -71,11 +72,14 @@ export interface OptInTelemetryOptions {
   /** Reads the stored opt-in; anything but `true` means off. */
   readonly read: () => boolean | null;
   readonly write: (optIn: boolean) => void;
-  /** Where events go once opted in. Without one, events are dropped. */
-  readonly send?: (event: string, props: TelemetryProps) => void;
+  /** Where events go once opted in, already sanitized. Without one, events are dropped. */
+  readonly send?: (event: TelemetryEventName, props: TelemetryProps) => void;
 }
 
-/** Off unless the user opted in; even then, only sends if a destination is configured. */
+/**
+ * Off unless the user opted in; even then, only sends if a destination is configured, and only
+ * the catalogued properties (anything else, or an invalid event, is dropped).
+ */
 export function createOptInTelemetry({
   read,
   write,
@@ -87,8 +91,10 @@ export function createOptInTelemetry({
     setOptIn: (optIn) => {
       write(optIn);
     },
-    track: (event, props = {}) => {
-      if (isEnabled()) send?.(event, props);
+    track: (event, props) => {
+      if (!send || !isEnabled()) return;
+      const clean = sanitizeTelemetryEvent(event, props);
+      if (clean) send(event, clean);
     },
   };
 }

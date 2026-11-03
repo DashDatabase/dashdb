@@ -6,6 +6,8 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       'server-only': fileURLToPath(new URL('./src/shims/server-only.ts', import.meta.url)),
+      // Unit tests run against DashDB Community, as tsconfig.json does.
+      '@dashdb/active-edition': fileURLToPath(new URL('./src/edition/oss.ts', import.meta.url)),
     },
   },
   test: {

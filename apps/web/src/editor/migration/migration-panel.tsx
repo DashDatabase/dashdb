@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { downloadBlob, downloadText } from '@/lib/download';
+import { track } from '@/lib/telemetry';
 import { ActionButton } from '../components/action-button';
 import { saveBaseline } from '../projects';
 import { relativeTime } from '../schema-text';
@@ -248,6 +249,12 @@ export function MigrationPanel() {
       },
     });
     if (wasInteractive) {
+      // Only when the user asks: regenerating as they edit isn't a new migration.
+      track('migration_generated', {
+        target: panel.target,
+        risk: response.output.report.riskLevel,
+        ops_count: response.output.operations.length,
+      });
       const decided = useMigrationPanel.getState().decisions;
       const open = response.output.renameCandidates.filter((c) => !decided.has(c.key));
       if (open.length > 0) setRenameQueue(open);
@@ -338,6 +345,7 @@ export function MigrationPanel() {
     saveBaseline(projectId, result.after, label).then(
       (list) => {
         editorStore.getState().setBaselines(list);
+        track('baseline_saved', { reason: 'applied' });
         useMigrationPanel.getState().set({ source: list[0]?.id ?? null, applied: new Set() });
         toast.success('Marked as applied', {
           description: `Saved baseline “${label}”. New changes are generated from it.`,
@@ -352,6 +360,7 @@ export function MigrationPanel() {
     zipFiles(view.files).then(
       (blob) => {
         downloadBlob(`${migrationSlug(projectName)}-${slug}-${result?.target ?? 'sql'}.zip`, blob);
+        if (result) track('migration_downloaded', { target: result.target, bundle: 'zip' });
       },
       () => toast.error('Could not build the zip file.'),
     );
@@ -556,8 +565,9 @@ export function MigrationPanel() {
                     title="Download migration file"
                     disabled={!activeFile || stale}
                     onClick={() => {
-                      if (activeFile)
-                        downloadText(singleFileName(activeFile.path), activeFile.contents);
+                      if (!activeFile) return;
+                      downloadText(singleFileName(activeFile.path), activeFile.contents);
+                      track('migration_downloaded', { target: result.target, bundle: 'file' });
                     }}
                   >
                     <DownloadIcon aria-hidden />
