@@ -13,7 +13,8 @@
     "./eslint/next": "./eslint/next.js"
   },
   "scripts": {
-    "lint": "eslint . --max-warnings 0"
+    "lint": "eslint . --max-warnings 0",
+    "test": "vitest run"
   },
   "dependencies": {
     "@eslint/compat": "^2.1.1",
@@ -31,6 +32,7 @@
     "eslint": "^10.0.0"
   },
   "devDependencies": {
-    "eslint": "^10.13.0"
+    "eslint": "^10.13.0",
+    "vitest": "^5.0.5"
   }
 }

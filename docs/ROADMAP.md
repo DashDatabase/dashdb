@@ -26,7 +26,7 @@ Items are grouped by status, not dates. "Later" means wanted but not yet schedul
 
 ## 🚧 Now
 
-- Open-source launch: license, contributor docs, issue forms, DCO check
+- Open-source launch: license, contributor docs, issue forms, CLA
 - Demo GIF and launch materials
 
 ## 🔜 Next
@@ -44,8 +44,9 @@ Items are grouped by status, not dates. "Later" means wanted but not yet schedul
 - SQLite migrations (table-rebuild strategy)
 - More ORMs (TypeORM, Sequelize, SQLAlchemy)
 
-Paid features will live in `/ee` under the [DashDB Commercial License](../ee/LICENSE). What runs
-in your browser today stays free and AGPL-3.0.
+DashDB Community is AGPL. Paid cloud, Team and Enterprise features (the **Pro** and **Team** items
+above) are developed separately under a commercial license. What runs in your browser today stays
+free and AGPL-3.0.
 
 ## Suggest something
 

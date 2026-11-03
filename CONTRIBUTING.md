@@ -22,9 +22,9 @@ database integration tests.
 git clone https://github.com/DashDatabase/dashdb.git
 cd dashdb
 nvm use && pnpm install
-cp apps/api/.env.example apps/api/.env && cp apps/web/.env.example apps/web/.env.local
-docker compose up -d       # optional: only needed for db:* and test:db
-pnpm dev                   # web :3000, api :8787
+cp apps/web/.env.example apps/web/.env.local
+docker compose up -d       # optional: only needed for test:db
+pnpm dev                   # http://localhost:3000
 ```
 
 The pre-commit hook runs [gitleaks](https://github.com/gitleaks/gitleaks), so it must be on your
@@ -35,7 +35,6 @@ The pre-commit hook runs [gitleaks](https://github.com/gitleaks/gitleaks), so it
 | `build` / `test` / `lint` / `typecheck` | Turbo across all workspaces                                                        |
 | `test:db`                               | DB integration tests (`*.db.test.ts`, needs compose)                               |
 | `e2e`                                   | Playwright (run `pnpm --filter @dashdb/web exec playwright install chromium` once) |
-| `db:generate` / `db:migrate`            | drizzle-kit in `packages/db`                                                       |
 | `format` / `format:check`               | Prettier                                                                           |
 
 ## Architecture overview
@@ -45,18 +44,20 @@ DashDB is a pnpm + Turborepo monorepo, TypeScript strict everywhere.
 ```
 apps/
   web/            Next.js App Router + Tailwind v4: the editor (src/editor), the site, docs, blog
-  api/            Hono on Node (:8787)
 packages/
   core/           The engine: schema IR, parsers, serializers, diff, migration SQL, safety rules
   shared/         zod schemas + types used everywhere (no Node/React deps)
-  db/             Drizzle schema, client and migrations for the Postgres metadata DB
-  api-client/     Typed Hono RPC client, with types inferred from apps/api's AppType
+  edition/        Which edition this build is, and the interfaces paid editions plug into
   ui/             Shared React components and design tokens
   config/         Shared tsconfig bases, ESLint flat configs, Tailwind preset
-ee/               Reserved for commercial features (separate license, empty for now)
 ```
 
-Dependencies point one way: `apps -> api-client/ui/db/core -> shared`, with `config` as a
+This repository is DashDB Community. Paid cloud, Team and Enterprise features are developed in a
+separate private repository that uses this one as a git submodule, so nothing here needs a
+server, a database of its own or an account. They plug in only through `packages/edition`, and an
+ESLint rule rejects imports of `@dashdb-cloud/*` or of paths outside this repository.
+
+Dependencies point one way: `apps -> ui/core/edition -> shared`, with `config` as a
 devDependency of everything. Each package has `package.json` `exports`, `src/index.ts`,
 `vitest.config.ts` and a `README.md`.
 
@@ -175,7 +176,7 @@ docs: explain baselines in the migrations guide
 ```
 
 Common types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `chore`, `ci`. Use the package
-or app as the scope (`core`, `web`, `api`, `ui`, `db`).
+or app as the scope (`core`, `web`, `ui`, `edition`, `config`).
 
 ### Add a changeset
 
@@ -194,27 +195,26 @@ When changesets reach `main`, a bot opens a **chore: version packages** pull req
 it tags the release, publishes the GitHub release with the changelog, and pushes the signed
 multi-arch image to `ghcr.io/dashdatabase/dashdb`.
 
-### Sign your commits (DCO)
+### Sign the CLA (once)
 
-Every commit in a pull request must be signed off under the
-[Developer Certificate of Origin](https://developercertificate.org): a statement that you wrote
-the change, or otherwise have the right to submit it under the project's license. Add the
-sign-off with `-s`:
+Before your first pull request can be merged, you sign DashDB's
+[Contributor License Agreement](CLA.md). A bot comments on the pull request with a sentence to
+reply with; reply once and you're done for this and every future pull request.
 
-```sh
-git commit -s -m "fix(core): parse quoted enum labels"
-```
+**Why a CLA?** DashDB Community is AGPL, and it stays that way. The same code also ships in
+DashDB's paid cloud, Team and Enterprise editions, which are developed separately under a
+commercial license. The AGPL alone doesn't let us include your contribution there, so the CLA asks
+for that permission. In plain terms:
 
-This appends `Signed-off-by: Your Name <you@example.com>`, which must match the commit author. The
-**DCO** check on pull requests fails if a commit is missing it. To fix existing commits:
-`git rebase --signoff main` and force-push.
+- You keep the copyright to what you wrote.
+- You let DashDB use and distribute it under other licenses too, including the commercial one.
+- You confirm it's yours to give (you wrote it, or your employer agrees).
 
-<!-- TODO(maintainer): decide between the DCO check (.github/workflows/dco.yml) and CLA Assistant
-     (https://github.com/cla-assistant/cla-assistant). A CLA is needed if contributions must be
-     relicensable under the commercial license; the DCO alone does not grant that. -->
+That's what lets one codebase serve both the free and the paid editions, instead of the paid
+editions drifting away from what you contributed. Questions: licensing@dashdb.dev.
 
 ## License
 
-DashDB is licensed under [AGPL-3.0](LICENSE), except the `/ee` directory, which is under the
-[DashDB Commercial License](ee/LICENSE). By contributing, you agree that your contribution
-outside `/ee` is licensed under AGPL-3.0.
+DashDB Community is AGPL: everything in this repository is under [AGPL-3.0](LICENSE). Paid cloud,
+Team and Enterprise features are developed separately under a commercial license. Your
+contribution is licensed under AGPL-3.0, plus the rights you grant in the [CLA](CLA.md).

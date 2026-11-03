@@ -8,11 +8,12 @@
 
 ## Checklist
 
-- [ ] Commits follow [Conventional Commits](https://www.conventionalcommits.org) and are signed off (`git commit -s`, see [CONTRIBUTING](https://github.com/DashDatabase/dashdb/blob/main/CONTRIBUTING.md#sign-your-commits-dco))
+- [ ] Commits follow [Conventional Commits](https://www.conventionalcommits.org)
+- [ ] I've signed the [CLA](https://github.com/DashDatabase/dashdb/blob/main/CLA.md) (the bot will ask on your first pull request)
 - [ ] `pnpm lint && pnpm typecheck && pnpm test` pass
 - [ ] New behaviour has tests
 - [ ] Parser or SQL generation changes: `pnpm test:db` passes, and snapshot / golden diffs are reviewed
 - [ ] New safety rule: tests, guide (`rule-guides.ts`) and example (`examples.ts`) added
 - [ ] Editor or site changes: `pnpm e2e` passes, no new axe violations, screenshots attached
 - [ ] Docs updated (`apps/web/content/docs`, package READMEs) if behaviour changed
-- [ ] No code outside `/ee` depends on `/ee`
+- [ ] No server, billing, auth, collaboration or enterprise code (those live in the private cloud repository; see `CLAUDE.md`)

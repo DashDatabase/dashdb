@@ -1,7 +1,7 @@
 'use server';
 
 import { headers } from 'next/headers';
-import { isCloudEdition } from '../config';
+import { isCloudEdition } from '@dashdb/edition';
 import { clientKey, createRateLimiter } from './rate-limit';
 import { saveSignup, storesFromEnv, type SubscriberStore } from './store';
 import { parseSignup } from './validate';
@@ -40,14 +40,13 @@ export async function joinWaitlist(
   }
 
   stores ??= storesFromEnv({
-    DATABASE_URL: process.env.DATABASE_URL,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     RESEND_AUDIENCE_ID: process.env.RESEND_AUDIENCE_ID,
   });
   const result = await saveSignup(stores, input.email, input.source);
   if (result === 'saved') return SUCCESS;
   if (result === 'unconfigured' && process.env.NODE_ENV !== 'production') {
-    // Local development without a database or Resend: accept, but say where it went.
+    // Local development without Resend: accept, but say where it went.
     console.info(`[waitlist] no store configured; dropped a signup from ${input.source}`);
     return SUCCESS;
   }

@@ -16,8 +16,6 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "format": "prettier --write .",
-    "db:generate": "pnpm --filter @dashdb/db db:generate",
-    "db:migrate": "pnpm --filter @dashdb/db db:migrate",
     "format:check": "prettier --check .",
     "prepare": "husky"
   },

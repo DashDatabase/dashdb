@@ -88,8 +88,8 @@ You need Node.js 22, pnpm 9 and Git. Docker is only needed for the database inte
 git clone https://github.com/DashDatabase/dashdb.git
 cd dashdb
 nvm use && pnpm install
-cp apps/api/.env.example apps/api/.env && cp apps/web/.env.example apps/web/.env.local
-pnpm dev                 # web on http://localhost:3000, api on :8787
+cp apps/web/.env.example apps/web/.env.local
+pnpm dev                 # http://localhost:3000
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the repository layout, tests and conventions.
@@ -128,9 +128,9 @@ problem, follow [SECURITY.md](SECURITY.md) instead of opening an issue.
 
 ## License
 
-DashDB is open source under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0),
-with one exception: the `/ee` directory, reserved for future commercial features, is under the
-[DashDB Commercial License](ee/LICENSE).
+DashDB Community is AGPL. Everything in this repository is under the
+[GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0). Paid cloud, Team and Enterprise
+features are developed separately under a commercial license.
 
 In plain language:
 
@@ -141,8 +141,6 @@ In plain language:
   changed version, under the AGPL too.
 - **The schemas and migrations you create are yours.** The AGPL covers DashDB's code, not what
   you design with it.
-- **Code in `/ee`** is source available: you can read it and try it, but running it in
-  production needs a commercial license. There is no code in `/ee` yet.
 - **Need different terms?** If the AGPL doesn't work for your company, a commercial license is
   available. Contact licensing@dashdb.dev.
 - **The name and logo are not covered by the license.** Saying your project works with or is

@@ -1,6 +1,6 @@
 import { Logo } from '@dashdb/ui/server';
 import Link from 'next/link';
-import { isCloudEdition } from '@/lib/config';
+import { isCloudEdition } from '@dashdb/edition';
 import { ButtonLink, Container, prefetchFor } from './primitives';
 
 const NAV = [

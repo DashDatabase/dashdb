@@ -21,9 +21,8 @@
     "templates:check": "vitest run src/templates"
   },
   "dependencies": {
-    "@dashdb/api-client": "workspace:*",
     "@dashdb/core": "workspace:*",
-    "@dashdb/db": "workspace:*",
+    "@dashdb/edition": "workspace:*",
     "@dashdb/shared": "workspace:*",
     "@dashdb/ui": "workspace:*",
     "@xyflow/react": "^12.12.0",

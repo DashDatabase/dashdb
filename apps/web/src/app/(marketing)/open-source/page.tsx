@@ -50,9 +50,10 @@ export default function OpenSourcePage() {
 
           <h2>License</h2>
           <p>
-            DashDB is open source under the{' '}
+            DashDB Community is AGPL: everything in the repository is open source under the{' '}
             <a href={`${repo}/blob/HEAD/LICENSE`}>GNU Affero General Public License v3.0</a>{' '}
-            (AGPL-3.0).
+            (AGPL-3.0). Paid cloud, Team and Enterprise features are developed separately under a
+            commercial license.
           </p>
           <ul>
             <li>
@@ -68,9 +69,8 @@ export default function OpenSourcePage() {
               DashDB&apos;s code, not what you design with it.
             </li>
             <li>
-              <strong>Future paid features</strong> will live in the repository&apos;s{' '}
-              <code>/ee</code> directory under a separate commercial license. A commercial license
-              for the rest of DashDB is available if the AGPL doesn&apos;t suit your company.
+              <strong>Need different terms?</strong> A commercial license for DashDB Community is
+              available if the AGPL doesn&apos;t suit your company.
             </li>
             <li>
               <strong>The name and logo are not covered by the license.</strong> Saying your project
