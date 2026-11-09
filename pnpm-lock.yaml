@@ -241,7 +241,7 @@ importers:
         version: 5.0.5(vitest@5.0.5)
       drizzle-orm:
         specifier: ^0.45.4
-        version: 0.45.4(@electric-sql/pglite@0.4.3)(@opentelemetry/api@1.10.0)(mysql2@3.24.6(@types/node@22.20.5))(postgres@3.4.9)(prisma@7.10.1(@types/node@22.20.5)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(magicast@0.5.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@6.0.3))
+        version: 0.45.4(@electric-sql/pglite@0.4.3)(@opentelemetry/api@1.10.0)(mysql2@3.24.6(@types/node@22.20.5))(postgres@4.0.0)(prisma@7.10.1(@types/node@22.20.5)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(magicast@0.5.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@6.0.3))
       eslint:
         specifier: ^10.13.0
         version: 10.14.0(jiti@2.7.0)
@@ -252,8 +252,8 @@ importers:
         specifier: 3.24.6
         version: 3.24.6(@types/node@22.20.5)
       postgres:
-        specifier: ^3.4.9
-        version: 3.4.9
+        specifier: ^4.0.0
+        version: 4.0.0
       prisma:
         specifier: 7.10.1
         version: 7.10.1(@types/node@22.20.5)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(magicast@0.5.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@6.0.3)
@@ -5750,9 +5750,9 @@ packages:
     resolution: {integrity: sha512-Jtc2612XINuBjIl/QTWsV5UvE8UHuNblcO3vVADSrKsrc6RqGX6lOW1cEo3CM2v0XG4Nat8nI+YM7/f26VxXLw==}
     engines: {node: '>=12'}
 
-  postgres@3.4.9:
-    resolution: {integrity: sha512-GD3qdB0x1z9xgFI6cdRD6xu2Sp2WCOEoe3mtnyB5Ee0XrrL5Pe+e4CCnJrRMnL1zYtRDZmQQVbvOttLnKDLnaw==}
-    engines: {node: '>=12'}
+  postgres@4.0.0:
+    resolution: {integrity: sha512-kBh8qXtcvvIAc00DftQyOxz7M/3Zxww1tRMXZPLzipNXXl5PIzHml+9zB3Mrge2U8ldc0WF1ZdLp1iYQi7Kh3A==}
+    engines: {node: '>=20'}
 
   powershell-utils@0.2.1:
     resolution: {integrity: sha512-C+y9x90UElAddDZmV4qOx9W53B61PO7cIqWz2dQsWlwswuq4mr8NEwytdGKboYbQlGZ3awrkTeNvcZiZNHnQ8A==}
@@ -10313,12 +10313,12 @@ snapshots:
 
   dotenv@17.4.2: {}
 
-  drizzle-orm@0.45.4(@electric-sql/pglite@0.4.3)(@opentelemetry/api@1.10.0)(mysql2@3.24.6(@types/node@22.20.5))(postgres@3.4.9)(prisma@7.10.1(@types/node@22.20.5)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(magicast@0.5.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@6.0.3)):
+  drizzle-orm@0.45.4(@electric-sql/pglite@0.4.3)(@opentelemetry/api@1.10.0)(mysql2@3.24.6(@types/node@22.20.5))(postgres@4.0.0)(prisma@7.10.1(@types/node@22.20.5)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(magicast@0.5.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@6.0.3)):
     optionalDependencies:
       '@electric-sql/pglite': 0.4.3
       '@opentelemetry/api': 1.10.0
       mysql2: 3.24.6(@types/node@22.20.5)
-      postgres: 3.4.9
+      postgres: 4.0.0
       prisma: 7.10.1(@types/node@22.20.5)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(magicast@0.5.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@6.0.3)
 
   dunder-proto@1.0.1:
@@ -12643,7 +12643,7 @@ snapshots:
 
   postgres@3.4.7: {}
 
-  postgres@3.4.9: {}
+  postgres@4.0.0: {}
 
   powershell-utils@0.2.1: {}
 
